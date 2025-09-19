@@ -77,6 +77,29 @@ class RidersController extends AppBaseController
     if ($request->has('attendance') && !empty($request->attendance)) {
       $query->where('attendance', $request->attendance);
     }
+    // Filter by rider status (absconder and followup)
+    if ($request->has('rider_status') && !empty($request->rider_status)) {
+      $statusFilters = $request->rider_status;
+
+      if (is_array($statusFilters)) {
+        $query->where(function ($q) use ($statusFilters) {
+          foreach ($statusFilters as $status) {
+            if ($status === 'absconder') {
+              $q->orWhere('absconder', 1);
+            } elseif ($status === 'followup') {
+              $q->orWhere('flowup', 1);
+            }
+          }
+        });
+      } else {
+        // Handle single selection for backward compatibility
+        if ($statusFilters === 'absconder') {
+          $query->where('absconder', 1);
+        } elseif ($statusFilters === 'followup') {
+          $query->where('flowup', 1);
+        }
+      }
+    }
     // if ($request->has('status') && !empty($request->status)) {
     //   $query->where('status', $request->status);
     // }
@@ -91,6 +114,15 @@ class RidersController extends AppBaseController
         // Riders who don't have an active bike assigned
         $query->whereDoesntHave('bikes', function ($q) {
           $q->where('warehouse', 'Active');
+        });
+      }
+    }
+    // Filter by balance
+    if ($request->has('balance_filter') && !empty($request->balance_filter)) {
+      if ($request->balance_filter === 'greater_than_zero') {
+        // Riders with balance greater than 0
+        $query->whereHas('account', function ($q) {
+          $q->whereRaw('(SELECT COALESCE(SUM(debit), 0) - COALESCE(SUM(credit), 0) FROM transactions WHERE account_id = accounts.id) > 0');
         });
       }
     }
@@ -629,6 +661,58 @@ class RidersController extends AppBaseController
       return response()->json([
         'success' => false,
         'message' => 'Error updating ' . $section . ' information'
+      ], 500);
+    }
+  }
+
+  public function toggleAbsconder(Request $request, $id)
+  {
+    $rider = $this->ridersRepository->find($id);
+
+    if (empty($rider)) {
+      return response()->json(['error' => 'Rider not found'], 404);
+    }
+
+    try {
+      // Toggle the absconder status
+      $rider->absconder = $rider->absconder ? 0 : 1;
+      $rider->save();
+
+      return response()->json([
+        'success' => true,
+        'message' => 'Absconder status updated successfully',
+        'absconder' => $rider->absconder
+      ]);
+    } catch (\Exception $e) {
+      return response()->json([
+        'success' => false,
+        'message' => 'Error updating absconder status'
+      ], 500);
+    }
+  }
+
+  public function toggleFlowup(Request $request, $id)
+  {
+    $rider = $this->ridersRepository->find($id);
+
+    if (empty($rider)) {
+      return response()->json(['error' => 'Rider not found'], 404);
+    }
+
+    try {
+      // Toggle the flowup status
+      $rider->flowup = $rider->flowup ? 0 : 1;
+      $rider->save();
+
+      return response()->json([
+        'success' => true,
+        'message' => 'Flowup status updated successfully',
+        'flowup' => $rider->flowup
+      ]);
+    } catch (\Exception $e) {
+      return response()->json([
+        'success' => false,
+        'message' => 'Error updating flowup status'
       ], 500);
     }
   }

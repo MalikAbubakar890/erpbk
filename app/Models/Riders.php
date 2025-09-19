@@ -43,6 +43,8 @@ class Riders extends Model
     'visa_sponsor',
     'visa_occupation',
     'status',
+    'absconder',
+    'flowup',
     'TAID',
     'fleet_supervisor',
     'passport_handover',
@@ -95,7 +97,8 @@ class Riders extends Model
     'other_details' => 'string',
     'visa_sponsor' => 'string',
     'visa_occupation' => 'string',
-
+    'absconder' => 'boolean',
+    'flowup' => 'boolean',
     'fleet_supervisor' => 'string',
     'passport_handover' => 'string',
     'noon_no' => 'string',
