@@ -25600,3 +25600,7 @@ th.sorting.sorted-desc::after {
     opacity: 1;
     visibility: visible;
 }
+
+.light-style .select2-container--default .select2-selection--multiple .select2-selection__choice{
+  color: #ffffff !important;
+}
