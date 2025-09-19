@@ -380,7 +380,7 @@
     border: none;
     border-radius: 12px;
     padding: 16px;
-    color: #727272;
+    color: #ffffff !important;
     font-weight: 600;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     box-shadow: 0 4px 12px rgba(114, 114, 114, 0.3);
