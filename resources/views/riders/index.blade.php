@@ -30,346 +30,432 @@
                 </button>
             </div>
             <div class="fleet-supervisor-accordion collapsed" id="fleetSupervisorAccordion">
-                <div class="fleet-supervisor-cards">
-                    @php
-                    $dropdown = DB::table('dropdowns')->where('label', 'Fleet Supervisor')->first();
-                    $fleetSupervisors = $dropdown && $dropdown->values ? json_decode($dropdown->values, true) : [];
-                    @endphp
-
-                    @foreach($fleetSupervisors as $fleet)
-                    <div class="fleet-supervisor-card @if($fleet == request('fleet_supervisor')) active @endif"
-                        data-fleet_supervisor="{{ $fleet }}">
-                        <h3 class="fleet-supervisor-name">{{ $fleet }}</h3>
-                        <div class="fleet-supervisor-stats">
-                            <div class="fleet-stat active">
-                                <i class="fleet-stat-icon ti ti-user-check"></i>
-                                <span class="fleet-stat-label">Active</span>
-                                <span class="fleet-stat-value">{{ \App\Models\Riders::where('fleet_supervisor', $fleet)->where('status', 1)->count() }}</span>
-                            </div>
-                            <div class="fleet-stat inactive">
-                                <i class="fleet-stat-icon ti ti-user-x"></i>
-                                <span class="fleet-stat-label">Inactive</span>
-                                <span class="fleet-stat-value">{{ \App\Models\Riders::where('fleet_supervisor', $fleet)->where('status', 3)->count() }}</span>
-                            </div>
-                        </div>
+                <div class="fleet-supervisor-slider-container">
+                    <div class="slider-controls">
+                        <button class="slider-btn prev-btn" id="prevBtn" type="button">
+                            <i class="ti ti-chevron-left"></i>
+                        </button>
+                        <div class="slider-indicators" id="sliderIndicators"></div>
+                        <button class="slider-btn next-btn" id="nextBtn" type="button">
+                            <i class="ti ti-chevron-right"></i>
+                        </button>
                     </div>
-                    @endforeach
+                    <div class="fleet-supervisor-cards slider-track" id="sliderTrack">
+                        @php
+                        $dropdown = DB::table('dropdowns')->where('label', 'Fleet Supervisor')->first();
+                        $fleetSupervisors = $dropdown && $dropdown->values ? json_decode($dropdown->values, true) : [];
+                        @endphp
+
+                        @foreach($fleetSupervisors as $index => $fleet)
+                        <a href="{{ $fleet == request('fleet_supervisor') ? route('riders.index') : request()->fullUrlWithQuery(['fleet_supervisor' => $fleet]) }}"
+                            class="fleet-supervisor-card @if($fleet == request('fleet_supervisor')) active @endif"
+                            data-slide="{{ $index }}">
+                            <h3 class="fleet-supervisor-name">{{ $fleet }}</h3>
+                            <div class="fleet-supervisor-stats">
+                                <div class="fleet-stat active">
+                                    <i class="fleet-stat-icon ti ti-user-check"></i>
+                                    <span class="fleet-stat-label">Active</span>
+                                    <span class="fleet-stat-value">{{ \App\Models\Riders::where('fleet_supervisor', $fleet)->where('status', 1)->count() }}</span>
+                                </div>
+                                <div class="fleet-stat inactive">
+                                    <i class="fleet-stat-icon ti ti-user-x"></i>
+                                    <span class="fleet-stat-label">Inactive</span>
+                                    <span class="fleet-stat-value">{{ \App\Models\Riders::where('fleet_supervisor', $fleet)->where('status', 3)->count() }}</span>
+                                </div>
+                            </div>
+                        </a>
+                        @endforeach
+                    </div>
                 </div>
             </div>
         </div>
-        <!-- Enhanced Filter Section -->
-        <div class="filter-section mb-4">
-            <div class="row">
-                <div class="col-lg-8">
-                    <div class="filter-cards">
-                        <!-- Status Filter Card -->
-                        <div class="filter-card">
-                            <div class="filter-header">
-                                <div class="filter-icon">
-                                    <i class="ti ti-filter"></i>
-                                </div>
-                                <div class="filter-title">
-                                    <h6 class="mb-0">Status Filter</h6>
-                                    <small class="text-muted">Filter riders by status</small>
-                                </div>
-                            </div>
-                            <div class="filter-body">
-                                <form method="GET" action="{{ route('riders.index') }}" id="statusFilterForm">
-                                    <div class="select">
-                                        <select class="form-control select2" id="rider_status" name="rider_status[]" multiple onchange="this.form.submit()">
-                                            <option value="absconder" {{ in_array('absconder', request('rider_status', [])) ? 'selected' : '' }}>Absconder</option>
-                                            <option value="followup" {{ in_array('followup', request('rider_status', [])) ? 'selected' : '' }}>Follow Up</option>
-                                        </select>
-                                    </div>
-                                </form>
-                            </div>
-                        </div>
 
-                        <!-- Balance Filter Card -->
-                        <div class="filter-card">
-                            <div class="filter-header">
-                                <div class="filter-icon">
-                                    <i class="ti ti-cash"></i>
-                                </div>
-                                <div class="filter-title">
-                                    <h6 class="mb-0">Recovery Riders</h6>
-                                    <small class="text-muted">Riders with outstanding balance</small>
-                                </div>
-                            </div>
-                            <div class="filter-body">
-                                <button type="button" class="balance-filter-btn {{ request('balance_filter') == 'greater_than_zero' ? 'checked' : '' }}"
-                                    data-balance_filter="greater_than_zero"
-                                    id="balanceFilterBtn">
-                                    <div class="balance-stats">
-                                        <div class="stat-item">
-                                            <span class="stat-label">Active</span>
-                                            <span class="stat-value">{{ \App\Models\Riders::where('status', 1)->whereHas('account', function($q) { $q->whereRaw('(SELECT COALESCE(SUM(debit), 0) - COALESCE(SUM(credit), 0) FROM transactions WHERE account_id = accounts.id) > 0'); })->count() }}</span>
-                                        </div>
-                                        <div class="stat-divider"></div>
-                                        <div class="stat-item">
-                                            <span class="stat-label">Inactive</span>
-                                            <span class="stat-value">{{ \App\Models\Riders::where('status', 3)->whereHas('account', function($q) { $q->whereRaw('(SELECT COALESCE(SUM(debit), 0) - COALESCE(SUM(credit), 0) FROM transactions WHERE account_id = accounts.id) > 0'); })->count() }}</span>
-                                        </div>
-                                    </div>
-                                    <div class="filter-indicator">
-                                        <i class="ti ti-check"></i>
-                                    </div>
-                                </button>
+        <!-- Fleet Supervisor Slider Script -->
+        <script>
+            // Fleet Supervisor Slider with boundary checking
+            setTimeout(function() {
+                console.log('Initializing fleet supervisor slider...');
+                const sliderTrack = document.getElementById('sliderTrack');
+                const prevBtn = document.getElementById('prevBtn');
+                const nextBtn = document.getElementById('nextBtn');
 
-                                <!-- Balance Filter Dropdown -->
-                                <div class="balance-dropdown" id="balanceDropdown">
-                                    <div class="dropdown-header">
-                                        <h6 class="mb-0">Balance Filter Results</h6>
-                                        <button type="button" class="btn-close" onclick="closeBalanceDropdown()">
-                                            <i class="ti ti-x"></i>
-                                        </button>
-                                    </div>
-                                    <div class="dropdown-content">
-                                        <div class="filter-summary">
-                                            <div class="summary-item">
-                                                <span class="summary-label">Filter Applied:</span>
-                                                <span class="summary-value">Balance > 0</span>
-                                            </div>
-                                            <div class="summary-item">
-                                                <span class="summary-label">Total Results:</span>
-                                                <span class="summary-value" id="totalBalanceResults">{{ \App\Models\Riders::whereHas('account', function($q) { $q->whereRaw('(SELECT COALESCE(SUM(debit), 0) - COALESCE(SUM(credit), 0) FROM transactions WHERE account_id = accounts.id) > 0'); })->count() }}</span>
-                                            </div>
-                                        </div>
-                                        <div class="quick-actions">
-                                            <button type="button" class="quick-action-btn" onclick="exportBalanceResults()">
-                                                <i class="ti ti-download"></i>
-                                                Export Results
-                                            </button>
-                                            <button type="button" class="quick-action-btn" onclick="clearBalanceFilter()">
-                                                <i class="ti ti-x"></i>
-                                                Clear Filter
-                                            </button>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
+                if (sliderTrack && prevBtn && nextBtn) {
+                    console.log('All elements found, initializing slider...');
+
+                    const cards = sliderTrack.querySelectorAll('.fleet-supervisor-card');
+                    const totalCards = cards.length;
+                    console.log('Found', totalCards, 'cards');
+
+                    if (totalCards === 0) {
+                        console.log('No cards found');
+                        return;
+                    }
+
+                    let currentIndex = 0;
+                    const cardWidth = 296; // 280px card width + 16px gap
+                    const maxIndex = totalCards - 1;
+
+                    // Update button states based on current position
+                    function updateButtonStates() {
+                        // Disable prev button if at first card
+                        if (currentIndex === 0) {
+                            prevBtn.style.opacity = '0.5';
+                            prevBtn.style.pointerEvents = 'none';
+                            prevBtn.disabled = true;
+                        } else {
+                            prevBtn.style.opacity = '1';
+                            prevBtn.style.pointerEvents = 'auto';
+                            prevBtn.disabled = false;
+                        }
+
+                        // Disable next button if at last card
+                        if (currentIndex >= maxIndex) {
+                            nextBtn.style.opacity = '0.5';
+                            nextBtn.style.pointerEvents = 'none';
+                            nextBtn.disabled = true;
+                        } else {
+                            nextBtn.style.opacity = '1';
+                            nextBtn.style.pointerEvents = 'auto';
+                            nextBtn.disabled = false;
+                        }
+
+                        console.log('Current index:', currentIndex, 'Max index:', maxIndex);
+                    }
+
+                    // Update slider position
+                    function updateSlider() {
+                        const translateX = -currentIndex * cardWidth;
+                        sliderTrack.style.transform = `translateX(${translateX}px)`;
+                        console.log('Moving to card', currentIndex, 'translateX:', translateX);
+                        updateButtonStates();
+                    }
+
+                    // Next slide - move to next card
+                    function nextSlide() {
+                        if (currentIndex < maxIndex) {
+                            currentIndex++;
+                            updateSlider();
+                        } else {
+                            console.log('Already at last card, cannot go forward');
+                        }
+                    }
+
+                    // Previous slide - move to previous card
+                    function prevSlide() {
+                        if (currentIndex > 0) {
+                            currentIndex--;
+                            updateSlider();
+                        } else {
+                            console.log('Already at first card, cannot go backward');
+                        }
+                    }
+
+                    // Add click handlers with boundary checking
+                    nextBtn.addEventListener('click', function(e) {
+                        e.preventDefault();
+                        console.log('Next button clicked, current index:', currentIndex);
+                        nextSlide();
+                    });
+
+                    prevBtn.addEventListener('click', function(e) {
+                        e.preventDefault();
+                        console.log('Prev button clicked, current index:', currentIndex);
+                        prevSlide();
+                    });
+
+                    // Initialize slider
+                    updateSlider();
+
+                    console.log('Fleet supervisor slider initialized successfully!');
+                    console.log('Total cards:', totalCards, 'Max index:', maxIndex);
+
+                } else {
+                    console.log('Missing elements:', {
+                        sliderTrack: !!sliderTrack,
+                        prevBtn: !!prevBtn,
+                        nextBtn: !!nextBtn
+                    });
+                }
+            }, 500);
+        </script>
+        <!-- Filter Tabs Section -->
+        <div class="filter-tabs-section mb-4">
+            <div class="container-fluid d-flex justify-content-between">
+                @php
+                $activeFiltersCount = count(request('rider_status', [])) + (request('balance_filter') ? 1 : 0);
+
+                // Helper function to toggle rider status in URL
+                function toggleRiderStatus($status) {
+                $currentStatuses = request('rider_status', []);
+                $newStatuses = $currentStatuses;
+
+                if (in_array($status, $currentStatuses)) {
+                // Remove the status
+                $newStatuses = array_diff($currentStatuses, [$status]);
+                } else {
+                // Add the status
+                $newStatuses[] = $status;
+                }
+
+                $queryParams = request()->query();
+                $queryParams['rider_status'] = array_values($newStatuses);
+
+                return request()->fullUrlWithQuery($queryParams);
+                }
+
+                // Helper function to toggle balance filter in URL
+                function toggleBalanceFilter() {
+                $queryParams = request()->query();
+
+                if (request('balance_filter') == 'greater_than_zero') {
+                unset($queryParams['balance_filter']);
+                } else {
+                $queryParams['balance_filter'] = 'greater_than_zero';
+                }
+
+                return request()->fullUrlWithQuery($queryParams);
+                }
+                @endphp
+
+
+                <div class="filter-tabs">
+                    @if($activeFiltersCount > 0)
+                    <div class="filter-status">
+                        <div class="filter-info">
+                            <i class="ti ti-filter"></i>
+                            <span>{{ $activeFiltersCount }} filter{{ $activeFiltersCount > 1 ? 's' : '' }} applied</span>
+                            <a href="{{ route('riders.index') }}" class="btn btn-sm btn-outline-secondary ms-2">
+                                <i class="ti ti-x"></i>
+                                Clear All
+                            </a>
                         </div>
                     </div>
+                    @endif
+                    <a href="{{ route('riders.index') }}" class="filter-tab {{ !request('rider_status') && !request('balance_filter') ? 'active' : '' }}">
+                        <i class="ti ti-users"></i>
+                        All Riders
+                    </a>
+                    <a href="{{ toggleRiderStatus('absconder') }}" class="filter-tab {{ in_array('absconder', request('rider_status', [])) ? 'active' : '' }}">
+                        <i class="ti ti-user-x"></i>
+                        Absconder
+                    </a>
+                    <a href="{{ toggleRiderStatus('llicense') }}" class="filter-tab {{ in_array('llicense', request('rider_status', [])) ? 'active' : '' }}">
+                        <i class="ti ti-license"></i>
+                        Learning License
+                    </a>
+                    <a href="{{ toggleRiderStatus('followup') }}" class="filter-tab {{ in_array('followup', request('rider_status', [])) ? 'active' : '' }}">
+                        <i class="ti ti-phone-call"></i>
+                        Follow Up
+                    </a>
+                    <a href="{{ toggleBalanceFilter() }}" class="filter-tab {{ request('balance_filter') == 'greater_than_zero' ? 'active' : '' }}">
+                        <i class="ti ti-cash"></i>
+                        Recovery ({{ \App\Models\Riders::whereHas('account', function($q) { $q->whereRaw('(SELECT COALESCE(SUM(debit), 0) - COALESCE(SUM(credit), 0) FROM transactions WHERE account_id = accounts.id) > 0'); })->count() }})
+                    </a>
                 </div>
-                <div class="col-lg-4">
-                    <div class="action-section">
-                        <div class="action-header">
-                            <h6 class="mb-0">Quick Actions</h6>
-                            <small class="text-muted">Manage riders efficiently</small>
-                        </div>
-                        <div class="action-buttons">
-                            @can('rider_create')
-                            <div class="action-dropdown-container">
-                                <button class="action-dropdown-btn" id="addRiderDropdownBtn">
-                                    <i class="ti ti-plus"></i>
-                                    <span>Add Rider</span>
-                                    <i class="ti ti-chevron-down"></i>
-                                </button>
-                                <div class="action-dropdown-menu" id="addRiderDropdown">
-                                    <a class="action-dropdown-item" href="{{ route('riders.create') }}">
-                                        <i class="ti ti-user-plus"></i>
-                                        <div>
-                                            <div class="action-dropdown-item-text">Create New Rider</div>
-                                            <div class="action-dropdown-item-desc">Add a new rider to the system</div>
-                                        </div>
-                                    </a>
-                                    <a class="action-dropdown-item show-modal" href="javascript:void(0);" data-size="sm" data-title="Import Today Attendance" data-action="{{ route('rider.attendance_import') }}">
-                                        <i class="ti ti-calendar-check"></i>
-                                        <div>
-                                            <div class="action-dropdown-item-text">Import Today Attendance</div>
-                                            <div class="action-dropdown-item-desc">Import attendance data for today</div>
-                                        </div>
-                                    </a>
-                                    <a class="action-dropdown-item show-modal" href="javascript:void(0);" data-size="sm" data-title="Import Rider Activities" data-action="{{ route('rider.activities_import') }}">
-                                        <i class="ti ti-activity"></i>
-                                        <div>
-                                            <div class="action-dropdown-item-text">Import Activities</div>
-                                            <div class="action-dropdown-item-desc">Import rider activity data</div>
-                                        </div>
-                                    </a>
-                                    <a class="action-dropdown-item" href="{{ route('rider.exportRiders') }}">
-                                        <i class="ti ti-file-export"></i>
-                                        <div>
-                                            <div class="action-dropdown-item-text">Export Riders</div>
-                                            <div class="action-dropdown-item-desc">Export rider data to Excel</div>
-                                        </div>
-                                    </a>
+                <div class="action-buttons">
+                    @can('rider_create')
+                    <div class="action-dropdown-container">
+                        <button class="action-dropdown-btn" id="addRiderDropdownBtn">
+                            <i class="ti ti-plus"></i>
+                            <span>Add Rider</span>
+                            <i class="ti ti-chevron-down"></i>
+                        </button>
+                        <div class="action-dropdown-menu" id="addRiderDropdown">
+                            <a class="action-dropdown-item" href="{{ route('riders.create') }}">
+                                <i class="ti ti-user-plus"></i>
+                                <div>
+                                    <div class="action-dropdown-item-text">Create New Rider</div>
+                                    <div class="action-dropdown-item-desc">Add a new rider to the system</div>
                                 </div>
-                            </div>
-                            @endcan
+                            </a>
+                            <a class="action-dropdown-item show-modal" href="javascript:void(0);" data-size="sm" data-title="Import Today Attendance" data-action="{{ route('rider.attendance_import') }}">
+                                <i class="ti ti-calendar-check"></i>
+                                <div>
+                                    <div class="action-dropdown-item-text">Import Today Attendance</div>
+                                    <div class="action-dropdown-item-desc">Import attendance data for today</div>
+                                </div>
+                            </a>
+                            <a class="action-dropdown-item show-modal" href="javascript:void(0);" data-size="sm" data-title="Import Rider Activities" data-action="{{ route('rider.activities_import') }}">
+                                <i class="ti ti-activity"></i>
+                                <div>
+                                    <div class="action-dropdown-item-text">Import Activities</div>
+                                    <div class="action-dropdown-item-desc">Import rider activity data</div>
+                                </div>
+                            </a>
+                            <a class="action-dropdown-item" href="{{ route('rider.exportRiders') }}">
+                                <i class="ti ti-file-export"></i>
+                                <div>
+                                    <div class="action-dropdown-item-text">Export Riders</div>
+                                    <div class="action-dropdown-item-desc">Export rider data to Excel</div>
+                                </div>
+                            </a>
                         </div>
-                        <div id="filterSidebar" class="filter-sidebar" style="z-index: 1111;">
-                            <div class="filter-header">
-                                <h5>Filter Riders</h5>
-                                <button type="button" class="btn-close" id="closeSidebar"></button>
-                            </div>
-                            <div class="filter-body" id="searchTopbody">
-                                <form id="filterForm" action="{{ route('riders.index') }}" method="GET">
-                                    <div class="row">
-                                        <div class="form-group col-md-12">
-                                            <label for="id">Rider Id</label>
-                                            <input type="number" name="rider_id" class="form-control" placeholder="Filter By Rider ID" value="{{ request('rider_id') }}">
-                                        </div>
-                                        <div class="form-group col-md-12">
-                                            <label for="name">Rider Name</label>
-                                            <input type="text" name="name" class="form-control" placeholder="Filter By Name" value="{{ request('name') }}">
-                                        </div>
-                                        <div class="form-group col-md-12">
-                                            <label for="fleet_supervisor">Filter by Fleet SuperVisor</label>
-                                            <select class="form-control " id="fleet_supervisor" name="fleet_supervisor">
-                                                @php
-                                                $supervisorRow = DB::table('dropdowns')
-                                                ->where('label', 'Fleet Supervisor')
-                                                ->whereNotNull('values')
-                                                ->first();
-                                                $fleetSupervisors = [];
-                                                if ($supervisorRow && $supervisorRow->values) {
-                                                $fleetSupervisors = json_decode($supervisorRow->values, true);
-                                                }
-                                                @endphp
-                                                <option value="" selected>Select</option>
-                                                @foreach($fleetSupervisors as $supervisor)
-                                                <option value="{{ $supervisor }}" {{ request('fleet_supervisor') == $supervisor ? 'selected' : '' }}>{{ $supervisor }}</option>
-                                                @endforeach
-                                            </select>
-                                        </div>
-                                        <div class="form-group col-md-12">
-                                            <label for="hub">Filter by HUB</label>
-                                            <select class="form-control " id="hub" name="hub">
-                                                @php
-                                                $emirateHubs = DB::table('riders')
-                                                ->whereNotNull('designation')
-                                                ->where('designation', '!=', '')
-                                                ->select('designation')
-                                                ->distinct()
-                                                ->pluck('designation');
-                                                @endphp
-                                                <option value="" selected>Select</option>
-                                                @foreach($emirateHubs as $hub)
-                                                <option value="{{ $hub }}" {{ request('hub') == $hub ? 'selected' : '' }}>{{ $hub }}</option>
-                                                @endforeach
-                                            </select>
-                                        </div>
-                                        <div class="form-group col-md-12">
-                                            <label for="customer_id">Filter by Customer</label>
-                                            <select class="form-control " id="customer_id" name="customer_id">
-                                                @php
-                                                $customerIds = DB::table('riders')
-                                                ->whereNotNull('customer_id')
-                                                ->where('customer_id', '!=', '')
-                                                ->pluck('customer_id')
-                                                ->unique();
-
-                                                $customers = DB::table('customers')
-                                                ->whereIn('id', $customerIds)
-                                                ->select('id', 'name')
-                                                ->get();
-                                                @endphp
-                                                <option value="" selected>Select</option>
-                                                @foreach($customers as $customer)
-                                                <option value="{{ $customer->id }}" {{ request('customer_id') == $customer->id ? 'selected' : '' }}>{{ $customer->name }}</option>
-                                                @endforeach
-                                            </select>
-                                        </div>
-                                        <div class="form-group col-md-12">
-                                            <label for="bike">Bike Number</label>
-                                            <input type="text" name="branded_plate_no" value="{{ request('bike') }}" class="form-control" placeholder="Filter By Bike Number">
-                                        </div>
-                                        <div class="form-group col-md-12">
-                                            <label for="designation">Filter by Designation</label>
-                                            <select class="form-control " id="designation" name="designation">
-                                                @php
-                                                $emiratedesignation = DB::table('riders')
-                                                ->whereNotNull('designation')
-                                                ->where('designation', '!=', '')
-                                                ->select('designation')
-                                                ->distinct()
-                                                ->pluck('designation');
-                                                @endphp
-                                                <option value="" selected>Select</option>
-                                                @foreach($emiratedesignation as $des)
-                                                <option value="{{ $des }}" {{ request('designation') == $des ? 'selected' : '' }}>{{ $des }}</option>
-                                                @endforeach
-                                            </select>
-                                        </div>
-                                        <div class="form-group col-md-12">
-                                            <label for="attandence">Filter by Attandence</label>
-                                            <select class="form-control " id="attendance" name="attendance">
-                                                @php
-                                                $attandence = DB::table('riders')
-                                                ->whereNotNull('attendance')
-                                                ->where('attendance', '!=', '')
-                                                ->select('attendance')
-                                                ->distinct()
-                                                ->pluck('attendance');
-                                                @endphp
-                                                <option value="" selected>Select</option>
-                                                @foreach($attandence as $att)
-                                                <option value="{{ $att }}" {{ request('attandence') == $att ? 'selected' : '' }}>{{ $att }}</option>
-                                                @endforeach
-                                            </select>
-                                        </div>
-                                        <!-- <div class="form-group col-md-12">
-                                    <label for="status">Filter by Status</label>
-                                    <select class="form-control " id="status" name="status">
-                                        <option value="" selected>Select</option>
-                                        <option value="1" {{ request('status') == 1 ? 'selected' : '' }}>Active</option>
-                                        <option value="3" {{ request('status') == 3 ? 'selected' : '' }}>In Active</option>
-                                    </select>
-                                </div> -->
-                                        <div class="form-group col-md-12">
-                                            <label for="bike_assignment_status">Filter by Bike Assignment</label>
-                                            <select class="form-control " id="bike_assignment_status" name="bike_assignment_status">
-                                                <option value="" selected>Select</option>
-                                                <option value="Active" {{ request('bike_assignment_status') == 'Active' ? 'selected' : '' }}>Active</option>
-                                                <option value="Inactive" {{ request('bike_assignment_status') == 'Inactive' ? 'selected' : '' }}>Inactive</option>
-                                            </select>
-                                        </div>
-                                        <div class="form-group col-md-12">
-                                            <label for="quick_search">Quick Search</label>
-                                            <input type="text" name="quick_search" id="quickSearchSidebar" class="form-control" placeholder="Quick Search..." value="{{ request('quick_search') }}">
-                                        </div>
-                                        <div class="col-md-12 form-group text-center">
-                                            <button type="submit" class="btn btn-primary pull-right mt-3"><i class="fa fa-filter mx-2"></i> Filter Data</button>
-                                        </div>
-                                    </div>
-                                </form>
-                            </div>
-                        </div>
-                        <div class="filter-overlay" id="filterOverlay"></div>
-
-                        {{-- Include Column Control Panel --}}
-                        @php
-                        $tableColumns = [
-                        ['data' => 'rider_id', 'title' => 'Rider ID'],
-                        ['data' => 'name', 'title' => 'Name'],
-                        ['data' => 'company_contact', 'title' => 'Contact'],
-                        ['data' => 'fleet_supervisor', 'title' => 'Fleet Supv'],
-                        ['data' => 'emirate_hub', 'title' => 'Hub'],
-                        ['data' => 'customer_id', 'title' => 'Customer'],
-                        ['data' => 'designation', 'title' => 'Desig'],
-                        ['data' => 'bike', 'title' => 'Bike'],
-                        ['data' => 'status', 'title' => 'Status'],
-                        ['data' => 'shift', 'title' => 'Shift'],
-                        ['data' => 'attendance', 'title' => 'ATTN'],
-                        ['data' => 'orders_sum', 'title' => 'Orders'],
-                        ['data' => 'days', 'title' => 'Days'],
-                        ['data' => 'balance', 'title' => 'Balance'],
-                        ['data' => 'action', 'title' => 'Actions'],
-                        ['data' => 'search', 'title' => 'Search'],
-                        ['data' => 'control', 'title' => 'Control']
-                        ];
-                        @endphp
-
-                        @include('components.column-control-panel', [
-                        'tableColumns' => $tableColumns,
-                        'exportRoute' => route('rider.exportCustomizableRiders'),
-                        'tableIdentifier' => 'riders_table'
-                        ])
                     </div>
+                    @endcan
                 </div>
             </div>
+        </div>
+        <div id="filterSidebar" class="filter-sidebar" style="z-index: 1111;">
+            <div class="filter-header">
+                <h5>Filter Riders</h5>
+                <button type="button" class="btn-close" id="closeSidebar"></button>
+            </div>
+            <div class="filter-body" id="searchTopbody">
+                <form id="filterForm" action="{{ route('riders.index') }}" method="GET">
+                    <div class="row">
+                        <div class="form-group col-md-12">
+                            <label for="id">Rider Id</label>
+                            <input type="number" name="rider_id" class="form-control" placeholder="Filter By Rider ID" value="{{ request('rider_id') }}">
+                        </div>
+                        <div class="form-group col-md-12">
+                            <label for="name">Rider Name</label>
+                            <input type="text" name="name" class="form-control" placeholder="Filter By Name" value="{{ request('name') }}">
+                        </div>
+                        <div class="form-group col-md-12">
+                            <label for="fleet_supervisor">Filter by Fleet SuperVisor</label>
+                            <select class="form-control " id="fleet_supervisor" name="fleet_supervisor">
+                                @php
+                                $supervisorRow = DB::table('dropdowns')
+                                ->where('label', 'Fleet Supervisor')
+                                ->whereNotNull('values')
+                                ->first();
+                                $fleetSupervisors = [];
+                                if ($supervisorRow && $supervisorRow->values) {
+                                $fleetSupervisors = json_decode($supervisorRow->values, true);
+                                }
+                                @endphp
+                                <option value="" selected>Select</option>
+                                @foreach($fleetSupervisors as $supervisor)
+                                <option value="{{ $supervisor }}" {{ request('fleet_supervisor') == $supervisor ? 'selected' : '' }}>{{ $supervisor }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="form-group col-md-12">
+                            <label for="hub">Filter by HUB</label>
+                            <select class="form-control " id="hub" name="hub">
+                                @php
+                                $emirateHubs = DB::table('riders')
+                                ->whereNotNull('designation')
+                                ->where('designation', '!=', '')
+                                ->select('designation')
+                                ->distinct()
+                                ->pluck('designation');
+                                @endphp
+                                <option value="" selected>Select</option>
+                                @foreach($emirateHubs as $hub)
+                                <option value="{{ $hub }}" {{ request('hub') == $hub ? 'selected' : '' }}>{{ $hub }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="form-group col-md-12">
+                            <label for="customer_id">Filter by Customer</label>
+                            <select class="form-control " id="customer_id" name="customer_id">
+                                @php
+                                $customerIds = DB::table('riders')
+                                ->whereNotNull('customer_id')
+                                ->where('customer_id', '!=', '')
+                                ->pluck('customer_id')
+                                ->unique();
+
+                                $customers = DB::table('customers')
+                                ->whereIn('id', $customerIds)
+                                ->select('id', 'name')
+                                ->get();
+                                @endphp
+                                <option value="" selected>Select</option>
+                                @foreach($customers as $customer)
+                                <option value="{{ $customer->id }}" {{ request('customer_id') == $customer->id ? 'selected' : '' }}>{{ $customer->name }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="form-group col-md-12">
+                            <label for="bike">Bike Number</label>
+                            <input type="text" name="branded_plate_no" value="{{ request('bike') }}" class="form-control" placeholder="Filter By Bike Number">
+                        </div>
+                        <div class="form-group col-md-12">
+                            <label for="designation">Filter by Designation</label>
+                            <select class="form-control " id="designation" name="designation">
+                                @php
+                                $emiratedesignation = DB::table('riders')
+                                ->whereNotNull('designation')
+                                ->where('designation', '!=', '')
+                                ->select('designation')
+                                ->distinct()
+                                ->pluck('designation');
+                                @endphp
+                                <option value="" selected>Select</option>
+                                @foreach($emiratedesignation as $des)
+                                <option value="{{ $des }}" {{ request('designation') == $des ? 'selected' : '' }}>{{ $des }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="form-group col-md-12">
+                            <label for="attandence">Filter by Attandence</label>
+                            <select class="form-control " id="attendance" name="attendance">
+                                @php
+                                $attandence = DB::table('riders')
+                                ->whereNotNull('attendance')
+                                ->where('attendance', '!=', '')
+                                ->select('attendance')
+                                ->distinct()
+                                ->pluck('attendance');
+                                @endphp
+                                <option value="" selected>Select</option>
+                                @foreach($attandence as $att)
+                                <option value="{{ $att }}" {{ request('attandence') == $att ? 'selected' : '' }}>{{ $att }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="form-group col-md-12">
+                            <label for="bike_assignment_status">Filter by Bike Assignment</label>
+                            <select class="form-control " id="bike_assignment_status" name="bike_assignment_status">
+                                <option value="" selected>Select</option>
+                                <option value="Active" {{ request('bike_assignment_status') == 'Active' ? 'selected' : '' }}>Active</option>
+                                <option value="Inactive" {{ request('bike_assignment_status') == 'Inactive' ? 'selected' : '' }}>Inactive</option>
+                            </select>
+                        </div>
+                        <div class="form-group col-md-12">
+                            <label for="quick_search">Quick Search</label>
+                            <input type="text" name="quick_search" id="quickSearchSidebar" class="form-control" placeholder="Quick Search..." value="{{ request('quick_search') }}">
+                        </div>
+                        <div class="col-md-12 form-group text-center">
+                            <button type="submit" class="btn btn-primary pull-right mt-3"><i class="fa fa-filter mx-2"></i> Filter Data</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+        <!-- Filter Overlay -->
+        <div id="filterOverlay" class="filter-overlay"></div>
 </section>
+{{-- Include Column Control Panel --}}
+@php
+$tableColumns = [
+['data' => 'rider_id', 'title' => 'Rider ID'],
+['data' => 'name', 'title' => 'Name'],
+['data' => 'company_contact', 'title' => 'Contact'],
+['data' => 'fleet_supervisor', 'title' => 'Fleet Supv'],
+['data' => 'emirate_hub', 'title' => 'Hub'],
+['data' => 'customer_id', 'title' => 'Customer'],
+['data' => 'designation', 'title' => 'Desig'],
+['data' => 'bike', 'title' => 'Bike'],
+['data' => 'status', 'title' => 'Status'],
+['data' => 'shift', 'title' => 'Shift'],
+['data' => 'attendance', 'title' => 'ATTN'],
+['data' => 'orders_sum', 'title' => 'Orders'],
+['data' => 'days', 'title' => 'Days'],
+['data' => 'balance', 'title' => 'Balance'],
+['data' => 'action', 'title' => 'Actions'],
+['data' => 'search', 'title' => 'Search'],
+['data' => 'control', 'title' => 'Control']
+];
+@endphp
+
+@include('components.column-control-panel', [
+'tableColumns' => $tableColumns,
+'exportRoute' => route('rider.exportCustomizableRiders'),
+'tableIdentifier' => 'riders_table'
+])
 <div class="content px-0">
     @include('flash::message')
     <div class="card">
@@ -382,7 +468,17 @@
             </div>
         </div>
         <div class="card-body table-responsive px-2 py-0" id="table-data">
-            @include('riders.table', ['data' => $data])
+            <div class="riders-table-container">
+                @include('riders.table', ['data' => $data])
+            </div>
+            <div class="filter-loading-overlay" style="display: none;">
+                <div class="filter-loading-content">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <p class="mt-2">Applying filters...</p>
+                </div>
+            </div>
         </div>
     </div>
 </div>
@@ -424,71 +520,53 @@
 </script>
 <script type="text/javascript">
     $(document).ready(function() {
-        // Sidebar open/close
-        $(document).on('click', '#openFilterSidebar, .openFilterSidebar', function() {
+        // Filter sidebar functionality
+        $(document).on('click', '#openFilterSidebar, .openFilterSidebar', function(e) {
+            e.preventDefault();
+            console.log('Filter button clicked!'); // Debug line
             $('#filterSidebar').addClass('open');
             $('#filterOverlay').addClass('show');
+            return false;
         });
+
         $('#closeSidebar, #filterOverlay').on('click', function() {
             $('#filterSidebar').removeClass('open');
             $('#filterOverlay').removeClass('show');
         });
         $('#filterForm').on('submit', function(e) {
-            e.preventDefault();
-            $('#loading-overlay').show();
+            // Let the form submit naturally - no need to prevent default
             $('#filterSidebar').removeClass('open');
             $('#filterOverlay').removeClass('show');
-            const loaderStartTime = Date.now();
-            let filteredFields = $(this).serializeArray().filter(field => field.name !== '_token' && field.value.trim() !== '');
-            let formData = $.param(filteredFields);
-            $.ajax({
-                url: "{{ route('riders.index') }}",
-                type: "GET",
-                data: formData,
-                success: function(data) {
-                    $('#table-data').html(data.tableData);
-                    let newUrl = "{{ route('riders.index') }}" + (formData ? '?' + formData : '');
-                    history.pushState(null, '', newUrl);
-                    if (filteredFields.length > 0) {
-                        $('#clearFilterBtn').show();
-                    } else {
-                        $('#clearFilterBtn').hide();
-                    }
-
-                    // Reapply column control settings after table update
-                    if (window.ColumnController) {
-                        setTimeout(() => {
-                            window.ColumnController.reapplySettings();
-                            window.ColumnController.initializeDropdowns();
-                        }, 100);
-                    }
-
-                    const elapsed = Date.now() - loaderStartTime;
-                    const remaining = 1000 - elapsed;
-                    setTimeout(() => $('#loading-overlay').hide(), remaining > 0 ? remaining : 0);
-                },
-                error: function(xhr, status, error) {
-                    console.error(error);
-                    const elapsed = Date.now() - loaderStartTime;
-                    const remaining = 1000 - elapsed;
-                    setTimeout(() => $('#loading-overlay').hide(), remaining > 0 ? remaining : 0);
-                }
-            });
         });
-        // Quick search input (main)
+        // Quick search input (main) - redirect to URL with search parameter
         $('#quickSearch').on('keyup', function(e) {
             if (e.keyCode === 13 || $(this).val().length === 0) {
-                // Set the sidebar quick search too
-                $('#quickSearchSidebar').val($(this).val());
-                $('#filterForm').submit();
+                const searchValue = $(this).val();
+                const url = new URL(window.location);
+
+                if (searchValue) {
+                    url.searchParams.set('quick_search', searchValue);
+                } else {
+                    url.searchParams.delete('quick_search');
+                }
+
+                window.location.href = url.toString();
             }
         });
-        // Quick search input (sidebar)
+
+        // Quick search input (sidebar) - redirect to URL with search parameter
         $('#quickSearchSidebar').on('keyup', function(e) {
             if (e.keyCode === 13 || $(this).val().length === 0) {
-                // Set the main quick search too
-                $('#quickSearch').val($(this).val());
-                $('#filterForm').submit();
+                const searchValue = $(this).val();
+                const url = new URL(window.location);
+
+                if (searchValue) {
+                    url.searchParams.set('quick_search', searchValue);
+                } else {
+                    url.searchParams.delete('quick_search');
+                }
+
+                window.location.href = url.toString();
             }
         });
     });
@@ -536,166 +614,7 @@
             }
         });
 
-        $('.fleet-supervisor-card').on('click', function() {
-            const fleet_supervisor = $(this).data('fleet_supervisor');
-            const loaderStartTime = Date.now();
-            $('#loading-overlay').show();
-
-            // Check if this card is already active
-            const isCurrentlyActive = $(this).hasClass('active');
-
-            if (isCurrentlyActive) {
-                // If already active, deselect it (remove all filters)
-                $('.fleet-supervisor-card').removeClass('active');
-                $('.balance-filter-btn').removeClass('active');
-
-                $.ajax({
-                    url: "{{ route('riders.index') }}",
-                    type: "GET",
-                    data: {}, // No filters - show all riders
-                    success: function(data) {
-                        $('#table-data').html(data.tableData);
-                        let newUrl = "{{ route('riders.index') }}";
-                        history.pushState(null, '', newUrl);
-
-                        // Reapply column control settings after table update
-                        if (window.ColumnController) {
-                            setTimeout(() => {
-                                window.ColumnController.reapplySettings();
-                                window.ColumnController.initializeDropdowns();
-                            }, 100);
-                        }
-
-                        const elapsed = Date.now() - loaderStartTime;
-                        const remaining = 1000 - elapsed;
-                        setTimeout(() => $('#loading-overlay').hide(), remaining > 0 ? remaining : 0);
-                    },
-                    error: function() {
-                        console.error(error);
-                        const elapsed = Date.now() - loaderStartTime;
-                        const remaining = 1000 - elapsed;
-                        setTimeout(() => $('#loading-overlay').hide(), remaining > 0 ? remaining : 0);
-                    }
-                });
-            } else {
-                // If not active, select it and apply fleet supervisor filter
-                $('.fleet-supervisor-card').removeClass('active');
-                $('.balance-filter-btn').removeClass('active');
-                $(this).addClass('active');
-
-                $.ajax({
-                    url: "{{ route('riders.index') }}",
-                    type: "GET",
-                    data: {
-                        fleet_supervisor: fleet_supervisor
-                    },
-                    success: function(data) {
-                        $('#table-data').html(data.tableData);
-                        let newUrl = "{{ route('riders.index') }}" + '?fleet_supervisor=' + encodeURIComponent(fleet_supervisor);
-                        history.pushState(null, '', newUrl);
-
-                        // Reapply column control settings after table update
-                        if (window.ColumnController) {
-                            setTimeout(() => {
-                                window.ColumnController.reapplySettings();
-                                window.ColumnController.initializeDropdowns();
-                            }, 100);
-                        }
-
-                        const elapsed = Date.now() - loaderStartTime;
-                        const remaining = 1000 - elapsed;
-                        setTimeout(() => $('#loading-overlay').hide(), remaining > 0 ? remaining : 0);
-                    },
-                    error: function() {
-                        console.error(error);
-                        const elapsed = Date.now() - loaderStartTime;
-                        const remaining = 1000 - elapsed;
-                        setTimeout(() => $('#loading-overlay').hide(), remaining > 0 ? remaining : 0);
-                    }
-                });
-            }
-        });
-
-        $('.balance-filter-btn').on('click', function() {
-            const balance_filter = $(this).data('balance_filter');
-            const loaderStartTime = Date.now();
-            $('#loading-overlay').show();
-
-            // Check if this button is already active or checked
-            const isCurrentlyActive = $(this).hasClass('active');
-            const isCurrentlyChecked = $(this).hasClass('checked');
-
-            if (isCurrentlyActive || isCurrentlyChecked) {
-                // If already active/checked, deselect it (remove all filters)
-                $('.fleet-supervisor-card').removeClass('active');
-                $('.balance-filter-btn').removeClass('active checked');
-
-                $.ajax({
-                    url: "{{ route('riders.index') }}",
-                    type: "GET",
-                    data: {}, // No filters - show all riders
-                    success: function(data) {
-                        $('#table-data').html(data.tableData);
-                        let newUrl = "{{ route('riders.index') }}";
-                        history.pushState(null, '', newUrl);
-
-                        // Reapply column control settings after table update
-                        if (window.ColumnController) {
-                            setTimeout(() => {
-                                window.ColumnController.reapplySettings();
-                                window.ColumnController.initializeDropdowns();
-                            }, 100);
-                        }
-
-                        const elapsed = Date.now() - loaderStartTime;
-                        const remaining = 1000 - elapsed;
-                        setTimeout(() => $('#loading-overlay').hide(), remaining > 0 ? remaining : 0);
-                    },
-                    error: function() {
-                        console.error(error);
-                        const elapsed = Date.now() - loaderStartTime;
-                        const remaining = 1000 - elapsed;
-                        setTimeout(() => $('#loading-overlay').hide(), remaining > 0 ? remaining : 0);
-                    }
-                });
-            } else {
-                // If not active, select it and apply balance filter
-                $('.fleet-supervisor-card').removeClass('active');
-                $('.balance-filter-btn').removeClass('active checked');
-                $(this).addClass('checked');
-
-                $.ajax({
-                    url: "{{ route('riders.index') }}",
-                    type: "GET",
-                    data: {
-                        balance_filter: balance_filter
-                    },
-                    success: function(data) {
-                        $('#table-data').html(data.tableData);
-                        let newUrl = "{{ route('riders.index') }}" + '?balance_filter=' + encodeURIComponent(balance_filter);
-                        history.pushState(null, '', newUrl);
-
-                        // Reapply column control settings after table update
-                        if (window.ColumnController) {
-                            setTimeout(() => {
-                                window.ColumnController.reapplySettings();
-                                window.ColumnController.initializeDropdowns();
-                            }, 100);
-                        }
-
-                        const elapsed = Date.now() - loaderStartTime;
-                        const remaining = 1000 - elapsed;
-                        setTimeout(() => $('#loading-overlay').hide(), remaining > 0 ? remaining : 0);
-                    },
-                    error: function() {
-                        console.error(error);
-                        const elapsed = Date.now() - loaderStartTime;
-                        const remaining = 1000 - elapsed;
-                        setTimeout(() => $('#loading-overlay').hide(), remaining > 0 ? remaining : 0);
-                    }
-                });
-            }
-        });
+        // Fleet supervisor and balance filter cards now use direct links - no JavaScript needed
     });
 </script>
 <script>
@@ -750,122 +669,7 @@
         });
     });
 
-    // Initialize Select2 for multi-select status filter with enhanced features
-    $(document).ready(function() {
-        $('#rider_status').select2({
-            placeholder: '🎯 Select Status to Filter',
-            allowClear: true,
-            width: '100%',
-            closeOnSelect: false,
-            dropdownParent: $('body'),
-            templateResult: function(data) {
-                if (!data.id) return data.text;
-
-                var $result = $(
-                    '<div class="select2-result-item">' +
-                    '<div class="option-content">' +
-                    '<span class="option-icon">' + (data.id === 'absconder' ? '🚨' : '🔔') + '</span>' +
-                    '<span class="option-text">' + data.text + '</span>' +
-                    '</div>' +
-                    '</div>'
-                );
-
-                return $result;
-            },
-            templateSelection: function(data) {
-                return data.text;
-            }
-        });
-
-        // Add loading animation when form is submitted
-        $('#statusFilterForm').on('submit', function() {
-            $('.select2-selection__choice').addClass('loading');
-
-            // Show loading overlay
-            $('#loading-overlay').show();
-        });
-
-        // Handle form submission with proper parameter handling
-        $('#rider_status').on('change', function() {
-            // Add ripple effect
-            $('.select').addClass('ripple-effect');
-            setTimeout(() => {
-                $('.select').removeClass('ripple-effect');
-            }, 600);
-
-            // Add a small delay to ensure select2 values are updated
-            setTimeout(function() {
-                $('#statusFilterForm').submit();
-            }, 100);
-        });
-
-        // Add hover effects for better UX
-        $('.select').hover(
-            function() {
-                $(this).addClass('hover-effect');
-            },
-            function() {
-                $(this).removeClass('hover-effect');
-            }
-        );
-
-        // Add click animation
-        $('.select').on('click', function() {
-            $(this).addClass('click-effect');
-            setTimeout(() => {
-                $(this).removeClass('click-effect');
-            }, 200);
-        });
-
-        // Custom scrollbar for dropdown
-        $('.select2-dropdown').on('DOMNodeInserted', function() {
-            $('.select2-results__options').addClass('custom-scrollbar');
-        });
-
-        // Balance Filter Functionality
-        $('#balanceFilterBtn').on('click', function(e) {
-            e.stopPropagation();
-            const dropdown = $('#balanceDropdown');
-
-            if (dropdown.hasClass('show')) {
-                closeBalanceDropdown();
-            } else {
-                // Close other dropdowns
-                $('.balance-dropdown').removeClass('show');
-                // Show this dropdown
-                dropdown.addClass('show');
-
-                // Update dropdown content based on current filter state
-                updateBalanceDropdownContent();
-            }
-        });
-
-        // Close dropdown when clicking outside
-        $(document).on('click', function(e) {
-            if (!$(e.target).closest('.filter-body').length) {
-                closeBalanceDropdown();
-            }
-        });
-
-        // Balance filter button click handler
-        $('.balance-filter-btn').on('click', function() {
-            const balanceFilter = $(this).data('balance_filter');
-            const currentUrl = new URL(window.location);
-
-            if (currentUrl.searchParams.get('balance_filter') === balanceFilter) {
-                // Remove filter if already active
-                currentUrl.searchParams.delete('balance_filter');
-                $(this).removeClass('active');
-            } else {
-                // Apply filter
-                currentUrl.searchParams.set('balance_filter', balanceFilter);
-                $(this).addClass('active');
-            }
-
-            // Redirect to new URL
-            window.location.href = currentUrl.toString();
-        });
-    });
+    // Status filter functionality is now handled by direct URL links
 
     // Add CSS for enhanced interactions
     $('<style>')
@@ -937,46 +741,99 @@
         `)
         .appendTo('head');
 
-    // Balance Filter Functions
-    function closeBalanceDropdown() {
-        $('#balanceDropdown').removeClass('show');
-    }
+    // Balance filter functions are now handled by direct URL links
 
-    function updateBalanceDropdownContent() {
-        const isFilterActive = $('#balanceFilterBtn').hasClass('active');
-        const totalResults = $('#totalBalanceResults').text();
+    // All filter functions are now handled by direct URL links - no JavaScript needed
 
-        if (isFilterActive) {
-            $('.summary-value').first().text('Balance > 0');
-            $('#totalBalanceResults').text(totalResults);
-        } else {
-            $('.summary-value').first().text('No filter applied');
-            $('#totalBalanceResults').text('All riders');
+    // Simple Fleet Supervisor Slider
+    function initFleetSupervisorSlider() {
+        console.log('Initializing slider...');
+
+        const sliderTrack = document.getElementById('sliderTrack');
+        const prevBtn = document.getElementById('prevBtn');
+        const nextBtn = document.getElementById('nextBtn');
+        const indicatorsContainer = document.getElementById('sliderIndicators');
+
+        if (!sliderTrack) {
+            console.log('sliderTrack not found');
+            return;
         }
+
+        if (!prevBtn) {
+            console.log('prevBtn not found');
+            return;
+        }
+
+        if (!nextBtn) {
+            console.log('nextBtn not found');
+            return;
+        }
+
+        if (!indicatorsContainer) {
+            console.log('indicatorsContainer not found');
+            return;
+        }
+
+        const cards = sliderTrack.querySelectorAll('.fleet-supervisor-card');
+        console.log('Found cards:', cards.length);
+
+        if (cards.length === 0) {
+            console.log('No cards found');
+            return;
+        }
+
+        let currentIndex = 0;
+
+        // Simple next function
+        function nextSlide() {
+            if (currentIndex < cards.length - 1) {
+                currentIndex++;
+                updateSlider();
+            }
+        }
+
+        // Simple prev function
+        function prevSlide() {
+            if (currentIndex > 0) {
+                currentIndex--;
+                updateSlider();
+            }
+        }
+
+        // Update slider
+        function updateSlider() {
+            const translateX = -currentIndex * 300; // 300px per slide
+            sliderTrack.style.transform = `translateX(${translateX}px)`;
+
+            // Update buttons
+            prevBtn.style.opacity = currentIndex === 0 ? '0.5' : '1';
+            nextBtn.style.opacity = currentIndex >= cards.length - 1 ? '0.5' : '1';
+        }
+
+        // Event listeners
+        nextBtn.onclick = function() {
+            nextSlide();
+        };
+
+        prevBtn.onclick = function() {
+            prevSlide();
+        };
+
+        // Initialize
+        updateSlider();
     }
 
-    function exportBalanceResults() {
-        const currentUrl = new URL(window.location);
-        currentUrl.searchParams.set('balance_filter', 'greater_than_zero');
-        currentUrl.pathname = currentUrl.pathname.replace('/riders', '/rider/exportCustomizableRiders');
+    // Initialize slider when DOM is loaded
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log('DOM loaded, initializing slider...');
+        setTimeout(initFleetSupervisorSlider, 100);
+    });
 
-        // Show loading state
-        showNotification('Preparing export...', 'info');
-
-        // Redirect to export
-        window.open(currentUrl.toString(), '_blank');
-    }
-
-    function clearBalanceFilter() {
-        const currentUrl = new URL(window.location);
-        currentUrl.searchParams.delete('balance_filter');
-
-        // Show notification
-        showNotification('Balance filter cleared', 'success');
-
-        // Redirect to clear filter
-        window.location.href = currentUrl.toString();
-    }
+    // Also try to initialize when window loads
+    window.addEventListener('load', function() {
+        console.log('Window loaded, initializing slider...');
+        setTimeout(initFleetSupervisorSlider, 100);
+    });
 
     // Enhanced notification function
     function showNotification(message, type) {

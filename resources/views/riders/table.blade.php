@@ -144,6 +144,8 @@
       @endforeach
    </tbody>
 </table>
-{!! $data->links('pagination') !!}
+@if(method_exists($data, 'links'))
+{!! $data->links('components.global-pagination') !!}
+@endif
 
 <!-- Filter modal removed: using right-side sliding sidebar instead -->

@@ -10,12 +10,14 @@ use App\Imports\ImportRiderActivities;
 use App\Repositories\RiderActivitiesRepository;
 use App\Models\RiderActivities;
 use Illuminate\Http\Request;
+use App\Traits\GlobalPagination;
 use Flash;
 use DB;
 use Maatwebsite\Excel\Facades\Excel;
 
 class RiderActivitiesController extends AppBaseController
 {
+    use GlobalPagination;
   /** @var RiderActivitiesRepository $riderActivitiesRepository*/
   private $riderActivitiesRepository;
 
@@ -79,7 +81,8 @@ class RiderActivitiesController extends AppBaseController
       $query->where('payout_type', $request->payout_type);
     }
 
-    $data = $query->paginate($perPage);
+    // Apply pagination using the trait
+        $data = $this->applyPagination($query, $paginationParams);
 
     // Dropdown data
     $riders = DB::table('riders')
@@ -99,7 +102,7 @@ class RiderActivitiesController extends AppBaseController
 
     if ($request->ajax()) {
       $tableData = view('rider_activities.table', compact('data', 'riders', 'fleetSupervisors', 'payoutTypes'))->render();
-      $paginationLinks = $data->links('pagination')->render();
+      $paginationLinks = $data->links('components.global-pagination')->render();
       return response()->json([
         'tableData' => $tableData,
         'paginationLinks' => $paginationLinks,

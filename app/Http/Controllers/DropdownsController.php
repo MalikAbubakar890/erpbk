@@ -8,10 +8,12 @@ use App\Http\Requests\UpdateDropdownsRequest;
 use App\Http\Controllers\AppBaseController;
 use App\Repositories\DropdownsRepository;
 use Illuminate\Http\Request;
+use App\Traits\GlobalPagination;
 use Flash;
 
 class DropdownsController extends AppBaseController
 {
+    use GlobalPagination;
   /** @var DropdownsRepository $dropdownsRepository*/
   private $dropdownsRepository;
 

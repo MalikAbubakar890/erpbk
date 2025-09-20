@@ -6,6 +6,7 @@ use App\Models\rider_hiring;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Http\Request;
+use App\Traits\GlobalPagination;
 use Illuminate\Support\Facades\Auth;
 use Flash;
 use DB;
@@ -35,7 +36,8 @@ class riderhiringController extends Controller
         if ($request->filled('status')) {
             $query->where('status', $request->status);
         }
-        $data = $query->paginate($perPage);
+        // Apply pagination using the trait
+        $data = $this->applyPagination($query, $paginationParams);
         if ($request->ajax()) {
             try {
                 $tableData = view('riders.hiring_table', compact('data'))->render();

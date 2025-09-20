@@ -9,10 +9,12 @@ use App\Http\Requests\UpdateDepartmentsRequest;
 use App\Http\Controllers\AppBaseController;
 use App\Repositories\DepartmentsRepository;
 use Illuminate\Http\Request;
+use App\Traits\GlobalPagination;
 use Flash;
 
 class DepartmentsController extends AppBaseController
 {
+    use GlobalPagination;
   /** @var DepartmentsRepository $departmentsRepository*/
   private $departmentsRepository;
 

@@ -8,6 +8,7 @@ use App\Http\Controllers\AppBaseController;
 use App\Repositories\RolesRepository;
 use DB;
 use Illuminate\Http\Request;
+use App\Traits\GlobalPagination;
 use Spatie\Permission\Models\Role;
 use Spatie\Permission\Models\Permission;
 use Flash;
@@ -15,6 +16,7 @@ use App\Helpers\IConstants;
 
 class RolesController extends AppBaseController
 {
+    use GlobalPagination;
   /** @var RolesRepository $rolesRepository*/
   private $rolesRepository;
 

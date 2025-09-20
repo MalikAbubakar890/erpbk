@@ -10,11 +10,13 @@ use App\Imports\ImportRiderAttendance;
 use App\Imports\RiderAttendance;
 use App\Repositories\RiderAttendanceRepository;
 use Illuminate\Http\Request;
+use App\Traits\GlobalPagination;
 use Maatwebsite\Excel\Facades\Excel;
 use Flash;
 
 class RiderAttendanceController extends AppBaseController
 {
+    use GlobalPagination;
   /** @var RiderAttendanceRepository $riderAttendanceRepository*/
   private $riderAttendanceRepository;
 

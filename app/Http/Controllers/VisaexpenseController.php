@@ -19,6 +19,7 @@ use App\Repositories\VisaExpensesRepository;
 use App\Services\TransactionService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use App\Traits\GlobalPagination;
 use Illuminate\Validation\Rule;
 use Flash;
 use DB;
@@ -40,9 +41,8 @@ class VisaexpenseController extends Controller
         }
 
         $parent = Accounts::where('name', 'Visa Expense')->first();
-        $perPage = request()->input('per_page', 50);
-        $perPage = is_numeric($perPage) ? (int) $perPage : 50;
-        $perPage = $perPage > 0 ? $perPage : 50;
+        // Use global pagination trait
+        $paginationParams = $this->getPaginationParams($request, $this->getDefaultPerPage());
 
         $query = Accounts::query()
             ->orderBy('id', 'desc')
@@ -78,14 +78,15 @@ class VisaexpenseController extends Controller
             }
         }
 
-        $data = $query->paginate($perPage);
+        // Apply pagination using the trait
+        $data = $this->applyPagination($query, $paginationParams);
 
         if ($request->ajax()) {
             $tableData = view('visa_expenses.account_table', [
                 'data' => $data,
                 'parent' => $parent,
             ])->render();
-            $paginationLinks = $data->links('pagination')->render();
+            $paginationLinks = $data->links('components.global-pagination')->render();
             return response()->json([
                 'tableData' => $tableData,
                 'paginationLinks' => $paginationLinks,
@@ -164,9 +165,8 @@ class VisaexpenseController extends Controller
 
         // Auto-mark installments silently in the background
         $this->checkAndAutoMarkInstallments($id);
-        $perPage = request()->input('per_page', 50);
-        $perPage = is_numeric($perPage) ? (int) $perPage : 50;
-        $perPage = $perPage > 0 ? $perPage : 50;
+        // Use global pagination trait
+        $paginationParams = $this->getPaginationParams($request, $this->getDefaultPerPage());
         $query = visa_expenses::query()
             ->orderBy('id', 'asc')->where('rider_id', $id);
         if ($request->has('trans_date') && !empty($request->trans_date)) {
@@ -186,14 +186,15 @@ class VisaexpenseController extends Controller
         if ($request->has('payment_status') && !empty($request->payment_status)) {
             $query->where('payment_status', $request->payment_status);
         }
-        $data = $query->paginate($perPage);
+        // Apply pagination using the trait
+        $data = $this->applyPagination($query, $paginationParams);
         $account = Accounts::where('id', $id)->first();
         if ($request->ajax()) {
             $tableData = view('visa_expenses.table', [
                 'data' => $data,
                 'account' => $account,
             ])->render();
-            $paginationLinks = $data->links('pagination')->render();
+            $paginationLinks = $data->links('components.global-pagination')->render();
             return response()->json([
                 'tableData' => $tableData,
                 'paginationLinks' => $paginationLinks,
@@ -273,9 +274,8 @@ class VisaexpenseController extends Controller
         // Auto-mark installments as paid if their date has arrived
         $this->checkAndAutoMarkInstallments($id);
 
-        $perPage = request()->input('per_page', 50);
-        $perPage = is_numeric($perPage) ? (int) $perPage : 50;
-        $perPage = $perPage > 0 ? $perPage : 50;
+        // Use global pagination trait
+        $paginationParams = $this->getPaginationParams($request, $this->getDefaultPerPage());
 
         $query = visa_installment_plan::query()
             ->where('rider_id', $id)
@@ -290,7 +290,8 @@ class VisaexpenseController extends Controller
             $query->where('billing_month', 'like', '%' . $request->billing_month . '%');
         }
 
-        $data = $query->paginate($perPage);
+        // Apply pagination using the trait
+        $data = $this->applyPagination($query, $paginationParams);
         $account = Accounts::where('id', $id)->first();
 
         if ($request->ajax()) {
@@ -298,7 +299,7 @@ class VisaexpenseController extends Controller
                 'data' => $data,
                 'account' => $account,
             ])->render();
-            $paginationLinks = $data->links('pagination')->render();
+            $paginationLinks = $data->links('components.global-pagination')->render();
             return response()->json([
                 'tableData' => $tableData,
                 'paginationLinks' => $paginationLinks,

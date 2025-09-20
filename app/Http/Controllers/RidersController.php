@@ -27,6 +27,7 @@ use App\Models\Riders;
 use App\Models\Files;
 use App\Models\Transactions;
 use App\Repositories\RidersRepository;
+use App\Traits\GlobalPagination;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Mail;
 use Flash;
@@ -35,6 +36,7 @@ use Maatwebsite\Excel\Facades\Excel;
 
 class RidersController extends AppBaseController
 {
+  use GlobalPagination;
   /** @var RidersRepository $ridersRepository*/
   private $ridersRepository;
 
@@ -48,9 +50,8 @@ class RidersController extends AppBaseController
    */
   public function index(Request $request)
   {
-    $perPage = request()->input('per_page', 50);
-    $perPage = is_numeric($perPage) ? (int) $perPage : 50;
-    $perPage = $perPage > 0 ? $perPage : 50;
+    // Use global pagination trait
+    $paginationParams = $this->getPaginationParams($request, $this->getDefaultPerPage());
     $query = Riders::query()
       ->orderBy('id', 'desc');
     if ($request->has('rider_id') && !empty($request->rider_id)) {
@@ -88,6 +89,8 @@ class RidersController extends AppBaseController
               $q->orWhere('absconder', 1);
             } elseif ($status === 'followup') {
               $q->orWhere('flowup', 1);
+            } elseif ($status === 'llicense') {
+              $q->orWhere('l_license', 1);
             }
           }
         });
@@ -161,19 +164,143 @@ class RidersController extends AppBaseController
         });
       $query->select('riders.*');
     }
-    $data = $query->paginate($perPage);
-    if ($request->ajax()) {
-      $tableData = view('riders.table', [
-        'data' => $data,
-      ])->render();
-      $paginationLinks = $data->links('pagination')->render();
-      return response()->json([
-        'tableData' => $tableData,
-        'paginationLinks' => $paginationLinks,
-      ]);
-    }
+
+    // Apply pagination using the trait
+    $data = $this->applyPagination($query, $paginationParams);
+
     return view('riders.index', [
       'data' => $data,
+    ]);
+  }
+
+  /**
+   * Handle AJAX filter requests for riders listing
+   */
+  public function filterAjax(Request $request)
+  {
+    // Use global pagination trait
+    $paginationParams = $this->getPaginationParams($request, $this->getDefaultPerPage());
+
+    $query = Riders::query()
+      ->orderBy('id', 'desc');
+
+    if ($request->has('rider_id') && !empty($request->rider_id)) {
+      $query->where('rider_id', 'like', '%' . $request->rider_id . '%');
+    }
+    if ($request->has('name') && !empty($request->name)) {
+      $query->where('name', 'like', '%' . $request->name . '%');
+    }
+    if ($request->has('fleet_supervisor') && !empty($request->fleet_supervisor)) {
+      $query->where('fleet_supervisor', $request->fleet_supervisor);
+    }
+    if ($request->has('hub') && !empty($request->hub)) {
+      $query->where('hub', $request->hub);
+    }
+    if ($request->has('customer_id') && !empty($request->customer_id)) {
+      $query->where('customer_id', $request->customer_id);
+    }
+    if ($request->has('branded_plate_no') && !empty($request->branded_plate_no)) {
+      $query->where('branded_plate_no', $request->branded_plate_no);
+    }
+    if ($request->has('designation') && !empty($request->designation)) {
+      $query->where('designation', $request->designation);
+    }
+    if ($request->has('attendance') && !empty($request->attendance)) {
+      $query->where('attendance', $request->attendance);
+    }
+
+    // Filter by rider status (absconder and followup)
+    if ($request->has('rider_status') && !empty($request->rider_status)) {
+      $statusFilters = $request->rider_status;
+
+      if (is_array($statusFilters)) {
+        $query->where(function ($q) use ($statusFilters) {
+          foreach ($statusFilters as $status) {
+            if ($status === 'absconder') {
+              $q->orWhere('absconder', 1);
+            } elseif ($status === 'followup') {
+              $q->orWhere('flowup', 1);
+            } elseif ($status === 'llicense') {
+              $q->orWhere('l_license', 1);
+            }
+          }
+        });
+      } else {
+        // Handle single selection for backward compatibility
+        if ($statusFilters === 'absconder') {
+          $query->where('absconder', 1);
+        } elseif ($statusFilters === 'followup') {
+          $query->where('flowup', 1);
+        }
+      }
+    }
+
+    // Filter by balance
+    if ($request->has('balance_filter') && !empty($request->balance_filter)) {
+      if ($request->balance_filter === 'greater_than_zero') {
+        // Riders with balance greater than 0
+        $query->whereHas('account', function ($q) {
+          $q->whereRaw('(SELECT COALESCE(SUM(debit), 0) - COALESCE(SUM(credit), 0) FROM transactions WHERE account_id = accounts.id) > 0');
+        });
+      }
+    }
+
+    if ($request->filled('quick_search')) {
+      $search = $request->input('quick_search');
+
+      $query->leftJoin('customers', 'riders.customer_id', '=', 'customers.id')
+        ->leftJoin('bikes', 'riders.id', '=', 'bikes.rider_id')
+        ->where(function ($q) use ($search) {
+          $q->where('riders.name', 'like', "%{$search}%")
+            ->orWhere('riders.rider_id', 'like', "%{$search}%")
+            ->orWhere('riders.branded_plate_no', 'like', "%{$search}%")
+            ->orWhere('riders.fleet_supervisor', 'like', "%{$search}%")
+            ->orWhere('riders.emirate_hub', 'like', "%{$search}%")
+            ->orWhere('riders.customer_id', 'like', "%{$search}%")
+            ->orWhere('riders.designation', 'like', "%{$search}%")
+            ->orWhere('customers.name', 'like', "%{$search}%");
+          if (stripos($search, 'active') !== false) {
+            $q->orWhereExists(function ($subQuery) {
+              $subQuery->select(\DB::raw(1))
+                ->from('bikes')
+                ->whereRaw('bikes.rider_id = riders.id')
+                ->where('bikes.warehouse', '=', 'Active');
+            });
+          }
+          if (stripos($search, 'inactive') !== false) {
+            $q->orWhere(function ($subQ) {
+              $subQ->whereNotExists(function ($subQuery) {
+                $subQuery->select(\DB::raw(1))
+                  ->from('bikes')
+                  ->whereRaw('bikes.rider_id = riders.id')
+                  ->where('bikes.warehouse', '=', 'Active');
+              });
+            });
+          }
+        });
+      $query->select('riders.*');
+    }
+
+    // Apply pagination using the trait
+    $data = $this->applyPagination($query, $paginationParams);
+
+    $tableData = view('riders.table', [
+      'data' => $data,
+    ])->render();
+
+    // Use global pagination component
+    if (method_exists($data, 'links')) {
+      $paginationLinks = $data->links('components.global-pagination')->render();
+    } else {
+      $paginationLinks = '';
+    }
+
+    return response()->json([
+      'success' => true,
+      'html' => $tableData,
+      'pagination' => $paginationLinks,
+      'total' => method_exists($data, 'total') ? $data->total() : $data->count(),
+      'per_page' => method_exists($data, 'perPage') ? $data->perPage() : $data->count(),
     ]);
   }
   /**
@@ -713,6 +840,32 @@ class RidersController extends AppBaseController
       return response()->json([
         'success' => false,
         'message' => 'Error updating flowup status'
+      ], 500);
+    }
+  }
+
+  public function toggleLlicense(Request $request, $id)
+  {
+    $rider = $this->ridersRepository->find($id);
+
+    if (empty($rider)) {
+      return response()->json(['error' => 'Rider not found'], 404);
+    }
+
+    try {
+      // Toggle the l_license status
+      $rider->l_license = $rider->l_license ? 0 : 1;
+      $rider->save();
+
+      return response()->json([
+        'success' => true,
+        'message' => 'Learning license status updated successfully',
+        'l_license' => $rider->l_license
+      ]);
+    } catch (\Exception $e) {
+      return response()->json([
+        'success' => false,
+        'message' => 'Error updating learning license status'
       ], 500);
     }
   }

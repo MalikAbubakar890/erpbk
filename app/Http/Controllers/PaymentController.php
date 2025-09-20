@@ -6,6 +6,7 @@ use App\Repositories\PaymentsRepository;
 use App\Models\Payment;
 use App\Models\Accounts;
 use Illuminate\Http\Request;
+use App\Traits\GlobalPagination;
 use Flash;
 
 class PaymentController extends Controller
@@ -23,7 +24,8 @@ class PaymentController extends Controller
         $perPage = is_numeric($perPage) ? (int) $perPage : 50;
         $perPage = $perPage > 0 ? $perPage : 50;
         $query = Payment::query()->orderBy('id', 'asc');
-        $data = $query->paginate($perPage);
+        // Apply pagination using the trait
+        $data = $this->applyPagination($query, $paginationParams);
         return view('payments.index', ['data' => $data]);
     }
 

@@ -125,6 +125,7 @@ Route::middleware(['auth', 'web'])->group(function () {
   /* Rider section starts from here */
 
   Route::resource('riders', App\Http\Controllers\RidersController::class);
+  Route::post('riders/filter-ajax', [\App\Http\Controllers\RidersController::class, 'filterAjax'])->name('riders.filterAjax');
   Route::any('riders/job_status/{id?}', [\App\Http\Controllers\RidersController::class, 'job_status'])->name('rider.job_status');
 
 
@@ -162,6 +163,7 @@ Route::middleware(['auth', 'web'])->group(function () {
   Route::post('riders/update-section/{id}', [\App\Http\Controllers\RidersController::class, 'updateSection'])->name('riders.updateSection');
   Route::post('riders/toggle-absconder/{id}', [\App\Http\Controllers\RidersController::class, 'toggleAbsconder'])->name('riders.toggleAbsconder');
   Route::post('riders/toggle-flowup/{id}', [\App\Http\Controllers\RidersController::class, 'toggleFlowup'])->name('riders.toggleFlowup');
+  Route::post('riders/toggle-llicense/{id}', [\App\Http\Controllers\RidersController::class, 'toggleLlicense'])->name('riders.toggleLlicense');
 
 
 

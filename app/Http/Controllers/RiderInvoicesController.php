@@ -16,12 +16,14 @@ use App\Models\Transactions;
 use App\Repositories\RiderInvoicesRepository;
 use App\Services\TransactionService;
 use Illuminate\Http\Request;
+use App\Traits\GlobalPagination;
 use Flash;
 use Illuminate\Support\Facades\Mail;
 use Maatwebsite\Excel\Facades\Excel;
 
 class RiderInvoicesController extends AppBaseController
 {
+    use GlobalPagination;
   /** @var RiderInvoicesRepository $riderInvoicesRepository*/
   private $riderInvoicesRepository;
 
@@ -35,9 +37,8 @@ class RiderInvoicesController extends AppBaseController
    */
   public function index(Request $request)
   {
-    $perPage = request()->input('per_page', 50);
-    $perPage = is_numeric($perPage) ? (int) $perPage : 50;
-    $perPage = $perPage > 0 ? $perPage : 50;
+    // Use global pagination trait
+        $paginationParams = $this->getPaginationParams($request, $this->getDefaultPerPage());
 
     $query = RiderInvoices::query()
       ->orderBy('billing_month', 'desc');
@@ -67,7 +68,8 @@ class RiderInvoicesController extends AppBaseController
       $query->where('status', $request->status);
     }
 
-    $data = $query->paginate($perPage);
+    // Apply pagination using the trait
+        $data = $this->applyPagination($query, $paginationParams);
 
     // ✅ Billing month ka check for total calculation
     $billingMonth = $request->has('billing_month') && !empty($request->billing_month)
@@ -85,7 +87,7 @@ class RiderInvoicesController extends AppBaseController
         'currentMonthTotal' => $currentMonthTotal
       ])->render();
 
-      $paginationLinks = $data->links('pagination')->render();
+      $paginationLinks = $data->links('components.global-pagination')->render();
 
       return response()->json([
         'tableData' => $tableData,

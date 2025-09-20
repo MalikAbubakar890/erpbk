@@ -9,6 +9,7 @@ use App\Models\Rider;
 use App\Models\Riders;
 use App\Models\Transactions;
 use Illuminate\Http\Request;
+use App\Traits\GlobalPagination;
 use Illuminate\Support\Facades\DB;
 
 class ReportController extends Controller

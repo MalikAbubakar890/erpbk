@@ -6,6 +6,7 @@ use App\DataTables\LedgerDataTable;
 use App\Models\LedgerEntry;
 use App\Models\Transactions;
 use Illuminate\Http\Request;
+use App\Traits\GlobalPagination;
 
 use Yajra\DataTables\DataTables;
 

@@ -15,10 +15,12 @@ use App\Models\Riders;
 use App\Models\Transactions;
 use App\Repositories\AccountsRepository;
 use Illuminate\Http\Request;
+use App\Traits\GlobalPagination;
 use Flash;
 
 class AccountsController extends AppBaseController
 {
+    use GlobalPagination;
   /** @var AccountsRepository $accountsRepository*/
   private $accountsRepository;
 

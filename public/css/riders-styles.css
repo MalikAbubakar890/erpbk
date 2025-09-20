@@ -296,13 +296,205 @@
     }
 }
 
-/* Enhanced Filter Section Styling */
-.filter-section {
-    background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
-    border-radius: 20px;
-    padding: 24px;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-    border: 1px solid rgba(255, 255, 255, 0.8);
+/* Filter Tabs Section */
+.filter-tabs-section {
+    background: white;
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    border: 1px solid #e9ecef;
+    margin-bottom: 20px;
+    clear: both;
+    width: 100%;
+    display: block;
+}
+
+.filter-tabs {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+.filter-tab {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 20px;
+    background: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    color: #6c757d;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-decoration: none;
+    position: relative;
+    overflow: hidden;
+}
+
+.filter-tab:hover {
+    background: #e9ecef;
+    border-color: #adb5bd;
+    color: #495057;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.filter-tab.active {
+    background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+    border-color: #007bff;
+    color: white;
+    box-shadow: 0 4px 16px rgba(0, 123, 255, 0.3);
+    transform: translateY(-2px);
+}
+
+.filter-tab.active::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.2) 0%, rgba(255, 255, 255, 0.05) 100%);
+    pointer-events: none;
+}
+
+.filter-tab i {
+    font-size: 16px;
+    transition: all 0.3s ease;
+}
+
+.filter-tab.active i {
+    color: white;
+    transform: scale(1.1);
+}
+
+.filter-tab:not(.active) i {
+    color: #6c757d;
+}
+
+/* Tab hover animations */
+.filter-tab:not(.active):hover i {
+    color: #007bff;
+    transform: scale(1.05);
+}
+
+/* Filter remove icon */
+.filter-remove {
+    margin-left: 8px;
+    padding: 4px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.2);
+    font-size: 12px;
+    transition: all 0.2s ease;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 20px;
+    min-height: 20px;
+}
+
+.filter-remove:hover {
+    background: rgba(255, 255, 255, 0.4);
+    transform: scale(1.2);
+}
+
+.filter-tab.active:hover .filter-remove {
+    background: rgba(255, 255, 255, 0.3);
+}
+
+.filter-remove:active {
+    transform: scale(0.9);
+}
+
+/* Filter status section */
+.filter-status {
+    background: #e3f2fd;
+    border: 1px solid #bbdefb;
+    border-radius: 8px;
+    padding: 12px 16px;
+}
+
+.filter-info {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #1565c0;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.filter-info i {
+    font-size: 16px;
+}
+
+.filter-info .btn {
+    padding: 4px 8px;
+    font-size: 12px;
+    border-radius: 4px;
+}
+
+/* Filter loading overlay */
+#table-data {
+    position: relative;
+}
+
+.filter-loading-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(255, 255, 255, 0.9);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    border-radius: 8px;
+}
+
+.filter-loading-content {
+    text-align: center;
+    color: #6c757d;
+}
+
+.filter-loading-content p {
+    margin: 0;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+/* Responsive tab design */
+@media (max-width: 768px) {
+    .filter-tabs {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 8px;
+    }
+    
+    .filter-tab {
+        justify-content: center;
+        padding: 14px 16px;
+        font-size: 15px;
+    }
+}
+
+@media (max-width: 480px) {
+    .filter-tabs-section {
+        padding: 16px;
+    }
+    
+    .filter-tab {
+        padding: 12px 14px;
+        font-size: 14px;
+    }
+    
+    .filter-tab i {
+        font-size: 14px;
+    }
 }
 
 .filter-cards {
@@ -525,7 +717,7 @@
     width: 24px;
     height: 24px;
     border: none;
-    background: rgba(0, 0, 0, 0.1);
+    /* background: rgba(0, 0, 0, 0.1); */
     border-radius: 50%;
     display: flex;
     align-items: center;
@@ -659,21 +851,6 @@
     background: rgba(255, 255, 255, 0.3);
 }
 
-/* Responsive Design for Filter Cards */
-@media (max-width: 992px) {
-    .filter-cards {
-        grid-template-columns: 1fr;
-        gap: 16px;
-    }
-
-    .filter-section {
-        padding: 20px;
-    }
-
-    .filter-card {
-        padding: 16px;
-    }
-}
 
 @media (max-width: 768px) {
     .filter-section {
@@ -712,6 +889,8 @@
     box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
     border: 1px solid rgba(0, 0, 0, 0.05);
     height: fit-content;
+    margin-top: 0;
+    clear: both;
 }
 
 .action-header {
@@ -1099,6 +1278,7 @@
     max-height: 0;
     opacity: 0;
     margin-top: 0;
+    overflow: hidden;
 }
 
 .fleet-supervisor-accordion.expanded {
@@ -1107,13 +1287,96 @@
     margin-top: 20px;
 }
 
+/* Fleet Supervisor Slider Styles */
+.fleet-supervisor-slider-container {
+    position: relative;
+    overflow: hidden;
+    border-radius: 16px;
+}
+
+.slider-controls {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+    padding: 0 8px;
+}
+
+.slider-btn {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    color: white;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    backdrop-filter: blur(10px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    z-index: 3;
+}
+
+.slider-btn:hover {
+    background: rgba(255, 255, 255, 0.3);
+    transform: scale(1.1);
+}
+
+.slider-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.slider-btn:not(:disabled):hover {
+    background: rgba(255, 255, 255, 0.3);
+    transform: scale(1.1);
+}
+
+.slider-indicators {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.slider-indicator {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.4);
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.slider-indicator.active {
+    background: white;
+    transform: scale(1.2);
+}
+
+.slider-indicator:hover {
+    background: rgba(255, 255, 255, 0.7);
+}
+
 .fleet-supervisor-cards {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    display: flex;
     gap: 16px;
+    transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    overflow: hidden;
+}
+
+.slider-track {
+    display: flex;
+    gap: 16px;
+    transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    width: fit-content;
+    transform: translateX(0);
 }
 
 .fleet-supervisor-card {
+    min-width: 280px;
+    flex-shrink: 0;
     background: rgba(255, 255, 255, 0.95);
     backdrop-filter: blur(20px);
     border-radius: 16px;
@@ -1125,6 +1388,8 @@
     overflow: hidden;
     cursor: pointer;
 }
+
+/* Remove duplicate definition - already defined above */
 
 .fleet-supervisor-card::before {
     content: '';
@@ -1257,12 +1522,18 @@
         font-size: 20px;
     }
 
-    .fleet-supervisor-cards {
-        grid-template-columns: 1fr;
-        gap: 12px;
+    .slider-controls {
+        margin-bottom: 12px;
+    }
+
+    .slider-btn {
+        width: 36px;
+        height: 36px;
+        font-size: 16px;
     }
 
     .fleet-supervisor-card {
+        min-width: 260px;
         padding: 16px;
     }
 
@@ -1281,11 +1552,14 @@
         padding: 16px;
     }
 
-    .fleet-supervisor-cards {
-        gap: 10px;
+    .slider-btn {
+        width: 32px;
+        height: 32px;
+        font-size: 14px;
     }
 
     .fleet-supervisor-card {
+        min-width: 240px;
         padding: 12px;
     }
 

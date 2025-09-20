@@ -9,6 +9,7 @@ use App\Models\Settings;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
+use App\Traits\GlobalPagination;
 
 class HomeController extends Controller
 {

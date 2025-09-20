@@ -8,11 +8,13 @@ use App\Models\cod;
 use App\Models\Riders;
 use App\Models\Accounts;
 use Illuminate\Http\Request;
+use App\Traits\GlobalPagination;
 use Flash;
 use DB;
 
 class CodController extends AppBaseController
 {
+    use GlobalPagination;
     /** @var CodRepository $codRepository*/
     private $codRepository;
 
@@ -35,9 +37,8 @@ class CodController extends AppBaseController
             return redirect()->route('cod.rider', $riderId);
         }
 
-        $perPage = request()->input('per_page', 50);
-        $perPage = is_numeric($perPage) ? (int) $perPage : 50;
-        $perPage = $perPage > 0 ? $perPage : 50;
+        // Use global pagination trait
+        $paginationParams = $this->getPaginationParams($request, $this->getDefaultPerPage());
 
         $query = cod::query()->orderBy('id', 'desc');
 
@@ -52,7 +53,8 @@ class CodController extends AppBaseController
             $query->whereDate('transaction_date', $request->transaction_date);
         }
 
-        $data = $query->paginate($perPage);
+        // Apply pagination using the trait
+        $data = $this->applyPagination($query, $paginationParams);
 
         // Calculate totals (filter by rider if specified)
         $filterRiderId = $request->filled('rider_id') ? $request->rider_id : null;
@@ -66,7 +68,7 @@ class CodController extends AppBaseController
 
         if ($request->ajax()) {
             $tableData = view('cod.table', compact('data', 'selectedRider'))->render();
-            $paginationLinks = $data->links('pagination')->render();
+            $paginationLinks = $data->links('components.global-pagination')->render();
             return response()->json([
                 'tableData' => $tableData,
                 'paginationLinks' => $paginationLinks,
@@ -253,9 +255,8 @@ class CodController extends AppBaseController
 
         $rider = \App\Models\Riders::findOrFail($riderId);
 
-        $perPage = request()->input('per_page', 50);
-        $perPage = is_numeric($perPage) ? (int) $perPage : 50;
-        $perPage = $perPage > 0 ? $perPage : 50;
+        // Use global pagination trait
+        $paginationParams = $this->getPaginationParams($request, $this->getDefaultPerPage());
 
         $query = cod::query()
             ->where('rider_id', $riderId)
@@ -274,7 +275,8 @@ class CodController extends AppBaseController
                 ->whereMonth('billing_month', $billingMonth->month);
         }
 
-        $data = $query->paginate($perPage);
+        // Apply pagination using the trait
+        $data = $this->applyPagination($query, $paginationParams);
 
         // Calculate totals for this rider
         $filteredData = $query->get();
@@ -290,7 +292,7 @@ class CodController extends AppBaseController
                 'data' => $data,
                 'rider' => $rider,
             ])->render();
-            $paginationLinks = $data->links('pagination')->render();
+            $paginationLinks = $data->links('components.global-pagination')->render();
             return response()->json([
                 'tableData' => $tableData,
                 'paginationLinks' => $paginationLinks,

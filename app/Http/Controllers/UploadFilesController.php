@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\UploadFile;
 use Illuminate\Http\Request;
+use App\Traits\GlobalPagination;
 use App\DataTables\UploadFilesDataTable;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;

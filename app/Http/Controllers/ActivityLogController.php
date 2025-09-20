@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\ActivityLog;
 use App\Models\User;
 use Illuminate\Http\Request;
+use App\Traits\GlobalPagination;
 use Illuminate\Support\Facades\DB;
 
 class ActivityLogController extends Controller

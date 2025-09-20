@@ -15,11 +15,13 @@ use App\Models\VehicleModels;
 use App\Repositories\BikesRepository;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
+use App\Traits\GlobalPagination;
 use Flash;
 use Auth;
 
 class BikesController extends AppBaseController
 {
+    use GlobalPagination;
   /** @var BikesRepository $bikesRepository*/
   private $bikesRepository;
 
@@ -37,9 +39,8 @@ class BikesController extends AppBaseController
     if (!auth()->user()->hasPermissionTo('bike_view')) {
       abort(403, 'Unauthorized action.');
     }
-    $perPage = request()->input('per_page', 50);
-    $perPage = is_numeric($perPage) ? (int) $perPage : 50;
-    $perPage = $perPage > 0 ? $perPage : 50;
+    // Use global pagination trait
+        $paginationParams = $this->getPaginationParams($request, $this->getDefaultPerPage());
     $query = Bikes::query()
       ->orderBy('bike_code', 'desc');
     if ($request->has('bike_code') && !empty($request->bike_code)) {
@@ -73,12 +74,13 @@ class BikesController extends AppBaseController
     if ($request->has('status') && !empty($request->status)) {
       $query->where('status', $request->status);
     }
-    $data = $query->paginate($perPage);
+    // Apply pagination using the trait
+        $data = $this->applyPagination($query, $paginationParams);
     if ($request->ajax()) {
       $tableData = view('bikes.table', [
         'data' => $data,
       ])->render();
-      $paginationLinks = $data->links('pagination')->render();
+      $paginationLinks = $data->links('components.global-pagination')->render();
       return response()->json([
         'tableData' => $tableData,
         'paginationLinks' => $paginationLinks,

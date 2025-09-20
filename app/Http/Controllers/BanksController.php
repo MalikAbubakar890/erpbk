@@ -16,10 +16,12 @@ use App\Models\Files;
 use App\Models\Transactions;
 use App\Repositories\BanksRepository;
 use Illuminate\Http\Request;
+use App\Traits\GlobalPagination;
 use Flash;
 
 class BanksController extends AppBaseController
 {
+    use GlobalPagination;
   /** @var BanksRepository $banksRepository*/
   private $banksRepository;
 
@@ -37,9 +39,8 @@ class BanksController extends AppBaseController
     if (!auth()->user()->hasPermissionTo('bank_view')) {
       abort(403, 'Unauthorized action.');
     }
-    $perPage = request()->input('per_page', 50);
-    $perPage = is_numeric($perPage) ? (int) $perPage : 50;
-    $perPage = $perPage > 0 ? $perPage : 50;
+    // Use global pagination trait
+        $paginationParams = $this->getPaginationParams($request, $this->getDefaultPerPage());
     $query = Banks::query()
       ->orderBy('id', 'asc');
     if ($request->has('name') && !empty($request->name)) {
@@ -57,12 +58,13 @@ class BanksController extends AppBaseController
     if ($request->has('status') && !empty($request->status)) {
       $query->where('status', $request->status);
     }
-    $data = $query->paginate($perPage);
+    // Apply pagination using the trait
+        $data = $this->applyPagination($query, $paginationParams);
     if ($request->ajax()) {
       $tableData = view('banks.table', [
         'data' => $data,
       ])->render();
-      $paginationLinks = $data->links('pagination')->render();
+      $paginationLinks = $data->links('components.global-pagination')->render();
       return response()->json([
         'tableData' => $tableData,
         'paginationLinks' => $paginationLinks,

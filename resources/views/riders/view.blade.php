@@ -21,7 +21,9 @@
     border: 2px solid #dee2e6;
     border-radius: 12px;
     padding: 16px;
-    min-width: 200px;
+    min-width: 180px;
+    flex: 1;
+    max-width: 220px;
     transition: all 0.3s ease;
     cursor: pointer;
     position: relative;
@@ -47,6 +49,11 @@
   .flowup-card.active {
     background: linear-gradient(135deg, #007bff 0%, #6f42c1 100%);
     border-color: #007bff;
+  }
+
+  .llicense-card.active {
+    background: linear-gradient(135deg, #17a2b8 0%, #20c997 100%);
+    border-color: #17a2b8;
   }
 
   .status-card::before {
@@ -153,6 +160,10 @@
     background: #007bff;
   }
 
+  .llicense-card .status-checkbox:checked+.toggle-switch {
+    background: #17a2b8;
+  }
+
   /* Loading state */
   .status-card.loading {
     opacity: 0.7;
@@ -180,8 +191,10 @@
   /* Responsive design */
   @media (max-width: 768px) {
     .status-card {
-      min-width: 160px;
+      min-width: 150px;
+      max-width: 180px;
       padding: 12px;
+      flex: 1;
     }
 
     .status-title {
@@ -190,6 +203,28 @@
 
     .status-subtitle {
       font-size: 11px;
+    }
+  }
+
+  @media (max-width: 576px) {
+    .status-card {
+      min-width: 140px;
+      max-width: 160px;
+      padding: 10px;
+    }
+
+    .status-title {
+      font-size: 13px;
+    }
+
+    .status-subtitle {
+      font-size: 10px;
+    }
+
+    .status-icon {
+      width: 35px;
+      height: 35px;
+      font-size: 18px;
     }
   }
 </style>
@@ -406,7 +441,7 @@ $account = App\Models\Accounts::where('ref_id', $result['id'])->where('account_t
             {{-- <a href="javascript:void(0);" class="btn btn-default btn-block no-print" onclick="window.print();"><i class="fa fa-print"></i>&nbsp;<b>Print</b></a>
  --}}
           </div>
-          <div class="d-flex justify-content-start gap-3">
+          <div class="d-flex flex-wrap justify-content-start gap-2 gap-md-3">
             <!-- Absconder Status Card -->
             <div class="status-card absconder-card {{ ($result['absconder'] ?? 0) == 1 ? 'active' : '' }}"
               data-rider-id="{{ $result['id'] ?? '' }}"
@@ -429,7 +464,6 @@ $account = App\Models\Accounts::where('ref_id', $result['id'])->where('account_t
                 </label>
               </div>
             </div>
-
             <!-- Follow Up Status Card -->
             <div class="status-card flowup-card {{ ($result['flowup'] ?? 0) == 1 ? 'active' : '' }}"
               data-rider-id="{{ $result['id'] ?? '' }}"
@@ -448,6 +482,28 @@ $account = App\Models\Accounts::where('ref_id', $result['id'])->where('account_t
                   data-rider-id="{{ $result['id'] ?? '' }}"
                   {{ ($result['flowup'] ?? 0) == 1 ? 'checked' : '' }}>
                 <label for="flowup-{{ $result['id'] ?? '' }}" class="toggle-switch">
+                  <span class="toggle-slider"></span>
+                </label>
+              </div>
+            </div>
+            <!-- Learning License Status Card -->
+            <div class="status-card llicense-card {{ ($result['l_license'] ?? 0) == 1 ? 'active' : '' }}"
+              data-rider-id="{{ $result['id'] ?? '' }}"
+              data-type="llicense">
+              <div class="status-icon">
+                <i class="ti ti-certificate"></i>
+              </div>
+              <div class="status-content">
+                <div class="status-title">Learning License</div>
+                <div class="status-subtitle">{{ ($result['l_license'] ?? 0) == 1 ? 'Learning License Required' : 'No Learning License' }}</div>
+              </div>
+              <div class="status-toggle">
+                <input type="checkbox"
+                  class="status-checkbox llicense-checkbox"
+                  id="llicense-{{ $result['id'] ?? '' }}"
+                  data-rider-id="{{ $result['id'] ?? '' }}"
+                  {{ ($result['l_license'] ?? 0) == 1 ? 'checked' : '' }}>
+                <label for="llicense-{{ $result['id'] ?? '' }}" class="toggle-switch">
                   <span class="toggle-slider"></span>
                 </label>
               </div>
@@ -650,6 +706,57 @@ $account = App\Models\Accounts::where('ref_id', $result['id'])->where('account_t
         });
     });
 
+    // Add change event listener to llicense checkbox
+    document.querySelector('.llicense-checkbox').addEventListener('change', function() {
+      const riderId = this.getAttribute('data-rider-id');
+      const isChecked = this.checked;
+      const card = this.closest('.status-card');
+      const subtitle = card.querySelector('.status-subtitle');
+
+      if (!riderId) {
+        showNotification('Rider ID not found', 'error');
+        return;
+      }
+
+      // Add loading state
+      card.classList.add('loading');
+      subtitle.textContent = 'Updating...';
+
+      // Make AJAX request
+      fetch(`/riders/toggle-llicense/${riderId}`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+          },
+          body: JSON.stringify({})
+        })
+        .then(response => response.json())
+        .then(data => {
+          if (data.success) {
+            // Update card appearance
+            updateCardStatus(card, 'llicense', isChecked);
+            showNotification(data.message, 'success');
+          } else {
+            showNotification('Error: ' + data.message, 'error');
+            // Revert checkbox state on error
+            this.checked = !isChecked;
+            updateCardStatus(card, 'llicense', !isChecked);
+          }
+        })
+        .catch(error => {
+          console.error('Error:', error);
+          showNotification('An error occurred while updating learning license status', 'error');
+          // Revert checkbox state on error
+          this.checked = !isChecked;
+          updateCardStatus(card, 'llicense', !isChecked);
+        })
+        .finally(() => {
+          // Remove loading state
+          card.classList.remove('loading');
+        });
+    });
+
     // Function to update card status
     function updateCardStatus(card, type, isActive) {
       const subtitle = card.querySelector('.status-subtitle');
@@ -669,6 +776,14 @@ $account = App\Models\Accounts::where('ref_id', $result['id'])->where('account_t
         } else {
           card.classList.remove('active');
           subtitle.textContent = 'No Follow Up';
+        }
+      } else if (type === 'llicense') {
+        if (isActive) {
+          card.classList.add('active');
+          subtitle.textContent = 'Learning License Required';
+        } else {
+          card.classList.remove('active');
+          subtitle.textContent = 'No Learning License';
         }
       }
     }

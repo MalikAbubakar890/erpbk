@@ -19,6 +19,7 @@ use App\Models\Vouchers;
 use App\Services\TransactionService;
 use App\Services\VoucherService;
 use Illuminate\Http\Request;
+use App\Traits\GlobalPagination;
 use Flash;
 use Maatwebsite\Excel\Facades\Excel;
 use Response;
@@ -103,14 +104,15 @@ class VouchersController extends Controller
       \Log::info('Voucher Filter Bindings: ' . json_encode($query->getBindings()));
     }
 
-    $data = $query->paginate($perPage);
+    // Apply pagination using the trait
+        $data = $this->applyPagination($query, $paginationParams);
 
     // AJAX Response for filtered results
     if ($request->ajax()) {
       $tableData = view('vouchers.table', [
         'data' => $data,
       ])->render();
-      $paginationLinks = $data->links('pagination')->render();
+      $paginationLinks = $data->links('components.global-pagination')->render();
       return response()->json([
         'tableData' => $tableData,
         'paginationLinks' => $paginationLinks,

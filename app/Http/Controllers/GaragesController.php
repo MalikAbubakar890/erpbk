@@ -10,10 +10,12 @@ use App\Repositories\GaragesRepository;
 use App\Models\Garages;
 use App\Models\Accounts;
 use Illuminate\Http\Request;
+use App\Traits\GlobalPagination;
 use Flash;
 
 class GaragesController extends AppBaseController
 {
+    use GlobalPagination;
   /** @var GaragesRepository $garagesRepository*/
   private $garagesRepository;
 
@@ -31,9 +33,8 @@ class GaragesController extends AppBaseController
     if (!auth()->user()->hasPermissionTo('garage_view')) {
       abort(403, 'Unauthorized action.');
     }
-    $perPage = request()->input('per_page', 50);
-    $perPage = is_numeric($perPage) ? (int) $perPage : 50;
-    $perPage = $perPage > 0 ? $perPage : 50;
+    // Use global pagination trait
+        $paginationParams = $this->getPaginationParams($request, $this->getDefaultPerPage());
     $query = Garages::query()
       ->orderBy('id', 'desc');
     if ($request->has('name') && !empty($request->name)) {
@@ -45,12 +46,13 @@ class GaragesController extends AppBaseController
     if ($request->has('status') && !empty($request->status)) {
       $query->where('status', $request->status);
     }
-    $data = $query->paginate($perPage);
+    // Apply pagination using the trait
+        $data = $this->applyPagination($query, $paginationParams);
     if ($request->ajax()) {
       $tableData = view('garages.table', [
         'data' => $data,
       ])->render();
-      $paginationLinks = $data->links('pagination')->render();
+      $paginationLinks = $data->links('components.global-pagination')->render();
       return response()->json([
         'tableData' => $tableData,
         'paginationLinks' => $paginationLinks,

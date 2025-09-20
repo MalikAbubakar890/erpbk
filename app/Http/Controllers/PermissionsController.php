@@ -8,12 +8,14 @@ use App\Http\Requests\UpdatePermissionsRequest;
 use App\Http\Controllers\AppBaseController;
 use App\Repositories\PermissionsRepository;
 use Illuminate\Http\Request;
+use App\Traits\GlobalPagination;
 use Spatie\Permission\Models\Permission;
 
 use Flash;
 
 class PermissionsController extends AppBaseController
 {
+    use GlobalPagination;
     /** @var PermissionsRepository $permissionsRepository*/
     private $permissionsRepository;
 

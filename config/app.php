@@ -171,6 +171,7 @@ return [
     App\Providers\MenuServiceProvider::class,
     App\Providers\FortifyServiceProvider::class,
     App\Providers\CloudwaysServiceProvider::class,
+    App\Providers\PaginationServiceProvider::class,
   ])->toArray(),
 
   /*

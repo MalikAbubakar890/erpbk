@@ -8,10 +8,12 @@ use App\Http\Requests\UpdateRiderEmailsRequest;
 use App\Http\Controllers\AppBaseController;
 use App\Repositories\RiderEmailsRepository;
 use Illuminate\Http\Request;
+use App\Traits\GlobalPagination;
 use Flash;
 
 class RiderEmailsController extends AppBaseController
 {
+    use GlobalPagination;
     /** @var RiderEmailsRepository $riderEmailsRepository*/
     private $riderEmailsRepository;
 
