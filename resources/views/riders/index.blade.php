@@ -456,7 +456,7 @@ $tableColumns = [
 'exportRoute' => route('rider.exportCustomizableRiders'),
 'tableIdentifier' => 'riders_table'
 ])
-<div class="content px-0">
+<div class="content container-fluid">
     @include('flash::message')
     <div class="card">
         <div class="card-header d-flex justify-content-between">
