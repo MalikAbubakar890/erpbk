@@ -1,6 +1,7 @@
 <?php
 
 namespace App\Helpers;
+
 use App\Models\Dropdowns;
 use App\Models\Services;
 use App\Models\Settings;
@@ -13,7 +14,6 @@ class Common
   {
 
     return Settings::where('name', $setting_name)->value('value');
-
   }
 
   /*  public static function settings()
@@ -74,18 +74,15 @@ class Common
   public static function DateFormat($date)
   {
     return date('d-M-Y', strtotime($date));
-
   }
   public static function MonthFormat($date)
   {
     return date('M Y', strtotime($date));
-
   }
 
   public static function DateTimeFormat($date)
   {
     return date('d M Y h:i A', strtotime($date));
-
   }
   public static function Dropdowns($key)
   {
@@ -100,7 +97,6 @@ class Common
     if ($user) {
       return $user->name;
     }
-
   }
 
   public static function status($status)
@@ -113,6 +109,4 @@ class Common
       return '<span class="badge bg-label-warning rounded-0">pending</span>';
     }
   }
-
-
 }

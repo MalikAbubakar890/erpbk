@@ -78,7 +78,7 @@ class RidersController extends AppBaseController
     if ($request->has('attendance') && !empty($request->attendance)) {
       $query->where('attendance', $request->attendance);
     }
-    // Filter by rider status (absconder and followup)
+    // Filter by rider status (absconder, followup, llicense, active, inactive)
     if ($request->has('rider_status') && !empty($request->rider_status)) {
       $statusFilters = $request->rider_status;
 
@@ -91,6 +91,23 @@ class RidersController extends AppBaseController
               $q->orWhere('flowup', 1);
             } elseif ($status === 'llicense') {
               $q->orWhere('l_license', 1);
+            } elseif ($status === 'active') {
+              // Active riders: status = 1 AND have active bike assigned
+              $q->orWhere(function ($subQuery) {
+                $subQuery->where('status', 1)
+                  ->whereHas('bikes', function ($bikeQuery) {
+                    $bikeQuery->where('warehouse', 'Active');
+                  });
+              });
+            } elseif ($status === 'inactive') {
+              // Inactive riders: status = 3 OR no active bike assigned
+              $q->orWhere(function ($subQuery) {
+                $subQuery->where('status', 3);
+              })->orWhere(function ($subQuery) {
+                $subQuery->whereDoesntHave('bikes', function ($bikeQuery) {
+                  $bikeQuery->where('warehouse', 'Active');
+                });
+              });
             }
           }
         });
@@ -100,6 +117,20 @@ class RidersController extends AppBaseController
           $query->where('absconder', 1);
         } elseif ($statusFilters === 'followup') {
           $query->where('flowup', 1);
+        } elseif ($statusFilters === 'llicense') {
+          $query->where('l_license', 1);
+        } elseif ($statusFilters === 'active') {
+          // Active riders: status = 1 AND have active bike assigned
+          $query->where('status', 1)->whereHas('bikes', function ($q) {
+            $q->where('warehouse', 'Active');
+          });
+        } elseif ($statusFilters === 'inactive') {
+          // Inactive riders: status = 3 OR no active bike assigned
+          $query->where(function ($q) {
+            $q->where('status', 3)->orWhereDoesntHave('bikes', function ($bikeQuery) {
+              $bikeQuery->where('warehouse', 'Active');
+            });
+          });
         }
       }
     }
@@ -209,7 +240,7 @@ class RidersController extends AppBaseController
       $query->where('attendance', $request->attendance);
     }
 
-    // Filter by rider status (absconder and followup)
+    // Filter by rider status (absconder, followup, llicense, active, inactive)
     if ($request->has('rider_status') && !empty($request->rider_status)) {
       $statusFilters = $request->rider_status;
 
@@ -222,6 +253,23 @@ class RidersController extends AppBaseController
               $q->orWhere('flowup', 1);
             } elseif ($status === 'llicense') {
               $q->orWhere('l_license', 1);
+            } elseif ($status === 'active') {
+              // Active riders: status = 1 AND have active bike assigned
+              $q->orWhere(function ($subQuery) {
+                $subQuery->where('status', 1)
+                  ->whereHas('bikes', function ($bikeQuery) {
+                    $bikeQuery->where('warehouse', 'Active');
+                  });
+              });
+            } elseif ($status === 'inactive') {
+              // Inactive riders: status = 3 OR no active bike assigned
+              $q->orWhere(function ($subQuery) {
+                $subQuery->where('status', 3);
+              })->orWhere(function ($subQuery) {
+                $subQuery->whereDoesntHave('bikes', function ($bikeQuery) {
+                  $bikeQuery->where('warehouse', 'Active');
+                });
+              });
             }
           }
         });
@@ -231,6 +279,20 @@ class RidersController extends AppBaseController
           $query->where('absconder', 1);
         } elseif ($statusFilters === 'followup') {
           $query->where('flowup', 1);
+        } elseif ($statusFilters === 'llicense') {
+          $query->where('l_license', 1);
+        } elseif ($statusFilters === 'active') {
+          // Active riders: status = 1 AND have active bike assigned
+          $query->where('status', 1)->whereHas('bikes', function ($q) {
+            $q->where('warehouse', 'Active');
+          });
+        } elseif ($statusFilters === 'inactive') {
+          // Inactive riders: status = 3 OR no active bike assigned
+          $query->where(function ($q) {
+            $q->where('status', 3)->orWhereDoesntHave('bikes', function ($bikeQuery) {
+              $bikeQuery->where('warehouse', 'Active');
+            });
+          });
         }
       }
     }

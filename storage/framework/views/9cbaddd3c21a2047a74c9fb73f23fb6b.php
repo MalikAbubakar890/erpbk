@@ -23,12 +23,12 @@
                         <p class="fleet-supervisor-subtitle">Manage and monitor fleet supervisor performance</p>
                     </div>
                 </div>
-                <button class="fleet-supervisor-toggle" id="fleetSupervisorToggle">
+                <button class="fleet-supervisor-toggle  collapsed" id="fleetSupervisorToggle">
                     <span>Toggle View</span>
                     <i class="ti ti-chevron-down"></i>
                 </button>
             </div>
-            <div class="fleet-supervisor-accordion expanded" id="fleetSupervisorAccordion">
+            <div class="fleet-supervisor-accordion collapsed" id="fleetSupervisorAccordion">
                 <div class="fleet-supervisor-slider-container">
                     <div class="slider-controls">
                         <button class="slider-btn prev-btn" id="prevBtn" type="button">
@@ -46,23 +46,21 @@
                         ?>
 
                         <?php $__currentLoopData = $fleetSupervisors; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $index => $fleet): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
-                        <a href="<?php echo e($fleet == request('fleet_supervisor') ? route('riders.index') : request()->fullUrlWithQuery(['fleet_supervisor' => $fleet])); ?>"
-                            class="fleet-supervisor-card <?php if($fleet == request('fleet_supervisor')): ?> active <?php endif; ?>"
-                            data-slide="<?php echo e($index); ?>">
+                        <div class="fleet-supervisor-card <?php if($fleet == request('fleet_supervisor')): ?> active filtered <?php endif; ?>" data-slide="<?php echo e($index); ?>" onclick="filterByFleetSupervisor('<?php echo e($fleet); ?>')">
                             <h3 class="fleet-supervisor-name"><?php echo e($fleet); ?></h3>
                             <div class="fleet-supervisor-stats">
-                                <div class="fleet-stat active">
+                                <div class="fleet-stat active <?php if($fleet == request('fleet_supervisor') && in_array('active', request('rider_status', []))): ?> active-selected <?php endif; ?>" onclick="event.stopPropagation(); filterByStatus('<?php echo e($fleet); ?>', 'active')">
                                     <i class="fleet-stat-icon ti ti-user-check"></i>
                                     <span class="fleet-stat-label">Active</span>
-                                    <span class="fleet-stat-value"><?php echo e(\App\Models\Riders::where('fleet_supervisor', $fleet)->where('status', 1)->count()); ?></span>
+                                    <span class="fleet-stat-value"><?php echo e(\App\Models\Riders::where('fleet_supervisor', $fleet)->where('status', 1)->whereHas('bikes', function($q) { $q->where('warehouse', 'Active'); })->count()); ?></span>
                                 </div>
-                                <div class="fleet-stat inactive">
+                                <div class="fleet-stat inactive <?php if($fleet == request('fleet_supervisor') && in_array('inactive', request('rider_status', []))): ?> active-selected <?php endif; ?>" onclick="event.stopPropagation(); filterByStatus('<?php echo e($fleet); ?>', 'inactive')">
                                     <i class="fleet-stat-icon ti ti-user-x"></i>
                                     <span class="fleet-stat-label">Inactive</span>
-                                    <span class="fleet-stat-value"><?php echo e(\App\Models\Riders::where('fleet_supervisor', $fleet)->where('status', 3)->count()); ?></span>
+                                    <span class="fleet-stat-value"><?php echo e(\App\Models\Riders::where('fleet_supervisor', $fleet)->where(function($q) { $q->where('status', 3)->orWhereDoesntHave('bikes', function($bikeQuery) { $bikeQuery->where('warehouse', 'Active'); }); })->count()); ?></span>
                                 </div>
                             </div>
-                        </a>
+                        </div>
                         <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                     </div>
                 </div>
@@ -449,13 +447,12 @@ $tableColumns = [
 ['data' => 'control', 'title' => 'Control']
 ];
 ?>
-
 <?php echo $__env->make('components.column-control-panel', [
 'tableColumns' => $tableColumns,
 'exportRoute' => route('rider.exportCustomizableRiders'),
 'tableIdentifier' => 'riders_table'
 ], \Illuminate\Support\Arr::except(get_defined_vars(), ['__data', '__path']))->render(); ?>
-<div class="content px-0">
+<div class="content container-fluid">
     <?php echo $__env->make('flash::message', \Illuminate\Support\Arr::except(get_defined_vars(), ['__data', '__path']))->render(); ?>
     <div class="card">
         <div class="card-header d-flex justify-content-between">
@@ -615,6 +612,53 @@ $tableColumns = [
 
         // Fleet supervisor and balance filter cards now use direct links - no JavaScript needed
     });
+
+    // Fleet supervisor filtering function - shows both active and inactive
+    function filterByFleetSupervisor(fleetSupervisor) {
+        const url = new URL(window.location);
+
+        // Clear existing filters
+        url.searchParams.delete('fleet_supervisor');
+        url.searchParams.delete('rider_status');
+
+        // Set fleet supervisor filter
+        url.searchParams.set('fleet_supervisor', fleetSupervisor);
+
+        // Set both active and inactive status
+        url.searchParams.set('rider_status[]', 'active');
+        url.searchParams.set('rider_status[]', 'inactive');
+
+        // Redirect to filtered URL
+        window.location.href = url.toString();
+    }
+
+    // Fleet supervisor status filtering function - toggle specific status
+    function filterByStatus(fleetSupervisor, status) {
+        const url = new URL(window.location);
+        const currentFleetSupervisor = url.searchParams.get('fleet_supervisor');
+        const currentStatuses = url.searchParams.getAll('rider_status[]');
+
+        // If clicking the same fleet supervisor and same status, toggle it off
+        if (currentFleetSupervisor === fleetSupervisor && currentStatuses.includes(status)) {
+            // Remove this specific status
+            const newStatuses = currentStatuses.filter(s => s !== status);
+            url.searchParams.delete('rider_status[]');
+            newStatuses.forEach(s => url.searchParams.append('rider_status[]', s));
+
+            // If no statuses left, remove fleet supervisor filter entirely
+            if (newStatuses.length === 0) {
+                url.searchParams.delete('fleet_supervisor');
+            }
+        } else {
+            // Set fleet supervisor and specific status
+            url.searchParams.set('fleet_supervisor', fleetSupervisor);
+            url.searchParams.delete('rider_status[]');
+            url.searchParams.set('rider_status[]', status);
+        }
+
+        // Redirect to filtered URL
+        window.location.href = url.toString();
+    }
 </script>
 <script>
     document.addEventListener('DOMContentLoaded', function() {
@@ -737,14 +781,106 @@ $tableColumns = [
                 scrollbar-width: thin;
                 scrollbar-color: #3b82f6 #f1f5f9;
             }
+            
+            /* Fleet supervisor active/inactive button highlighting */
+            .fleet-stat.active-selected {
+                background: linear-gradient(135deg, #10b981, #059669);
+                color: white;
+                transform: scale(1.05);
+                box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+                border: 2px solid #10b981;
+            }
+            
+            .fleet-stat.active-selected .fleet-stat-icon {
+                color: white;
+            }
+            
+            .fleet-stat.active-selected .fleet-stat-label {
+                color: white;
+                font-weight: 600;
+            }
+            
+            .fleet-stat.active-selected .fleet-stat-value {
+                color: white;
+                font-weight: 600;
+            }
+            
+            /* Default Active button styling */
+            .fleet-stat.active {
+                background: linear-gradient(135deg, #d1fae5, #a7f3d0);
+                border: 1px solid #10b981;
+                color: #065f46;
+            }
+            
+            .fleet-stat.active .fleet-stat-icon {
+                color: #10b981;
+            }
+            
+            .fleet-stat.active .fleet-stat-label {
+                color: #065f46;
+                font-weight: 500;
+            }
+            
+            .fleet-stat.active .fleet-stat-value {
+                color: #065f46;
+                font-weight: 600;
+            }
+            
+            /* Default Inactive button styling */
+            .fleet-stat.inactive {
+                background: linear-gradient(135deg, #fee2e2, #fecaca);
+                border: 1px solid #ef4444;
+                color: #991b1b;
+            }
+            
+            .fleet-stat.inactive .fleet-stat-icon {
+                color: #ef4444;
+            }
+            
+            .fleet-stat.inactive .fleet-stat-label {
+                color: #991b1b;
+                font-weight: 500;
+            }
+            
+            .fleet-stat.inactive .fleet-stat-value {
+                color: #991b1b;
+                font-weight: 600;
+            }
+            
+            .fleet-stat:hover {
+                background: rgba(16, 185, 129, 0.1);
+                transform: translateY(-2px);
+                transition: all 0.3s ease;
+            }
+            
+            .fleet-stat {
+                cursor: pointer;
+                transition: all 0.3s ease;
+                border-radius: 8px;
+                padding: 8px 12px;
+                margin: 4px 0;
+            }
+            
+            /* Fleet supervisor card filtered state */
+            .fleet-supervisor-card.filtered {
+                background: linear-gradient(135deg, #e0f2fe, #b3e5fc);
+                border: 2px solid #29b6f6;
+                box-shadow: 0 4px 15px rgba(41, 182, 246, 0.2);
+                transform: scale(1.02);
+            }
+            
+            .fleet-supervisor-card.filtered .fleet-supervisor-name {
+                color: #0277bd;
+                font-weight: 600;
+            }
+            
+            .fleet-supervisor-card.filtered .fleet-stat {
+                background: rgba(255, 255, 255, 0.8);
+                border-radius: 6px;
+            }
         `)
         .appendTo('head');
 
-    // Balance filter functions are now handled by direct URL links
-
-    // All filter functions are now handled by direct URL links - no JavaScript needed
-
-    // Simple Fleet Supervisor Slider
     function initFleetSupervisorSlider() {
         console.log('Initializing slider...');
 
