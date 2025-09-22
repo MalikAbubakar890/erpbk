@@ -22,12 +22,12 @@ $voucherType = request("vt");
                 <input  name="posting_date" class="form-control  date" placeholder="Posting Date" value="{{ date('Y-m-d') }}">
 </div> --}}
 
-{{-- @if(in_array($voucherType,['LV']))
-            <div class="form-group col-md-3">
-                <label for="exampleInputEmail1">Bank/Cash A/C</label>
-                {!! Form::select('payment_from',\App\Models\Accounts::dropdown(\App\Helpers\HeadAccount::BANK),null ,['class' => 'form-control  select2 ','id'=>'payment_from']) !!}
-            </div>
-            @endif --}}
+@if(in_array($voucherType,['LV']))
+<div class="form-group col-md-3">
+    <label for="exampleInputEmail1">Bank/Cash A/C</label>
+    {!! Form::select('payment_from',\App\Models\Accounts::dropdown(\App\Helpers\HeadAccount::BANK),null ,['class' => 'form-control select2 ','id'=>'payment_from']) !!}
+</div>
+@endif
 {{-- @if($voucherType==9)
             <input type="hidden" name="payment_from" value="811" /><!--Sim Bike and Vendor Charges Account ID-->
             @endif
@@ -53,7 +53,7 @@ $voucherType = request("vt");
     @include("vouchers.default_fields")
     @endif
 
-    @if($voucherType == 'LV')
+    @if($voucherType == 'AL')
     @php($accounts = \App\Models\Accounts::dropdown(null))
     @include("vouchers.loan_fields")
     @endif

@@ -558,18 +558,9 @@ $account = App\Models\Accounts::where('ref_id', $result['id'])->where('account_t
                 <button class="btn btn-outline-secondary rounded-pill p-2 waves-effect" type="button" id="actiondropdown" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                   <i class="ti ti-dots icon-md"></i>
                 </button>
-                <div class="dropdown-menu dropdown-menu-end" aria-labelledby="actiondropdown" style="">
-                  @can('visaloan_create')
-                  <a href="javascript:void(0);"
-                    data-action="{{ route('riders.visaloan', ['id' => $result['id'], 'vt' => 'VL']) }}"
-                    data-size="xl"
-                    data-title="Visa Loan Voucher"
-                    class="dropdown-item show-modal">
-                    Visa Loan Voucher
-                  </a>
-                  @endcan
+                <div class="dropdown-menu dropdown-menu-end" aria-labelledby="actiondropdown">
                   @can('advanceloan_create')
-                  <a href="javascript:void(0);" data-action="{{ route('riders.advanceloan', $result['id']) }}" data-size="xl" data-title="Advance Loan" class='dropdown-item show-modal'>
+                  <a href="javascript:void(0);" data-action="{{ route('riders.advanceloan', ['id' => $result['id'], 'vt' => 'AL']) }}" data-size="xl" data-title="Advance Loan" class='dropdown-item show-modal'>
                     Advance Loan
                   </a>
                   @endcan

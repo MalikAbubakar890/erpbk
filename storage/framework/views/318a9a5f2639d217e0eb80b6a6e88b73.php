@@ -557,18 +557,9 @@ $account = App\Models\Accounts::where('ref_id', $result['id'])->where('account_t
                 <button class="btn btn-outline-secondary rounded-pill p-2 waves-effect" type="button" id="actiondropdown" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                   <i class="ti ti-dots icon-md"></i>
                 </button>
-                <div class="dropdown-menu dropdown-menu-end" aria-labelledby="actiondropdown" style="">
-                  <?php if (app(\Illuminate\Contracts\Auth\Access\Gate::class)->check('visaloan_create')): ?>
-                  <a href="javascript:void(0);"
-                    data-action="<?php echo e(route('riders.visaloan', ['id' => $result['id'], 'vt' => 'VL'])); ?>"
-                    data-size="xl"
-                    data-title="Visa Loan Voucher"
-                    class="dropdown-item show-modal">
-                    Visa Loan Voucher
-                  </a>
-                  <?php endif; ?>
+                <div class="dropdown-menu dropdown-menu-end" aria-labelledby="actiondropdown">
                   <?php if (app(\Illuminate\Contracts\Auth\Access\Gate::class)->check('advanceloan_create')): ?>
-                  <a href="javascript:void(0);" data-action="<?php echo e(route('riders.advanceloan', $result['id'])); ?>" data-size="xl" data-title="Advance Loan" class='dropdown-item show-modal'>
+                  <a href="javascript:void(0);" data-action="<?php echo e(route('riders.advanceloan', ['id' => $result['id'], 'vt' => 'AL'])); ?>" data-size="xl" data-title="Advance Loan" class='dropdown-item show-modal'>
                     Advance Loan
                   </a>
                   <?php endif; ?>

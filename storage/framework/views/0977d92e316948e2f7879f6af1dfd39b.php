@@ -19,7 +19,13 @@ $voucherType = request("vt");
 
     
 
+<?php if(in_array($voucherType,['LV'])): ?>
+<div class="form-group col-md-3">
+    <label for="exampleInputEmail1">Bank/Cash A/C</label>
+    <?php echo Form::select('payment_from',\App\Models\Accounts::dropdown(\App\Helpers\HeadAccount::BANK),null ,['class' => 'form-control select2 ','id'=>'payment_from']); ?>
 
+</div>
+<?php endif; ?>
 
 <div class="form-group col-md-2">
     <label for="exampleInputEmail1">Payment Type</label>
@@ -42,7 +48,7 @@ $voucherType = request("vt");
     <?php echo $__env->make("vouchers.default_fields", \Illuminate\Support\Arr::except(get_defined_vars(), ['__data', '__path']))->render(); ?>
     <?php endif; ?>
 
-    <?php if($voucherType == 'LV'): ?>
+    <?php if($voucherType == 'AL'): ?>
     <?php ($accounts = \App\Models\Accounts::dropdown(null)); ?>
     <?php echo $__env->make("vouchers.loan_fields", \Illuminate\Support\Arr::except(get_defined_vars(), ['__data', '__path']))->render(); ?>
     <?php endif; ?>
