@@ -24,8 +24,10 @@ use Illuminate\Validation\Rule;
 use Flash;
 use DB;
 
-class VisaexpenseController extends Controller
+class VisaexpenseController extends AppBaseController
 {
+    use GlobalPagination;
+
     protected $visaRepo;
     public function __construct(VisaExpensesRepository $visaRepo)
     {

@@ -715,7 +715,22 @@ class RidersController extends AppBaseController
     $account = Accounts::where('ref_id', $rider_id)->where('account_type', 'expense')->first();
     return view('riders.visaloan-modal', compact('rider', 'account'));
   }
-
+  function storevisaloan(Request $request)
+  {
+    $validated = $request->validate([
+      'rider_id' => 'required|exists:accounts,id',
+      'amount' => 'required|numeric|min:0',
+      'billing_month' => 'required|string',
+      'number_of_installments' => 'required|integer|min:1|max:12',
+      'installment_amounts' => 'required|array|min:1',
+      'installment_amounts.*' => 'required|numeric|min:0'
+    ]);
+    $rider = Riders::find($validated['rider_id']);
+    $account = Accounts::where('ref_id', $rider_id)->where('account_type', 'expense')->first();
+    $rider->visa_expense_account_id = $account->id;
+    $rider->save();
+    return redirect()->back()->with('success', 'Visa Loan added successfully');
+  }
   public function advanceloan($rider_id)
   {
     $rider = Riders::find($rider_id);
