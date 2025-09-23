@@ -1,6 +1,4 @@
-@extends('riders.view')
-
-@section('page_content')
+<?php $__env->startSection('page_content'); ?>
 
 <style>
     .sticky-footer {
@@ -90,27 +88,29 @@
     }
 </style>
 
-{!! Form::model($riders, ['route' => ['riders.update', $riders->id], 'method' => 'patch','id'=>'formajax']) !!}
-<input type="hidden" id="redirect_url" value="{{route('riders.index')}}" />
+<?php echo Form::model($riders, ['route' => ['riders.update', $riders->id], 'method' => 'patch','id'=>'formajax']); ?>
+
+<input type="hidden" id="redirect_url" value="<?php echo e(route('riders.index')); ?>" />
 <div class="card-body">
     <div class="row">
-        @include('riders.fields')
+        <?php echo $__env->make('riders.fields', \Illuminate\Support\Arr::except(get_defined_vars(), ['__data', '__path']))->render(); ?>
     </div>
 </div>
 
 <div class="sticky-footer px-4">
     <div class="d-flex justify-content-end gap-3">
-        <a href="{{ route('riders.index') }}" class="btn btn-outline-secondary px-4">Cancel</a>
+        <a href="<?php echo e(route('riders.index')); ?>" class="btn btn-outline-secondary px-4">Cancel</a>
         <button type="submit" class="btn btn-primary px-4">Save Information</button>
     </div>
 </div>
 
-{!! Form::close() !!}
+<?php echo Form::close(); ?>
+
 
 </div>
 </div>
-@endsection
-@push('page-scripts')
+<?php $__env->stopSection(); ?>
+<?php $__env->startPush('page-scripts'); ?>
 
 
 <!-- Select2 CSS and JS -->
@@ -163,7 +163,7 @@
 
                 // Make AJAX request to add new recruiter
                 $.ajax({
-                    url: '{{ route("riders.addRecruiter") }}',
+                    url: '<?php echo e(route("riders.addRecruiter")); ?>',
                     method: 'POST',
                     data: {
                         _token: $('meta[name="csrf-token"]').attr('content'),
@@ -249,4 +249,5 @@
     });
 </script>
 
-@endpush
+<?php $__env->stopPush(); ?>
+<?php echo $__env->make('riders.view', \Illuminate\Support\Arr::except(get_defined_vars(), ['__data', '__path']))->render(); ?><?php /**PATH D:\xammp1\htdocs\erpbk\resources\views/riders/edit.blade.php ENDPATH**/ ?>

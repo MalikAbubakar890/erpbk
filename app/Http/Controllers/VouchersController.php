@@ -29,6 +29,7 @@ use Carbon\Carbon;
 
 class VouchersController extends Controller
 {
+  use GlobalPagination;
   /**
    * Display a listing of the Vouchers.
    *
@@ -50,9 +51,8 @@ class VouchersController extends Controller
    */
   private function indexWithFilters(Request $request)
   {
-    $perPage = $request->input('per_page', 50);
-    $perPage = is_numeric($perPage) ? (int) $perPage : 50;
-    $perPage = $perPage > 0 ? $perPage : 50;
+    // Use global pagination trait
+    $paginationParams = $this->getPaginationParams($request, $this->getDefaultPerPage());
 
     $query = Vouchers::query()->orderBy('id', 'desc');
 
@@ -105,7 +105,7 @@ class VouchersController extends Controller
     }
 
     // Apply pagination using the trait
-        $data = $this->applyPagination($query, $paginationParams);
+    $data = $this->applyPagination($query, $paginationParams);
 
     // AJAX Response for filtered results
     if ($request->ajax()) {
@@ -180,6 +180,15 @@ class VouchersController extends Controller
       $result = $voucherService->DefaultVoucher($request, 'debit');
     }
     if (in_array($request->voucher_type, ['AL'])) {
+      $result = $voucherService->DefaultVoucher($request, 'debit');
+    }
+    if (in_array($request->voucher_type, ['COD'])) {
+      $result = $voucherService->DefaultVoucher($request, 'debit');
+    }
+    if (in_array($request->voucher_type, ['PENALTY'])) {
+      $result = $voucherService->DefaultVoucher($request, 'debit');
+    }
+    if (in_array($request->voucher_type, ['INCENTIVE'])) {
       $result = $voucherService->DefaultVoucher($request, 'debit');
     }
     /* if (in_array($request->voucher_type, [13])) {

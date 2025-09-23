@@ -87,7 +87,19 @@ class Common
   public static function Dropdowns($key)
   {
     $dropdown = Dropdowns::where('key', $key)->first();
+
+    // If dropdown doesn't exist, return empty array
+    if (!$dropdown) {
+      return [];
+    }
+
     $values = json_decode($dropdown->values);
+
+    // If values are empty or invalid, return empty array
+    if (!$values || !is_array($values)) {
+      return [];
+    }
+
     return array_combine($values, $values);
   }
 

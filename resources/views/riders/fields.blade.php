@@ -130,6 +130,13 @@
                 ['class' => 'form-select', 'required']) !!}
             </div>
             <div class="form-group col-sm-4">
+                {!! Form::label('recuriter', 'Recuriter:',['class'=>'required']) !!}
+                {!! Form::select('recuriter',
+                ['' => 'Select or type a new recruiter'] + Common::Dropdowns('recuriter'),
+                null,
+                ['class' => 'form-select recruiter-select', 'required', 'id' => 'recruiter_select']) !!}
+            </div>
+            <div class="form-group col-sm-4">
                 <label>VAT</label>
                 <div class="form-check">
                     <input type="hidden" name="vat" value="2" />

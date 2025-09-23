@@ -1,106 +1,59 @@
-<script src="{{ asset('js/modal_custom.js') }}"></script>
-@php
+<script src="<?php echo e(asset('js/modal_custom.js')); ?>"></script>
+
+<?php
 if(isset($vouchers->voucher_type)){
 $voucherType = $vouchers->voucher_type;
 }else{
 $voucherType = request("vt");
 }
-@endphp
-<input type="hidden" name="v_trans_code" value="{{@$vouchers->trans_code??0}}">
-<input type="hidden" name="voucher_type" id="voucher_type" value="{{$voucherType}}">
+?>
+<input type="hidden" name="v_trans_code" value="<?php echo e(@$vouchers->trans_code??0); ?>">
+<input type="hidden" name="voucher_type" id="voucher_type" value="<?php echo e($voucherType); ?>">
 
 <div class="row mt-0 mb-2">
 
     <div class="form-group col-md-3">
         <label for="exampleInputEmail1">Date</label>
 
-        <input type="date" name="trans_date" class="form-control " placeholder="Transaction Date" value="@isset($vouchers->trans_date){{date('Y-m-d',strtotime($vouchers->trans_date)) }}@else{{date('Y-m-d')}}@endisset">
+        <input type="date" name="trans_date" class="form-control " placeholder="Transaction Date" value="<?php if(isset($vouchers->trans_date)): ?><?php echo e(date('Y-m-d',strtotime($vouchers->trans_date))); ?><?php else: ?><?php echo e(date('Y-m-d')); ?><?php endif; ?>">
     </div>
 
-    {{-- <div class="form-group col-md-3">
-                <label for="exampleInputEmail1">Posting Date</label>
-                <input  name="posting_date" class="form-control  date" placeholder="Posting Date" value="{{ date('Y-m-d') }}">
-</div> --}}
+    
 
-@if(in_array($voucherType,['LV']))
-<div class="form-group col-md-3">
-    <label for="exampleInputEmail1">Bank/Cash A/C</label>
-    {!! Form::select('payment_from',\App\Models\Accounts::dropdown(\App\Helpers\HeadAccount::BANK),null ,['class' => 'form-control select2 ','id'=>'payment_from']) !!}
-</div>
-@endif
-{{-- @if($voucherType==9)
-            <input type="hidden" name="payment_from" value="811" /><!--Sim Bike and Vendor Charges Account ID-->
-            @endif
-           --}}
-@if($voucherType != 'AL')
+
+
 <div class="form-group col-md-2">
     <label for="exampleInputEmail1">Payment Type</label>
-    {!! Form::select('payment_type',App\Helpers\Account::payment_type_list(),null ,['class' => 'form-select form-select-sm select2 ','id'=>'payment_type']) !!}
+    <?php echo Form::select('payment_type',App\Helpers\Account::payment_type_list(),null ,['class' => 'form-select form-select-sm select2 ','id'=>'payment_type']); ?>
+
 
 
 </div>
-@endif
 <div class="form-group col-md-2">
     <label for="exampleInputEmail1">Billing Month</label>
-    {{-- {!! Form::select('billing_month',App\Helpers\CommonHelper::BillingMonth(),null ,['class' => 'form-control  select2 ','id'=>'billing_month']) !!}
- --}} <input type="month" name="billing_month" class="form-control " value="@isset($vouchers->billing_month){{date('Y-m',strtotime($vouchers->billing_month)) }}@endisset" required>
+     <input type="month" name="billing_month" class="form-control " value="<?php if(isset($vouchers->billing_month)): ?><?php echo e(date('Y-m',strtotime($vouchers->billing_month))); ?><?php endif; ?>" required>
 </div>
 
 </div>
 <div class="scrollbar">
 
-    <h5>{{\App\Helpers\General::VoucherType($voucherType)}}</h5>
-    @if($voucherType == 'JV' || $voucherType == 'RFV')
-    @php($accounts = \App\Models\Accounts::dropdown(null))
-    @include("vouchers.default_fields")
-    @endif
+    <h5><?php echo e(\App\Helpers\General::voucherType($voucherType)); ?></h5>
+    <?php if($voucherType == 'JV' || $voucherType == 'RFV'): ?>
+    <?php ($accounts = \App\Models\Accounts::dropdown(null)); ?>
+    <?php echo $__env->make("vouchers.default_fields", \Illuminate\Support\Arr::except(get_defined_vars(), ['__data', '__path']))->render(); ?>
+    <?php endif; ?>
+    <?php if($voucherType == 'LV'): ?>
+    <?php ($accounts = \App\Models\Accounts::dropdown(null)); ?>
+    <?php echo $__env->make("vouchers.loan_fields", \Illuminate\Support\Arr::except(get_defined_vars(), ['__data', '__path']))->render(); ?>
+    <?php endif; ?>
+    <?php if($voucherType == 'VL'): ?>
+    <?php ($accounts = \App\Models\Accounts::dropdown(null)); ?>
+    <?php echo $__env->make("vouchers.visaloan_fields", \Illuminate\Support\Arr::except(get_defined_vars(), ['__data', '__path']))->render(); ?>
+    <?php endif; ?>
 
-    @if($voucherType == 'AL')
-    @php($accounts = \App\Models\Accounts::dropdown(null))
-    @include("vouchers.loan_fields")
-    @endif
-    @if($voucherType == 'COD')
-    @php($accounts = \App\Models\Accounts::dropdown(null))
-    @include("vouchers.cod_fields")
-    @endif
-    @if($voucherType == 'PENALTY')
-    @php($accounts = \App\Models\Accounts::dropdown(null))
-    @include("vouchers.penalty_fields")
-    @endif
-    @if($voucherType == 'VL')
-    @php($accounts = \App\Models\Accounts::dropdown(null))
-    @include("vouchers.visaloan_fields")
-    @endif
-
-    {{-- @if($voucherType == 5)
-            <h5>Invoice Voucher</h5>
-            @include("vouchers.invoice_fields")
-            @endif
-            @if($voucherType == 9)
-            <h5>Vendor Charges Voucher</h5>
-            @include("vouchers.sim_fields")
-            @endif
-            @if(in_array($voucherType,[10,11,8,12,13,14,15,16]))
-
-            @include("vouchers.default_fields")
-            @endif --}}
+    
 </div>
-{{-- @if($voucherType == 11)
-            <h5>Fuel Voucher</h5>
-            @include("vouchers.fuel_fields")
-            @endif
-            @if($voucherType == 8)
-            <h5>RTA Fine Voucher</h5>
-            @include("vouchers.rta_fields")
-            @endif
-            @if($voucherType == 12)
-            <h5>Advance Issue Voucher</h5>
-            @include("vouchers.default_fields")
-            @endif
-            @if($voucherType == 13)
-            <h5>Advance Repay Voucher</h5>
-            @include("vouchers.default_fields")
-            @endif --}}
+
 
 
 <div class="row">
@@ -243,7 +196,7 @@ $voucherType = request("vt");
         let id = g;
         var vt = $("#invoice_voucher_type").val();
         $.ajax({
-            url: "{{ url('fetch_invoices') }}/" + id + '/' + vt,
+            url: "<?php echo e(url('fetch_invoices')); ?>/" + id + '/' + vt,
             headers: {
                 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
             },
@@ -255,4 +208,4 @@ $voucherType = request("vt");
             }
         });
     }
-</script>
+</script><?php /**PATH D:\xammp1\htdocs\erpbk\resources\views/vouchers/fields.blade.php ENDPATH**/ ?>

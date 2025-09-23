@@ -15,46 +15,51 @@
       </tr>
    </thead>
    <tbody>
-      <?php $__currentLoopData = $data; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $r): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
-      <tr class="text-center">
-         <td><?php echo e(\Carbon\Carbon::parse($r->billing_month)->format('M Y')); ?></td>
-         <td><?php echo e(\Carbon\Carbon::parse($r->date)->format('d M Y')); ?></td>
-         <td><?php echo e(number_format($r->amount, 2)); ?></td>
-         <td>
-            <span class="badge bg-primary"><?php echo e($r->visa_status); ?></span>
-         </td>
-         <td>
-            <?php if($r->payment_status == 'paid'): ?>
-            <span class="badge bg-success">Paid</span>
-            <?php else: ?>
-            <span class="badge bg-danger">Unpaid</span>
-            <?php endif; ?>
-         </td>
-         <td>
-            <div class="dropdown">
-               <button class="btn btn-text-secondary rounded-pill text-body-secondary border-0 p-2 me-n1 waves-effect" type="button" id="actiondropdown" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                  <i class="icon-base ti ti-dots icon-md text-body-secondary"></i>
-               </button>
-               <div class="dropdown-menu dropdown-menu-end" aria-labelledby="actiondropdown" style="">
-                  <a href="<?php echo e(route('VisaExpense.viewvoucher', $r->id)); ?>" class='dropdown-item waves-effect'>
-                     View Expense Detail
-                  </a>
-                  <a href="javascript:void(0);" data-action="<?php echo e(route('VisaExpense.edit' , $r->id)); ?>" data-size="lg" data-title="New Fine" class='dropdown-item waves-effect show-modal'>
-                     Edit
-                  </a>
-                  <a href="javascript:void(0);" onclick='confirmDelete("<?php echo e(route('VisaExpense.delete', $r->id)); ?>")' class='dropdown-item confirm-modal' data-size="lg" data-title="Delete Sim">
-                     delete
-                  </a>
+      <?php $__currentLoopData = $data;
+      $__env->addLoop($__currentLoopData);
+      foreach ($__currentLoopData as $r): $__env->incrementLoopIndices();
+         $loop = $__env->getLastLoop(); ?>
+         <tr class="text-center">
+            <td><?php echo e(\Carbon\Carbon::parse($r->billing_month)->format('M Y')); ?></td>
+            <td><?php echo e(\Carbon\Carbon::parse($r->date)->format('d M Y')); ?></td>
+            <td><?php echo e(number_format($r->amount, 2)); ?></td>
+            <td>
+               <span class="badge bg-primary"><?php echo e($r->visa_status); ?></span>
+            </td>
+            <td>
+               <?php if ($r->payment_status == 'paid'): ?>
+                  <span class="badge bg-success">Paid</span>
+               <?php else: ?>
+                  <span class="badge bg-danger">Unpaid</span>
+               <?php endif; ?>
+            </td>
+            <td>
+               <div class="dropdown">
+                  <button class="btn btn-text-secondary rounded-pill text-body-secondary border-0 p-2 me-n1 waves-effect" type="button" id="actiondropdown" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                     <i class="icon-base ti ti-dots icon-md text-body-secondary"></i>
+                  </button>
+                  <div class="dropdown-menu dropdown-menu-end" aria-labelledby="actiondropdown" style="">
+                     <a href="<?php echo e(route('VisaExpense.viewvoucher', $r->id)); ?>" class='dropdown-item waves-effect'>
+                        View Expense Detail
+                     </a>
+                     <a href="javascript:void(0);" data-action="<?php echo e(route('VisaExpense.edit', $r->id)); ?>" data-size="lg" data-title="New Fine" class='dropdown-item waves-effect show-modal'>
+                        Edit
+                     </a>
+                     <a href="javascript:void(0);" onclick='confirmDelete("<?php echo e(route('VisaExpense.delete', $r->id)); ?>")' class='dropdown-item confirm-modal' data-size="lg" data-title="Delete Sim">
+                        delete
+                     </a>
+                  </div>
                </div>
-            </div>
-         </td>
-         <td></td>
-      </tr>
-      <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+            </td>
+            <td></td>
+         </tr>
+      <?php endforeach;
+      $__env->popLoop();
+      $loop = $__env->getLastLoop(); ?>
    </tbody>
 </table>
-<?php if(method_exists($data, 'links')): ?>
-    <?php echo $data->links('components.global-pagination'); ?>
+<?php if (method_exists($data, 'links')): ?>
+   <?php echo $data->links('components.global-pagination'); ?>
 
 <?php endif; ?>
 <div class="modal modal-default filtetmodal fade" id="customoizecolmn" tabindex="-1" data-bs-backdrop="static" role="dialog" aria-hidden="true">

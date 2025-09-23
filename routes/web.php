@@ -158,12 +158,19 @@ Route::middleware(['auth', 'web'])->group(function () {
   Route::get('riders/createitems/{id}', [\App\Http\Controllers\RidersController::class, 'createitems'])->name('riders.createitems');
   Route::get('riders/visaloan/{id}', [\App\Http\Controllers\RidersController::class, 'visaloan'])->name('riders.visaloan');
   Route::get('riders/advanceloan/{id}', [\App\Http\Controllers\RidersController::class, 'advanceloan'])->name('riders.advanceloan');
+  Route::get('riders/cod/{id}', [\App\Http\Controllers\RidersController::class, 'cod'])->name('riders.cod');
+  Route::get('riders/penalty/{id}', [\App\Http\Controllers\RidersController::class, 'penalty'])->name('riders.penalty');
+  Route::get('riders/incentive/{id}', [\App\Http\Controllers\RidersController::class, 'incentive'])->name('riders.incentive');
   Route::post('riders/storevisaloan', [\App\Http\Controllers\RidersController::class, 'storevisaloan'])->name('riders.storevisaloan');
+  Route::post('riders/storecod', [\App\Http\Controllers\RidersController::class, 'storecod'])->name('riders.storecod');
+  Route::post('riders/storepenalty', [\App\Http\Controllers\RidersController::class, 'storepenalty'])->name('riders.storepenalty');
+  Route::post('riders/storeincentive', [\App\Http\Controllers\RidersController::class, 'storeincentive'])->name('riders.storeincentive');
   Route::post('riders/storeadvanceloan', [\App\Http\Controllers\RidersController::class, 'storeadvanceloan'])->name('riders.storeadvanceloan');
   Route::post('riders/update-section/{id}', [\App\Http\Controllers\RidersController::class, 'updateSection'])->name('riders.updateSection');
   Route::post('riders/toggle-absconder/{id}', [\App\Http\Controllers\RidersController::class, 'toggleAbsconder'])->name('riders.toggleAbsconder');
   Route::post('riders/toggle-flowup/{id}', [\App\Http\Controllers\RidersController::class, 'toggleFlowup'])->name('riders.toggleFlowup');
   Route::post('riders/toggle-llicense/{id}', [\App\Http\Controllers\RidersController::class, 'toggleLlicense'])->name('riders.toggleLlicense');
+  Route::post('riders/add-recruiter', [\App\Http\Controllers\RidersController::class, 'addRecruiter'])->name('riders.addRecruiter');
 
 
 
@@ -415,23 +422,3 @@ Route::get('salik/deleteaccount/{id}', [\App\Http\Controllers\SalikController::c
 Route::get('salik/tickets/{id}', [\App\Http\Controllers\SalikController::class, 'tickets'])->name('salik.tickets');
 Route::get('salik/viewvoucher/{id}', [\App\Http\Controllers\SalikController::class, 'viewvoucher'])->name('salik.viewvoucher');
 Route::post('salik/getriderbybikedate', [SalikController::class, 'getriderbybikedate'])->name('salik.getriderbybikedate');
-
-Route::get('penalties/index/{rider_id?}', [\App\Http\Controllers\PenaltiesController::class, 'index'])->name('penalties.index');
-Route::resource('penalties', App\Http\Controllers\PenaltiesController::class, ['except' => ['index']]);
-Route::get('penalties/delete/{id}', [\App\Http\Controllers\PenaltiesController::class, 'destroy'])->name('penalties.delete');
-Route::get('penalties/rider/{rider_id}', [\App\Http\Controllers\PenaltiesController::class, 'riderPenalties'])->name('penalties.rider');
-Route::get('penalties/viewvoucher/{id}', [\App\Http\Controllers\PenaltiesController::class, 'viewVoucher'])->name('penalties.viewvoucher');
-Route::post('penalties/mark-paid/{id}', [\App\Http\Controllers\PenaltiesController::class, 'markAsPaid'])->name('penalties.markpaid');
-Route::get('penalties/statistics', [\App\Http\Controllers\PenaltiesController::class, 'getStatistics'])->name('penalties.statistics');
-Route::post('penalties/import', [\App\Http\Controllers\PenaltiesController::class, 'import'])->name('penalties.import');
-Route::get('penalties/viewvoucher/{id}', [\App\Http\Controllers\PenaltiesController::class, 'viewvoucher'])->name('penalties.viewvoucher');
-Route::get('penalties/getrider/{id}', [\App\Http\Controllers\PenaltiesController::class, 'getrider']);
-
-
-Route::get('cod/index/{rider_id?}', [\App\Http\Controllers\CodController::class, 'index'])->name('cod.index');
-Route::resource('cod', App\Http\Controllers\CodController::class, ['except' => ['index']]);
-Route::get('cod/delete/{id}', [\App\Http\Controllers\CodController::class, 'destroy'])->name('cod.delete');
-Route::get('cod/rider/{rider_id}', [\App\Http\Controllers\CodController::class, 'riderCod'])->name('cod.rider');
-Route::get('cod/viewvoucher/{id}', [\App\Http\Controllers\CodController::class, 'viewVoucher'])->name('cod.viewvoucher');
-Route::post('cod/mark-paid/{id}', [\App\Http\Controllers\CodController::class, 'markAsPaid'])->name('cod.markpaid');
-Route::get('cod/statistics', [\App\Http\Controllers\CodController::class, 'getStatistics'])->name('cod.statistics');

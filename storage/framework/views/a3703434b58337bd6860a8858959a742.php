@@ -20,87 +20,87 @@
         </tr>
     </thead>
     <tbody>
-        @if(isset($data) && $data->count() > 0)
-        @foreach($data as $voucher)
+        <?php if(isset($data) && $data->count() > 0): ?>
+        <?php $__currentLoopData = $data; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $voucher): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
         <tr class="text-center">
             <td>
-                @php
+                <?php
                 $voucherId = $voucher->voucher_type . '-' . str_pad($voucher->id, 4, '0', STR_PAD_LEFT);
-                @endphp
-                <a href="{{ route('vouchers.show', $voucher->id) }}" class="text-primary" target="_blank">{{ $voucherId }}</a>
+                ?>
+                <a href="<?php echo e(route('vouchers.show', $voucher->id)); ?>" class="text-primary" target="_blank"><?php echo e($voucherId); ?></a>
             </td>
-            <td>{{ \App\Helpers\Common::DateFormat($voucher->trans_date) }}</td>
-            <td>{{ $voucher->trans_code }}</td>
-            <td>{{ \App\Helpers\Common::MonthFormat($voucher->billing_month) }}</td>
+            <td><?php echo e(\App\Helpers\Common::DateFormat($voucher->trans_date)); ?></td>
+            <td><?php echo e($voucher->trans_code); ?></td>
+            <td><?php echo e(\App\Helpers\Common::MonthFormat($voucher->billing_month)); ?></td>
             <td>
-                @php
+                <?php
                 $voucherTypes = \App\Helpers\General::VoucherType();
-                @endphp
-                <span class="badge bg-primary">{{ $voucherTypes[$voucher->voucher_type] ?? $voucher->voucher_type }}</span>
+                ?>
+                <span class="badge bg-primary"><?php echo e($voucherTypes[$voucher->voucher_type] ?? $voucher->voucher_type); ?></span>
             </td>
-            <td class="text-end">{{ number_format($voucher->amount, 2) }}</td>
-            <td>{{ \App\Helpers\Common::UserName($voucher->Created_By) }}</td>
-            <td>{{ \App\Helpers\Common::UserName($voucher->Updated_By) }}</td>
+            <td class="text-end"><?php echo e(number_format($voucher->amount, 2)); ?></td>
+            <td><?php echo e(\App\Helpers\Common::UserName($voucher->Created_By)); ?></td>
+            <td><?php echo e(\App\Helpers\Common::UserName($voucher->Updated_By)); ?></td>
             <td>
-                @if($voucher->attach_file)
-                @if($voucher->voucher_type == 'RFV')
-                <a href="{{ url('storage/' . $voucher->attach_file) }}" class="btn btn-sm btn-outline-primary" target="_blank">
+                <?php if($voucher->attach_file): ?>
+                <?php if($voucher->voucher_type == 'RFV'): ?>
+                <a href="<?php echo e(url('storage/' . $voucher->attach_file)); ?>" class="btn btn-sm btn-outline-primary" target="_blank">
                     <i class="fa fa-file"></i> View
                 </a>
-                @elseif($voucher->voucher_type == 'LV')
-                <a href="{{ url('storage/' . $voucher->attach_file) }}" class="btn btn-sm btn-outline-primary" target="_blank">
+                <?php elseif($voucher->voucher_type == 'LV'): ?>
+                <a href="<?php echo e(url('storage/' . $voucher->attach_file)); ?>" class="btn btn-sm btn-outline-primary" target="_blank">
                     <i class="fa fa-file"></i> View
                 </a>
-                @else
-                <a href="{{ url('storage/vouchers/' . $voucher->attach_file) }}" class="btn btn-sm btn-outline-primary" target="_blank">
+                <?php else: ?>
+                <a href="<?php echo e(url('storage/vouchers/' . $voucher->attach_file)); ?>" class="btn btn-sm btn-outline-primary" target="_blank">
                     <i class="fa fa-file"></i> View
                 </a>
-                @endif
-                @else
+                <?php endif; ?>
+                <?php else: ?>
                 <span class="text-muted">-</span>
-                @endif
+                <?php endif; ?>
             </td>
             <td style="position: relative;">
                 <div class="dropdown">
-                    <button class="btn btn-text-secondary rounded-pill text-body-secondary border-0 p-2 me-n1 waves-effect" type="button" id="actiondropdown_{{ $voucher->id }}" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                    <button class="btn btn-text-secondary rounded-pill text-body-secondary border-0 p-2 me-n1 waves-effect" type="button" id="actiondropdown_<?php echo e($voucher->id); ?>" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                         <i class="icon-base ti ti-dots icon-md text-body-secondary"></i>
                     </button>
-                    <div class="dropdown-menu dropdown-menu-end" aria-labelledby="actiondropdown_{{ $voucher->id }}" style="z-index: 1050;">
-                        @can('voucher_document')
+                    <div class="dropdown-menu dropdown-menu-end" aria-labelledby="actiondropdown_<?php echo e($voucher->id); ?>" style="z-index: 1050;">
+                        <?php if (app(\Illuminate\Contracts\Auth\Access\Gate::class)->check('voucher_document')): ?>
                         <li><a href="javascript:void(0);" data-size="sm" data-title="Upload Document"
-                                data-action="{{ url('voucher/attach_file/'.$voucher->id) }}" class='dropdown-item waves-effect show-modal'>
+                                data-action="<?php echo e(url('voucher/attach_file/'.$voucher->id)); ?>" class='dropdown-item waves-effect show-modal'>
                                 <i class="fa fa-file my-1"></i> Upload Document
                             </a></li>
-                        @endcan
-                        @can('voucher_view')
-                        <li><a href="{{ route('vouchers.show', $voucher->id) }}" target="_blank" class='dropdown-item waves-effect'>
+                        <?php endif; ?>
+                        <?php if (app(\Illuminate\Contracts\Auth\Access\Gate::class)->check('voucher_view')): ?>
+                        <li><a href="<?php echo e(route('vouchers.show', $voucher->id)); ?>" target="_blank" class='dropdown-item waves-effect'>
                                 <i class="fa fa-eye my-1"></i> View
                             </a></li>
-                        @endcan
-                        @can('voucher_edit')
-                        @if($voucher->voucher_type !='RFV' && $voucher->voucher_type !='SV' && $voucher->voucher_type !='VL' && $voucher->voucher_type !='AL')
+                        <?php endif; ?>
+                        <?php if (app(\Illuminate\Contracts\Auth\Access\Gate::class)->check('voucher_edit')): ?>
+                        <?php if($voucher->voucher_type !='RFV' && $voucher->voucher_type !='SV' && $voucher->voucher_type !='VL' && $voucher->voucher_type !='AL'): ?>
                         <li><a href="javascript:void(0);" data-size="xl"
-                                data-title="Edit Voucher No. {{$voucher->voucher_type.'-'.str_pad($voucher->id,4,'0',STR_PAD_LEFT)}}"
-                                data-action="{{ route('vouchers.edit', $voucher->trans_code) }}" class='dropdown-item waves-effect show-modal'>
+                                data-title="Edit Voucher No. <?php echo e($voucher->voucher_type.'-'.str_pad($voucher->id,4,'0',STR_PAD_LEFT)); ?>"
+                                data-action="<?php echo e(route('vouchers.edit', $voucher->trans_code)); ?>" class='dropdown-item waves-effect show-modal'>
                                 <i class="fa fa-edit my-1"></i> Edit
                             </a></li>
-                        @endif
-                        @endcan
-                        @can('voucher_delete')
-                        @if($voucher->voucher_type !='RFV' && $voucher->voucher_type !='SV' && $voucher->voucher_type !='VL')
-                        <li><a href="javascript:void(0);" onclick="deleteVoucher('{{ $voucher->trans_code }}')" class='dropdown-item waves-effect text-danger'>
+                        <?php endif; ?>
+                        <?php endif; ?>
+                        <?php if (app(\Illuminate\Contracts\Auth\Access\Gate::class)->check('voucher_delete')): ?>
+                        <?php if($voucher->voucher_type !='RFV' && $voucher->voucher_type !='SV' && $voucher->voucher_type !='VL'): ?>
+                        <li><a href="javascript:void(0);" onclick="deleteVoucher('<?php echo e($voucher->trans_code); ?>')" class='dropdown-item waves-effect text-danger'>
                                 <i class="fa fa-trash my-1"></i> Delete
                             </a></li>
-                        @endif
-                        @endcan
+                        <?php endif; ?>
+                        <?php endif; ?>
                         </ul>
                     </div>
             </td>
             <td></td>
             <td></td>
         </tr>
-        @endforeach
-        @else
+        <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+        <?php else: ?>
         <tr>
             <td colspan="12" class="text-center">
                 <div class="py-4">
@@ -109,15 +109,16 @@
                 </div>
             </td>
         </tr>
-        @endif
+        <?php endif; ?>
     </tbody>
 </table>
 
-@if(isset($data))
+<?php if(isset($data)): ?>
 <div class="pagination-wrapper">
-    {!! $data->appends(request()->query())->links('pagination') !!}
+    <?php echo $data->appends(request()->query())->links('pagination'); ?>
+
 </div>
-@endif
+<?php endif; ?>
 
 <script>
     function deleteVoucher(transCode) {
@@ -126,7 +127,7 @@
                 url: '/vouchers/' + transCode,
                 type: 'DELETE',
                 data: {
-                    _token: '{{ csrf_token() }}'
+                    _token: '<?php echo e(csrf_token()); ?>'
                 },
                 success: function(result) {
                     if (typeof toastr !== 'undefined') {
@@ -181,4 +182,4 @@
 
         setTimeout(tryInitialize, 100);
     });
-</script>
+</script><?php /**PATH D:\xammp1\htdocs\erpbk\resources\views/vouchers/table.blade.php ENDPATH**/ ?>

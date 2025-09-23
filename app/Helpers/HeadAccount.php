@@ -11,4 +11,7 @@ interface HeadAccount
   const ADVANCE_LOAN = 1135;
   const RTA_FINE = 1235;
   const SALARIES_PAYABLE = 1200; // Add the correct GL code for Salaries Payable here
+  const COD_ACCOUNT = 1219; // COD Account
+  const PENALTY_ACCOUNT = 1017; // Penalty Account
+  const INCENTIVE_ACCOUNT = 1009; // Incentive Account
 }

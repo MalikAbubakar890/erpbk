@@ -440,6 +440,7 @@ $account = App\Models\Accounts::where('ref_id', $result['id'])->where('account_t
             <?php endif; ?>
             
           </div>
+          <?php if(isset($result)): ?>
           <div class="d-flex flex-wrap justify-content-start gap-2 gap-md-3">
             <!-- Absconder Status Card -->
             <div class="status-card absconder-card <?php echo e(($result['absconder'] ?? 0) == 1 ? 'active' : ''); ?>"
@@ -508,6 +509,7 @@ $account = App\Models\Accounts::where('ref_id', $result['id'])->where('account_t
               </div>
             </div>
           </div>
+          <?php endif; ?>
         </div>
       </div>
     </div>
@@ -564,17 +566,17 @@ $account = App\Models\Accounts::where('ref_id', $result['id'])->where('account_t
                   </a>
                   <?php endif; ?>
                   <?php if (app(\Illuminate\Contracts\Auth\Access\Gate::class)->check('cod_create')): ?>
-                  <a href="javascript:void(0);" data-action="<?php echo e(route('VisaExpense.edit' , $result['id'])); ?>" data-size="xl" data-title="COD" class='dropdown-item show-modal'>
+                  <a href="javascript:void(0);" data-action="<?php echo e(route('riders.cod' , $result['id'])); ?>" data-size="xl" data-title="COD" class='dropdown-item show-modal'>
                     COD
                   </a>
                   <?php endif; ?>
                   <?php if (app(\Illuminate\Contracts\Auth\Access\Gate::class)->check('penality_create')): ?>
-                  <a href="javascript:void(0);" data-action="<?php echo e(route('VisaExpense.delete', $result['id'])); ?>" class='dropdown-item show-modal' data-size="xl" data-title="Penality">
+                  <a href="javascript:void(0);" data-action="<?php echo e(route('riders.penalty' , $result['id'])); ?>" class='dropdown-item show-modal' data-size="xl" data-title="Penality">
                     Penality
                   </a>
                   <?php endif; ?>
                   <?php if (app(\Illuminate\Contracts\Auth\Access\Gate::class)->check('incentives_create')): ?>
-                  <a href="javascript:void(0);" data-action="<?php echo e(route('VisaExpense.delete', $result['id'])); ?>" class='dropdown-item show-modal' data-size="xl" data-title="Incentive">
+                  <a href="javascript:void(0);" data-action="<?php echo e(route('riders.incentive' , $result['id'])); ?>" class='dropdown-item show-modal' data-size="xl" data-title="Incentive">
                     Incentive
                   </a>
                   <?php endif; ?>
@@ -586,7 +588,7 @@ $account = App\Models\Accounts::where('ref_id', $result['id'])->where('account_t
         </div>
       </div>
     </div>
-    <div class="card mb-5" id="cardBody" style="margin-top: 120px; height:1067px !important;overflow: auto;margin-top: 120px;">
+    <div class="card mb-5" id="cardBody" style="margin-top: 120px; height:1300px !important;overflow: auto;margin-top: 120px;">
       <?php echo $__env->yieldContent('page_content'); ?>
     </div>
   </div>
@@ -839,7 +841,6 @@ $account = App\Models\Accounts::where('ref_id', $result['id'])->where('account_t
     document.head.appendChild(style);
   });
 </script>
-
 
 <?php $__env->stopSection(); ?>
 <?php echo $__env->make('layouts.app', \Illuminate\Support\Arr::except(get_defined_vars(), ['__data', '__path']))->render(); ?><?php /**PATH D:\xammp1\htdocs\erpbk\resources\views/riders/view.blade.php ENDPATH**/ ?>

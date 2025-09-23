@@ -26,6 +26,7 @@ use App\Models\JobStatus;
 use App\Models\Riders;
 use App\Models\Files;
 use App\Models\Transactions;
+use App\Models\Vouchers;
 use App\Repositories\RidersRepository;
 use App\Traits\GlobalPagination;
 use Illuminate\Http\Request;
@@ -720,7 +721,8 @@ class RidersController extends AppBaseController
   {
     $rider = Riders::find($rider_id);
     $account = Accounts::where('ref_id', $rider_id)->where('account_type', 'expense')->first();
-    return view('riders.advanceloan-modal', compact('rider', 'account'));
+    $accounts = Accounts::dropdown(null);
+    return view('riders.advanceloan-modal', compact('rider', 'account', 'accounts'));
   }
 
   public function files($rider_id, FilesDataTable $filesDataTable)
@@ -928,6 +930,577 @@ class RidersController extends AppBaseController
       return response()->json([
         'success' => false,
         'message' => 'Error updating learning license status'
+      ], 500);
+    }
+  }
+
+  public function storeadvanceloan(Request $request)
+  {
+    try {
+      \DB::beginTransaction();
+
+      // Validate the request
+      $request->validate([
+        'account_id' => 'required|array|min:2',
+        'account_id.*' => 'required|integer',
+        'dr_amount' => 'required|array|min:2',
+        'dr_amount.*' => 'required|numeric|min:0',
+        'narration' => 'required|array|min:2',
+        'narration.*' => 'required|string',
+      ]);
+
+      // Get rider account (first entry should be the rider's liability account)
+      $riderAccountId = $request->account_id[0];
+
+      if (empty($riderAccountId)) {
+        throw new \Exception('Rider account ID is required');
+      }
+
+      $riderAccount = Accounts::find($riderAccountId);
+
+      if (!$riderAccount) {
+        throw new \Exception('Rider account not found with ID: ' . $riderAccountId);
+      }
+
+      // Get the second account (credit account - should be Advance Loan account)
+      $creditAccountId = $request->account_id[1] ?? HeadAccount::ADVANCE_LOAN;
+
+      // Get amounts
+      $riderAmount = $request->dr_amount[0] ?? 0;
+      $creditAmount = $request->dr_amount[1] ?? 0;
+
+      // Use the first amount for both entries if only one amount is provided
+      if ($creditAmount == 0) {
+        $creditAmount = $riderAmount;
+      }
+
+      // Generate transaction code
+      $transCode = \App\Helpers\Account::trans_code();
+
+      // Create voucher entry
+      $voucherData = [
+        'trans_date' => $request->trans_date ?? date('Y-m-d'),
+        'voucher_type' => 'AL', // Advance Loan
+        'payment_type' => $request->payment_type ?? 1, // Default to Cash
+        'payment_from' => HeadAccount::ADVANCE_LOAN,
+        'billing_month' => date('Y-m-01'),
+        'amount' => $riderAmount,
+        'remarks' => 'Advance Loan to Rider',
+        'ref_id' => $riderAccount->ref_id, // Rider ID
+        'trans_code' => $transCode,
+        'Created_By' => auth()->id(),
+        'status' => 1
+      ];
+
+      $voucher = Vouchers::create($voucherData);
+
+      // Create debit transaction for rider account (first entry)
+      $debitTransaction = [
+        'account_id' => $riderAccountId,
+        'reference_id' => $voucher->id,
+        'reference_type' => 'Voucher',
+        'trans_code' => $transCode,
+        'trans_date' => $voucherData['trans_date'],
+        'narration' => $request->narration[0] ?? 'Advance Loan Received',
+        'debit' => $riderAmount,
+        'billing_month' => $voucherData['billing_month'],
+        'Created_By' => auth()->id()
+      ];
+
+      Transactions::create($debitTransaction);
+
+      // Create credit transaction for advance loan account (second entry)
+      $creditTransaction = [
+        'account_id' => $creditAccountId,
+        'reference_id' => $voucher->id,
+        'reference_type' => 'Voucher',
+        'trans_code' => $transCode,
+        'trans_date' => $voucherData['trans_date'],
+        'narration' => $request->narration[1] ?? 'Advance Loan Given to ' . $riderAccount->name,
+        'credit' => $creditAmount,
+        'billing_month' => $voucherData['billing_month'],
+        'Created_By' => auth()->id()
+      ];
+
+      Transactions::create($creditTransaction);
+
+      \DB::commit();
+
+      // Return success response
+      return response()->json([
+        'success' => true,
+        'message' => 'Advance loan recorded successfully',
+        'voucher_id' => $voucher->id,
+        'trans_code' => $transCode
+      ]);
+    } catch (\Exception $e) {
+      \DB::rollback();
+
+      // Log the request data for debugging
+      \Log::error('Advance loan error', [
+        'request_data' => $request->all(),
+        'error' => $e->getMessage(),
+        'trace' => $e->getTraceAsString()
+      ]);
+
+      return response()->json([
+        'success' => false,
+        'message' => 'Error recording advance loan: ' . $e->getMessage(),
+        'debug' => [
+          'account_ids' => $request->account_id ?? 'not provided',
+          'dr_amounts' => $request->dr_amount ?? 'not provided',
+          'narrations' => $request->narration ?? 'not provided'
+        ]
+      ], 500);
+    }
+  }
+
+  public function cod($rider_id)
+  {
+    $rider = Riders::find($rider_id);
+    $account = Accounts::where('ref_id', $rider_id)->where('account_type', 'expense')->first();
+    $accounts = Accounts::dropdown(null);
+    return view('riders.cod-modal', compact('rider', 'account', 'accounts'));
+  }
+
+  public function penalty($rider_id)
+  {
+    $rider = Riders::find($rider_id);
+    $account = Accounts::where('ref_id', $rider_id)->where('account_type', 'expense')->first();
+    $accounts = Accounts::dropdown(null);
+    return view('riders.penalty-modal', compact('rider', 'account', 'accounts'));
+  }
+
+  public function storecod(Request $request)
+  {
+    try {
+      \DB::beginTransaction();
+
+      // Validate the request
+      $request->validate([
+        'account_id' => 'required|array|min:2',
+        'account_id.*' => 'required|integer',
+        'dr_amount' => 'required|array|min:2',
+        'dr_amount.*' => 'required|numeric|min:0',
+        'narration' => 'required|array|min:2',
+        'narration.*' => 'required|string',
+      ]);
+
+      // Get rider account (first entry should be the rider's liability account)
+      $riderAccountId = $request->account_id[0];
+
+      if (empty($riderAccountId)) {
+        throw new \Exception('Rider account ID is required');
+      }
+
+      $riderAccount = Accounts::find($riderAccountId);
+
+      if (!$riderAccount) {
+        throw new \Exception('Rider account not found with ID: ' . $riderAccountId);
+      }
+
+      // Get the second account (credit account - should be COD account)
+      $creditAccountId = $request->account_id[1];
+
+      // Get amounts
+      $riderAmount = $request->dr_amount[0] ?? 0;
+      $creditAmount = $request->dr_amount[1] ?? 0;
+
+      // Use the first amount for both entries if only one amount is provided
+      if ($creditAmount == 0) {
+        $creditAmount = $riderAmount;
+      }
+
+      // Generate transaction code
+      $transCode = \App\Helpers\Account::trans_code();
+
+      // Create voucher entry
+      $voucherData = [
+        'trans_date' => $request->trans_date ?? date('Y-m-d'),
+        'voucher_type' => 'COD', // COD
+        'payment_type' => $request->payment_type ?? 1, // Default to Cash
+        'payment_from' => HeadAccount::COD_ACCOUNT,
+        'billing_month' => date('Y-m-01'),
+        'amount' => $riderAmount,
+        'remarks' => 'COD Amount to Rider',
+        'ref_id' => $riderAccount->ref_id, // Rider ID
+        'trans_code' => $transCode,
+        'Created_By' => auth()->id(),
+        'status' => 1
+      ];
+
+      $voucher = Vouchers::create($voucherData);
+
+      // Create debit transaction for rider account (first entry)
+      $debitTransaction = [
+        'account_id' => $riderAccountId,
+        'reference_id' => $voucher->id,
+        'reference_type' => 'Voucher',
+        'trans_code' => $transCode,
+        'trans_date' => $voucherData['trans_date'],
+        'narration' => $request->narration[0] ?? 'COD Amount Received',
+        'debit' => $riderAmount,
+        'billing_month' => $voucherData['billing_month'],
+        'Created_By' => auth()->id()
+      ];
+
+      Transactions::create($debitTransaction);
+
+      // Create credit transaction for COD account (second entry)
+      $creditTransaction = [
+        'account_id' => $creditAccountId,
+        'reference_id' => $voucher->id,
+        'reference_type' => 'Voucher',
+        'trans_code' => $transCode,
+        'trans_date' => $voucherData['trans_date'],
+        'narration' => $request->narration[1] ?? 'COD Amount Given to ' . $riderAccount->name,
+        'credit' => $creditAmount,
+        'billing_month' => $voucherData['billing_month'],
+        'Created_By' => auth()->id()
+      ];
+
+      Transactions::create($creditTransaction);
+
+      \DB::commit();
+
+      // Return success response
+      return response()->json([
+        'success' => true,
+        'message' => 'COD amount recorded successfully',
+        'voucher_id' => $voucher->id,
+        'trans_code' => $transCode
+      ]);
+    } catch (\Exception $e) {
+      \DB::rollback();
+
+      // Log the request data for debugging
+      \Log::error('COD error', [
+        'request_data' => $request->all(),
+        'error' => $e->getMessage(),
+        'trace' => $e->getTraceAsString()
+      ]);
+
+      return response()->json([
+        'success' => false,
+        'message' => 'Error recording COD amount: ' . $e->getMessage(),
+        'debug' => [
+          'account_ids' => $request->account_id ?? 'not provided',
+          'dr_amounts' => $request->dr_amount ?? 'not provided',
+          'narrations' => $request->narration ?? 'not provided'
+        ]
+      ], 500);
+    }
+  }
+
+  public function storepenalty(Request $request)
+  {
+    try {
+      \DB::beginTransaction();
+
+      // Validate the request
+      $request->validate([
+        'account_id' => 'required|array|min:2',
+        'account_id.*' => 'required|integer',
+        'dr_amount' => 'required|array|min:2',
+        'dr_amount.*' => 'required|numeric|min:0',
+        'narration' => 'required|array|min:2',
+        'narration.*' => 'required|string',
+      ]);
+
+      // Get rider account (first entry should be the rider's liability account)
+      $riderAccountId = $request->account_id[0];
+
+      if (empty($riderAccountId)) {
+        throw new \Exception('Rider account ID is required');
+      }
+
+      $riderAccount = Accounts::find($riderAccountId);
+
+      if (!$riderAccount) {
+        throw new \Exception('Rider account not found with ID: ' . $riderAccountId);
+      }
+
+      // Get the second account (credit account - should be Penalty account)
+      $creditAccountId = $request->account_id[1];
+
+      // Get amounts
+      $riderAmount = $request->dr_amount[0] ?? 0;
+      $creditAmount = $request->dr_amount[1] ?? 0;
+
+      // Use the first amount for both entries if only one amount is provided
+      if ($creditAmount == 0) {
+        $creditAmount = $riderAmount;
+      }
+
+      // Generate transaction code
+      $transCode = \App\Helpers\Account::trans_code();
+
+      // Create voucher entry
+      $voucherData = [
+        'trans_date' => $request->trans_date ?? date('Y-m-d'),
+        'voucher_type' => 'PENALTY', // Penalty
+        'payment_type' => $request->payment_type ?? 1, // Default to Cash
+        'payment_from' => HeadAccount::PENALTY_ACCOUNT,
+        'billing_month' => date('Y-m-01'),
+        'amount' => $riderAmount,
+        'remarks' => 'Penalty Amount to Rider',
+        'ref_id' => $riderAccount->ref_id, // Rider ID
+        'trans_code' => $transCode,
+        'Created_By' => auth()->id(),
+        'status' => 1
+      ];
+
+      $voucher = Vouchers::create($voucherData);
+
+      // Create debit transaction for rider account (first entry)
+      $debitTransaction = [
+        'account_id' => $riderAccountId,
+        'reference_id' => $voucher->id,
+        'reference_type' => 'Voucher',
+        'trans_code' => $transCode,
+        'trans_date' => $voucherData['trans_date'],
+        'narration' => $request->narration[0] ?? 'Penalty Amount Received',
+        'debit' => $riderAmount,
+        'billing_month' => $voucherData['billing_month'],
+        'Created_By' => auth()->id()
+      ];
+
+      Transactions::create($debitTransaction);
+
+      // Create credit transaction for penalty account (second entry)
+      $creditTransaction = [
+        'account_id' => $creditAccountId,
+        'reference_id' => $voucher->id,
+        'reference_type' => 'Voucher',
+        'trans_code' => $transCode,
+        'trans_date' => $voucherData['trans_date'],
+        'narration' => $request->narration[1] ?? 'Penalty Amount Given to ' . $riderAccount->name,
+        'credit' => $creditAmount,
+        'billing_month' => $voucherData['billing_month'],
+        'Created_By' => auth()->id()
+      ];
+
+      Transactions::create($creditTransaction);
+
+      \DB::commit();
+
+      // Return success response
+      return response()->json([
+        'success' => true,
+        'message' => 'Penalty amount recorded successfully',
+        'voucher_id' => $voucher->id,
+        'trans_code' => $transCode
+      ]);
+    } catch (\Exception $e) {
+      \DB::rollback();
+
+      // Log the request data for debugging
+      \Log::error('Penalty error', [
+        'request_data' => $request->all(),
+        'error' => $e->getMessage(),
+        'trace' => $e->getTraceAsString()
+      ]);
+
+      return response()->json([
+        'success' => false,
+        'message' => 'Error recording penalty amount: ' . $e->getMessage(),
+        'debug' => [
+          'account_ids' => $request->account_id ?? 'not provided',
+          'dr_amounts' => $request->dr_amount ?? 'not provided',
+          'narrations' => $request->narration ?? 'not provided'
+        ]
+      ], 500);
+    }
+  }
+
+  public function incentive($rider_id)
+  {
+    $rider = Riders::find($rider_id);
+    $account = Accounts::where('ref_id', $rider_id)->where('account_type', 'expense')->first();
+    $accounts = Accounts::dropdown(null);
+    return view('riders.incentive-modal', compact('rider', 'account', 'accounts'));
+  }
+
+  public function storeincentive(Request $request)
+  {
+    try {
+      \DB::beginTransaction();
+
+      // Validate the request
+      $request->validate([
+        'account_id' => 'required|array|min:2',
+        'account_id.*' => 'required|integer',
+        'dr_amount' => 'required|array|min:2',
+        'dr_amount.*' => 'required|numeric|min:0',
+        'narration' => 'required|array|min:2',
+        'narration.*' => 'required|string',
+      ]);
+
+      // Get rider account (first entry should be the rider's liability account)
+      $riderAccountId = $request->account_id[0];
+
+      if (empty($riderAccountId)) {
+        throw new \Exception('Rider account ID is required');
+      }
+
+      $riderAccount = Accounts::find($riderAccountId);
+
+      if (!$riderAccount) {
+        throw new \Exception('Rider account not found with ID: ' . $riderAccountId);
+      }
+
+      // Get the second account (credit account - should be Incentive account)
+      $creditAccountId = $request->account_id[1];
+
+      // Get amounts
+      $riderAmount = $request->dr_amount[0] ?? 0;
+      $creditAmount = $request->dr_amount[1] ?? 0;
+
+      // Use the first amount for both entries if only one amount is provided
+      if ($creditAmount == 0) {
+        $creditAmount = $riderAmount;
+      }
+
+      // Generate transaction code
+      $transCode = \App\Helpers\Account::trans_code();
+
+      // Create voucher entry
+      $voucherData = [
+        'trans_date' => $request->trans_date ?? date('Y-m-d'),
+        'voucher_type' => 'INCENTIVE', // Incentive
+        'payment_type' => $request->payment_type ?? 1, // Default to Cash
+        'payment_from' => HeadAccount::INCENTIVE_ACCOUNT,
+        'billing_month' => date('Y-m-01'),
+        'amount' => $riderAmount,
+        'remarks' => 'Incentive Amount to Rider',
+        'ref_id' => $riderAccount->ref_id, // Rider ID
+        'trans_code' => $transCode,
+        'Created_By' => auth()->id(),
+        'status' => 1
+      ];
+
+      $voucher = Vouchers::create($voucherData);
+
+      // Create debit transaction for rider account (first entry)
+      $debitTransaction = [
+        'account_id' => $creditAccountId,
+        'reference_id' => $voucher->id,
+        'reference_type' => 'Voucher',
+        'trans_code' => $transCode,
+        'trans_date' => $voucherData['trans_date'],
+        'narration' => $request->narration[0] ?? 'Incentive Amount Received',
+        'debit' => $riderAmount,
+        'billing_month' => $voucherData['billing_month'],
+        'Created_By' => auth()->id()
+      ];
+
+      Transactions::create($debitTransaction);
+
+      // Create credit transaction for incentive account (second entry)
+      $creditTransaction = [
+        'account_id' => $riderAccountId,
+        'reference_id' => $voucher->id,
+        'reference_type' => 'Voucher',
+        'trans_code' => $transCode,
+        'trans_date' => $voucherData['trans_date'],
+        'narration' => $request->narration[1] ?? 'Incentive Amount Given to ' . $riderAccount->name,
+        'credit' => $creditAmount,
+        'billing_month' => $voucherData['billing_month'],
+        'Created_By' => auth()->id()
+      ];
+
+      Transactions::create($creditTransaction);
+
+      \DB::commit();
+
+      // Return success response
+      return response()->json([
+        'success' => true,
+        'message' => 'Incentive amount recorded successfully',
+        'voucher_id' => $voucher->id,
+        'trans_code' => $transCode
+      ]);
+    } catch (\Exception $e) {
+      \DB::rollback();
+
+      // Log the request data for debugging
+      \Log::error('Incentive error', [
+        'request_data' => $request->all(),
+        'error' => $e->getMessage(),
+        'trace' => $e->getTraceAsString()
+      ]);
+
+      return response()->json([
+        'success' => false,
+        'message' => 'Error recording incentive amount: ' . $e->getMessage(),
+        'debug' => [
+          'account_ids' => $request->account_id ?? 'not provided',
+          'dr_amounts' => $request->dr_amount ?? 'not provided',
+          'narrations' => $request->narration ?? 'not provided'
+        ]
+      ], 500);
+    }
+  }
+
+  /**
+   * Add new recruiter to dropdown options
+   */
+  public function addRecruiter(Request $request)
+  {
+    try {
+      $request->validate([
+        'recruiter_name' => 'required|string|max:255'
+      ]);
+
+      $recruiterName = trim($request->recruiter_name);
+
+      // Get the recruiter dropdown
+      $dropdown = \App\Models\Dropdowns::where('key', 'recuriter')->first();
+
+      if (!$dropdown) {
+        // Create new dropdown if it doesn't exist
+        $dropdown = \App\Models\Dropdowns::create([
+          'name' => 'Recruiter',
+          'label' => 'Recruiter',
+          'key' => 'recuriter',
+          'values' => json_encode([$recruiterName]),
+          'status' => true
+        ]);
+      } else {
+        // Get existing values
+        $existingValues = json_decode($dropdown->values, true) ?: [];
+
+        // Check if recruiter already exists (case insensitive)
+        $exists = false;
+        foreach ($existingValues as $value) {
+          if (strtolower(trim($value)) === strtolower($recruiterName)) {
+            $exists = true;
+            break;
+          }
+        }
+
+        if (!$exists) {
+          // Add new recruiter to the list
+          $existingValues[] = $recruiterName;
+          $dropdown->values = json_encode($existingValues);
+          $dropdown->save();
+        }
+      }
+
+      return response()->json([
+        'success' => true,
+        'message' => 'Recruiter added successfully',
+        'recruiter_name' => $recruiterName
+      ]);
+    } catch (\Exception $e) {
+      \Log::error('Add recruiter error', [
+        'request_data' => $request->all(),
+        'error' => $e->getMessage()
+      ]);
+
+      return response()->json([
+        'success' => false,
+        'message' => 'Error adding recruiter: ' . $e->getMessage()
       ], 500);
     }
   }

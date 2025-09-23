@@ -441,6 +441,7 @@ $account = App\Models\Accounts::where('ref_id', $result['id'])->where('account_t
             {{-- <a href="javascript:void(0);" class="btn btn-default btn-block no-print" onclick="window.print();"><i class="fa fa-print"></i>&nbsp;<b>Print</b></a>
  --}}
           </div>
+          @isset($result)
           <div class="d-flex flex-wrap justify-content-start gap-2 gap-md-3">
             <!-- Absconder Status Card -->
             <div class="status-card absconder-card {{ ($result['absconder'] ?? 0) == 1 ? 'active' : '' }}"
@@ -509,6 +510,7 @@ $account = App\Models\Accounts::where('ref_id', $result['id'])->where('account_t
               </div>
             </div>
           </div>
+          @endisset
         </div>
       </div>
     </div>
@@ -565,17 +567,17 @@ $account = App\Models\Accounts::where('ref_id', $result['id'])->where('account_t
                   </a>
                   @endcan
                   @can('cod_create')
-                  <a href="javascript:void(0);" data-action="{{ route('VisaExpense.edit' , $result['id']) }}" data-size="xl" data-title="COD" class='dropdown-item show-modal'>
+                  <a href="javascript:void(0);" data-action="{{ route('riders.cod' , $result['id']) }}" data-size="xl" data-title="COD" class='dropdown-item show-modal'>
                     COD
                   </a>
                   @endcan
                   @can('penality_create')
-                  <a href="javascript:void(0);" data-action="{{ route('VisaExpense.delete', $result['id']) }}" class='dropdown-item show-modal' data-size="xl" data-title="Penality">
+                  <a href="javascript:void(0);" data-action="{{ route('riders.penalty' , $result['id']) }}" class='dropdown-item show-modal' data-size="xl" data-title="Penality">
                     Penality
                   </a>
                   @endcan
                   @can('incentives_create')
-                  <a href="javascript:void(0);" data-action="{{ route('VisaExpense.delete', $result['id']) }}" class='dropdown-item show-modal' data-size="xl" data-title="Incentive">
+                  <a href="javascript:void(0);" data-action="{{ route('riders.incentive' , $result['id']) }}" class='dropdown-item show-modal' data-size="xl" data-title="Incentive">
                     Incentive
                   </a>
                   @endcan
@@ -587,7 +589,7 @@ $account = App\Models\Accounts::where('ref_id', $result['id'])->where('account_t
         </div>
       </div>
     </div>
-    <div class="card mb-5" id="cardBody" style="margin-top: 120px; height:1067px !important;overflow: auto;margin-top: 120px;">
+    <div class="card mb-5" id="cardBody" style="margin-top: 120px; height:1300px !important;overflow: auto;margin-top: 120px;">
       @yield('page_content')
     </div>
   </div>
@@ -840,6 +842,5 @@ $account = App\Models\Accounts::where('ref_id', $result['id'])->where('account_t
     document.head.appendChild(style);
   });
 </script>
-
 
 @endsection
