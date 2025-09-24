@@ -28,7 +28,7 @@
     <div class="row pb-3">
         <div class="form-group col-md-3">
             <label for="exampleInputEmail1">Select Account</label>
-            {!! Form::select('account_id[]', $accounts, null, ['class' => 'form-select form-select-sm select2']) !!}
+            {!! Form::select('account_id[]', $bank_accounts ?? \App\Models\Accounts::bankAccountsDropdown(), null, ['class' => 'form-select form-select-sm select2']) !!}
         </div>
         <div class="form-group col-md-4">
             <label>Narration</label>

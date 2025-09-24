@@ -52,19 +52,19 @@ $voucherType = request("vt");
 
     <?php if($voucherType == 'AL'): ?>
     <?php ($accounts = \App\Models\Accounts::dropdown(null)); ?>
-    <?php echo $__env->make("vouchers.loan_fields", \Illuminate\Support\Arr::except(get_defined_vars(), ['__data', '__path']))->render(); ?>
+    <?php echo $__env->make("vouchers.loan_fields", ['bank_accounts' => $bank_accounts ?? \App\Models\Accounts::bankAccountsDropdown()], \Illuminate\Support\Arr::except(get_defined_vars(), ['__data', '__path']))->render(); ?>
     <?php endif; ?>
     <?php if($voucherType == 'COD'): ?>
     <?php ($accounts = \App\Models\Accounts::dropdown(null)); ?>
-    <?php echo $__env->make("vouchers.cod_fields", \Illuminate\Support\Arr::except(get_defined_vars(), ['__data', '__path']))->render(); ?>
+    <?php echo $__env->make("vouchers.cod_fields", ['bank_accounts' => $bank_accounts ?? \App\Models\Accounts::bankAccountsDropdown()], \Illuminate\Support\Arr::except(get_defined_vars(), ['__data', '__path']))->render(); ?>
     <?php endif; ?>
     <?php if($voucherType == 'PENALTY'): ?>
     <?php ($accounts = \App\Models\Accounts::dropdown(null)); ?>
-    <?php echo $__env->make("vouchers.penalty_fields", \Illuminate\Support\Arr::except(get_defined_vars(), ['__data', '__path']))->render(); ?>
+    <?php echo $__env->make("vouchers.penalty_fields", ['bank_accounts' => $bank_accounts ?? \App\Models\Accounts::bankAccountsDropdown()], \Illuminate\Support\Arr::except(get_defined_vars(), ['__data', '__path']))->render(); ?>
     <?php endif; ?>
     <?php if($voucherType == 'VL'): ?>
     <?php ($accounts = \App\Models\Accounts::dropdown(null)); ?>
-    <?php echo $__env->make("vouchers.visaloan_fields", \Illuminate\Support\Arr::except(get_defined_vars(), ['__data', '__path']))->render(); ?>
+    <?php echo $__env->make("vouchers.visaloan_fields", ['bank_accounts' => $bank_accounts ?? \App\Models\Accounts::bankAccountsDropdown()], \Illuminate\Support\Arr::except(get_defined_vars(), ['__data', '__path']))->render(); ?>
     <?php endif; ?>
 
     

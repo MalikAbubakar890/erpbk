@@ -1,22 +1,22 @@
-<script src="{{ asset('js/modal_custom.js') }}"></script>
-<input type="hidden" name="voucher_type" value="PENALTY" />
-<input type="hidden" name="trans_date" value="{{ date('Y-m-d') }}" />
-<input type="hidden" name="billing_month" value="{{ date('Y-m-01') }}" />
+<script src="<?php echo e(asset('js/modal_custom.js')); ?>"></script>
+<input type="hidden" name="voucher_type" value="PAYMENT" />
+<input type="hidden" name="trans_date" value="<?php echo e(date('Y-m-d')); ?>" />
+<input type="hidden" name="billing_month" value="<?php echo e(date('Y-m-01')); ?>" />
 
 <div class="row mt-0 mb-2">
     <div class="form-group col-md-3">
         <label for="exampleInputEmail1">Date</label>
-        <input type="date" name="trans_date" class="form-control " placeholder="Transaction Date" value="{{ date('Y-m-d') }}">
+        <input type="date" name="trans_date" class="form-control " placeholder="Transaction Date" value="<?php echo e(date('Y-m-d')); ?>">
     </div>
     <div class="form-group col-md-2">
         <label for="exampleInputEmail1">Billing Month</label>
-        <input type="month" name="billing_month" class="form-control " value="{{ date('Y-m-01') }}" required>
+        <input type="month" name="billing_month" class="form-control " value="<?php echo e(date('Y-m-01')); ?>" required>
     </div>
 </div>
 <div class="scrollbar">
-    <h5>Penalty Voucher</h5>
+    <h5>Payment Voucher</h5>
 
-    @php
+    <?php
     $rider_account = null;
     if ($rider && $rider->id) {
     $rider_account = \App\Models\Accounts::where('ref_id', $rider->id)->where('account_type', 'Liability')->first();
@@ -25,57 +25,60 @@
     $rider_account = \App\Models\Accounts::where('ref_id', $rider->id)->first();
     }
     }
-    @endphp
+    ?>
     <div class="row">
         <div class="form-group col-md-3">
             <label for="exampleInputEmail1">Select Account</label>
-            <input type="hidden" name="account_id[]" value="{{ $rider_account->id ?? '' }}" />
-            {!! Form::select('account_id[]', $accounts, $rider_account->id ?? null, ['class' => 'form-select form-select-sm select2' , 'disabled' => true]) !!}
+            <input type="hidden" name="account_id[]" value="<?php echo e($rider_account->id ?? ''); ?>" />
+            <?php echo Form::select('account_id[]', $accounts, $rider_account->id ?? null, ['class' => 'form-select form-select-sm select2' , 'disabled' => true]); ?>
+
         </div>
         <div class="form-group col-md-4">
             <label>Narration</label>
-            <textarea name="narration[]" class="form-control" rows="10" placeholder="Penalty Amount Received" style="height: 40px !important;">Penalty Amount Received</textarea>
+            <textarea name="narration[]" class="form-control" rows="10" placeholder="Payment Amount Received" style="height: 40px !important;">Payment Amount Received</textarea>
         </div>
         <div class="form-group col-md-2">
             <label>Amount (Dr)</label>
-            <input type="number" step="any" name="dr_amount[]" class="form-control dr_amount main_amount" placeholder="Penalty Amount" onchange="getTotal();" required>
+            <input type="number" step="any" name="dr_amount[]" class="form-control dr_amount main_amount" placeholder="Payment Amount" onchange="getTotal();" required>
         </div>
     </div>
     <div id="rows-container" class="mb-3" style="width: 100%;">
-        @isset($data)
-        @foreach($data as $entry)
+        <?php if(isset($data)): ?>
+        <?php $__currentLoopData = $data; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $entry): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
         <div class="row">
             <div class="form-group col-md-3">
                 <label for="exampleInputEmail1">Select Account</label>
-                {!! Form::select('account_id[]', $accounts, $entry->account_id??null, ['class' => 'form-control form-select select2 ']) !!}
+                <?php echo Form::select('account_id[]', $accounts, $entry->account_id??null, ['class' => 'form-control form-select select2 ']); ?>
+
             </div>
             <div class="form-group col-md-4">
                 <label>Narration</label>
-                <textarea name="narration[]" class="form-control " rows="10" placeholder="Narration" style="height: 40px !important;">{{$entry->narration}}</textarea>
+                <textarea name="narration[]" class="form-control " rows="10" placeholder="Narration" style="height: 40px !important;"><?php echo e($entry->narration); ?></textarea>
             </div>
             <div class="form-group col-md-2">
                 <label>Amount</label>
-                <input type="number" step="any" name="dr_amount[]" value="{{$entry->debit}}" class="form-control  dr_amount" onchange="getTotal();" placeholder="Penalty Amount">
+                <input type="number" step="any" name="dr_amount[]" value="<?php echo e($entry->debit); ?>" class="form-control  dr_amount" onchange="getTotal();" placeholder="Payment Amount">
             </div>
         </div>
-        @endforeach
-        @else
-        <!-- Second row for credit account (Penalty account) -->
+        <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+        <?php else: ?>
+        <!-- Second row for credit account (Payment account) -->
         <div class="row">
             <div class="form-group col-md-3">
                 <label for="exampleInputEmail1">Select Account</label>
-                {!! Form::select('account_id[]', $bank_accounts ?? \App\Models\Accounts::bankAccountsDropdown(), null, ['class' => 'form-select form-select-sm select2']) !!}
+                <?php echo Form::select('account_id[]', $bank_accounts ?? \App\Models\Accounts::bankAccountsDropdown(), null, ['class' => 'form-select form-select-sm select2']); ?>
+
             </div>
             <div class="form-group col-md-4">
                 <label>Narration</label>
-                <textarea name="narration[]" class="form-control" rows="10" placeholder="Penalty Amount Given" style="height: 40px !important;">Penalty Amount Given to {{ $rider->name ?? 'Rider' }}</textarea>
+                <textarea name="narration[]" class="form-control" rows="10" placeholder="Payment Amount Given" style="height: 40px !important;">Payment Amount Given to <?php echo e($rider->name ?? 'Rider'); ?></textarea>
             </div>
             <div class="form-group col-md-2">
                 <label>Amount (Cr)</label>
-                <input type="number" step="any" name="cr_amount[]" class="form-control cr_amount" placeholder="Penalty Amount" onchange="getTotal();" required readonly>
+                <input type="number" step="any" name="cr_amount[]" class="form-control cr_amount" placeholder="Payment Amount" onchange="getTotal();" required readonly>
             </div>
         </div>
-        @endisset
+        <?php endif; ?>
     </div>
 
     <div class="row">
@@ -137,4 +140,4 @@
                 $("#total_dr").val(dr_sum.toFixed(2));
             }
         });
-    </script>
+    </script><?php /**PATH D:\xammp1\htdocs\erpbk\resources\views/vouchers/payment_fields.blade.php ENDPATH**/ ?>

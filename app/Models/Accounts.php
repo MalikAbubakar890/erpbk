@@ -86,4 +86,13 @@ class Accounts extends Model
 
     return $query;
   }
+
+  public static function bankAccountsDropdown()
+  {
+    return self::select('id', \DB::raw("CONCAT(account_code, '-', name) as full_name"))
+      ->where('account_type', 'Asset')
+      ->where('parent_id', 994)
+      ->pluck('full_name', 'id')
+      ->prepend('Select', '');
+  }
 }

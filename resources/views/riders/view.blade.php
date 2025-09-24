@@ -115,7 +115,6 @@
   .status-toggle {
     display: flex;
     align-items: center;
-    justify-content: center;
   }
 
   .status-checkbox {
@@ -447,12 +446,14 @@ $account = App\Models\Accounts::where('ref_id', $result['id'])->where('account_t
             <div class="status-card absconder-card {{ ($result['absconder'] ?? 0) == 1 ? 'active' : '' }}"
               data-rider-id="{{ $result['id'] ?? '' }}"
               data-type="absconder">
-              <div class="status-icon">
-                <i class="ti ti-user-x"></i>
-              </div>
-              <div class="status-content">
-                <div class="status-title">Absconder</div>
-                <div class="status-subtitle">{{ ($result['absconder'] ?? 0) == 1 ? 'Marked as Absconder' : 'Not Absconder' }}</div>
+              <div class="d-flex justify-content-between">
+                <div class="status-icon">
+                  <i class="ti ti-user-x"></i>
+                </div>
+                <div class="status-content">
+                  <div class="status-title">Absconder</div>
+                  <div class="status-subtitle">{{ ($result['absconder'] ?? 0) == 1 ? 'Marked as Absconder' : 'Not Absconder' }}</div>
+                </div>
               </div>
               <div class="status-toggle">
                 <input type="checkbox"
@@ -469,12 +470,14 @@ $account = App\Models\Accounts::where('ref_id', $result['id'])->where('account_t
             <div class="status-card flowup-card {{ ($result['flowup'] ?? 0) == 1 ? 'active' : '' }}"
               data-rider-id="{{ $result['id'] ?? '' }}"
               data-type="flowup">
-              <div class="status-icon">
-                <i class="ti ti-bell"></i>
-              </div>
-              <div class="status-content">
-                <div class="status-title">Follow Up</div>
-                <div class="status-subtitle">{{ ($result['flowup'] ?? 0) == 1 ? 'Follow Up Required' : 'No Follow Up' }}</div>
+              <div class="d-flex justify-content-between">
+                <div class="status-icon">
+                  <i class="ti ti-bell"></i>
+                </div>
+                <div class="status-content">
+                  <div class="status-title">Follow Up</div>
+                  <div class="status-subtitle">{{ ($result['flowup'] ?? 0) == 1 ? 'Follow Up Required' : 'No Follow Up' }}</div>
+                </div>
               </div>
               <div class="status-toggle">
                 <input type="checkbox"
@@ -491,12 +494,14 @@ $account = App\Models\Accounts::where('ref_id', $result['id'])->where('account_t
             <div class="status-card llicense-card {{ ($result['l_license'] ?? 0) == 1 ? 'active' : '' }}"
               data-rider-id="{{ $result['id'] ?? '' }}"
               data-type="llicense">
-              <div class="status-icon">
-                <i class="ti ti-certificate"></i>
-              </div>
-              <div class="status-content">
-                <div class="status-title">Learning License</div>
-                <div class="status-subtitle">{{ ($result['l_license'] ?? 0) == 1 ? 'Learning License Required' : 'No Learning License' }}</div>
+              <div class="d-flex justify-content-between">
+                <div class="status-icon">
+                  <i class="ti ti-certificate"></i>
+                </div>
+                <div class="status-content">
+                  <div class="status-title">Learning License</div>
+                  <div class="status-subtitle">{{ ($result['l_license'] ?? 0) == 1 ? 'Learning License Required' : 'No Learning License' }}</div>
+                </div>
               </div>
               <div class="status-toggle">
                 <input type="checkbox"
@@ -579,6 +584,11 @@ $account = App\Models\Accounts::where('ref_id', $result['id'])->where('account_t
                   @can('incentives_create')
                   <a href="javascript:void(0);" data-action="{{ route('riders.incentive' , $result['id']) }}" class='dropdown-item show-modal' data-size="xl" data-title="Incentive">
                     Incentive
+                  </a>
+                  @endcan
+                  @can('payment_create')
+                  <a href="javascript:void(0);" data-action="{{ route('riders.payment' , $result['id']) }}" class='dropdown-item show-modal' data-size="xl" data-title="Payment">
+                    Payment
                   </a>
                   @endcan
                 </div>

@@ -57,8 +57,7 @@ $rider_account = \App\Models\Accounts::where('ref_id', $rider->id)->first();
     <div class="row">
         <div class="form-group col-md-3">
             <label for="exampleInputEmail1">Select Account</label>
-            <input type="hidden" name="account_id[]" value="<?php echo e(\App\Helpers\HeadAccount::ADVANCE_LOAN); ?>" />
-            <?php echo Form::select('account_id[]', $accounts, \App\Helpers\HeadAccount::ADVANCE_LOAN, ['class' => 'form-select form-select-sm select2', 'disabled' => true]); ?>
+            <?php echo Form::select('account_id[]', $bank_accounts, null, ['class' => 'form-select form-select-sm select2', ]); ?>
 
         </div>
         <div class="form-group col-md-4">
@@ -67,7 +66,7 @@ $rider_account = \App\Models\Accounts::where('ref_id', $rider->id)->first();
         </div>
         <div class="form-group col-md-2">
             <label>Amount</label>
-            <input type="number" step="any" name="dr_amount[]" class="form-control dr_amount" placeholder="Loan Amount" onchange="getTotal();" required readonly>
+            <input type="number" step="any" name="cr_amount[]" class="form-control cr_amount" placeholder="Loan Amount" onchange="getTotal();" required readonly>
         </div>
     </div>
     <?php endif; ?>

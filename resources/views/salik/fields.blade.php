@@ -26,7 +26,6 @@
     <label class="">Bike:</label>
     <select class="form select select2" required id="bike_id_create" name="bike_id">
         <option value=""></option>
-        @if(isset($salik))
         @php
         $bikes = DB::table('bikes')->get();
         @endphp
@@ -34,11 +33,11 @@
         @php
         $company = DB::table('leasing_companies')->where('id', $b->company)->first();
         @endphp
-        <option @if($b->id == $salik->bike_id) selected @endif value="{{ $b->id }}">
+        <option @if(isset($salik) && $b->id == $salik->bike_id) selected @endif value="{{ $b->id }}">
             {{ $b->plate }} - {{ $company ? $company->name : 'N/A' }}
         </option>
+
         @endforeach
-        @endif
     </select>
 </div>
 <div class="form-group col-sm-6">

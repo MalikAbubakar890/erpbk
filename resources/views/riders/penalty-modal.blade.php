@@ -2,7 +2,7 @@
 
 <input type="hidden" id="reload_page" value="1">
 <div class="row">
-    @include('vouchers.penalty_fields')
+    @include('vouchers.penalty_fields', ['bank_accounts' => $bank_accounts])
 </div>
 
 <div class="card-footer">

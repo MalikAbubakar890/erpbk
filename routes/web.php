@@ -161,10 +161,12 @@ Route::middleware(['auth', 'web'])->group(function () {
   Route::get('riders/cod/{id}', [\App\Http\Controllers\RidersController::class, 'cod'])->name('riders.cod');
   Route::get('riders/penalty/{id}', [\App\Http\Controllers\RidersController::class, 'penalty'])->name('riders.penalty');
   Route::get('riders/incentive/{id}', [\App\Http\Controllers\RidersController::class, 'incentive'])->name('riders.incentive');
+  Route::get('riders/payment/{id}', [\App\Http\Controllers\RidersController::class, 'payment'])->name('riders.payment');
   Route::post('riders/storevisaloan', [\App\Http\Controllers\RidersController::class, 'storevisaloan'])->name('riders.storevisaloan');
   Route::post('riders/storecod', [\App\Http\Controllers\RidersController::class, 'storecod'])->name('riders.storecod');
   Route::post('riders/storepenalty', [\App\Http\Controllers\RidersController::class, 'storepenalty'])->name('riders.storepenalty');
   Route::post('riders/storeincentive', [\App\Http\Controllers\RidersController::class, 'storeincentive'])->name('riders.storeincentive');
+  Route::post('riders/storepayment', [\App\Http\Controllers\RidersController::class, 'storepayment'])->name('riders.storepayment');
   Route::post('riders/storeadvanceloan', [\App\Http\Controllers\RidersController::class, 'storeadvanceloan'])->name('riders.storeadvanceloan');
   Route::post('riders/update-section/{id}', [\App\Http\Controllers\RidersController::class, 'updateSection'])->name('riders.updateSection');
   Route::post('riders/toggle-absconder/{id}', [\App\Http\Controllers\RidersController::class, 'toggleAbsconder'])->name('riders.toggleAbsconder');

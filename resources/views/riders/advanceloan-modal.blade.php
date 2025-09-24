@@ -3,7 +3,7 @@
 
 <input type="hidden" id="reload_page" value="1">
 <div class="row">
-    @include('riders.loan_fields', ['rider' => $rider, 'vt' => 'AL' , 'account' => $account])
+    @include('riders.loan_fields', ['rider' => $rider, 'vt' => 'AL' , 'account' => $account, 'bank_accounts' => $bank_accounts])
 </div>
 
 

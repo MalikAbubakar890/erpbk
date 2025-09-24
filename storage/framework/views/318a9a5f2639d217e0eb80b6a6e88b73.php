@@ -114,7 +114,6 @@
   .status-toggle {
     display: flex;
     align-items: center;
-    justify-content: center;
   }
 
   .status-checkbox {
@@ -446,12 +445,14 @@ $account = App\Models\Accounts::where('ref_id', $result['id'])->where('account_t
             <div class="status-card absconder-card <?php echo e(($result['absconder'] ?? 0) == 1 ? 'active' : ''); ?>"
               data-rider-id="<?php echo e($result['id'] ?? ''); ?>"
               data-type="absconder">
-              <div class="status-icon">
-                <i class="ti ti-user-x"></i>
-              </div>
-              <div class="status-content">
-                <div class="status-title">Absconder</div>
-                <div class="status-subtitle"><?php echo e(($result['absconder'] ?? 0) == 1 ? 'Marked as Absconder' : 'Not Absconder'); ?></div>
+              <div class="d-flex justify-content-between">
+                <div class="status-icon">
+                  <i class="ti ti-user-x"></i>
+                </div>
+                <div class="status-content">
+                  <div class="status-title">Absconder</div>
+                  <div class="status-subtitle"><?php echo e(($result['absconder'] ?? 0) == 1 ? 'Marked as Absconder' : 'Not Absconder'); ?></div>
+                </div>
               </div>
               <div class="status-toggle">
                 <input type="checkbox"
@@ -468,12 +469,14 @@ $account = App\Models\Accounts::where('ref_id', $result['id'])->where('account_t
             <div class="status-card flowup-card <?php echo e(($result['flowup'] ?? 0) == 1 ? 'active' : ''); ?>"
               data-rider-id="<?php echo e($result['id'] ?? ''); ?>"
               data-type="flowup">
-              <div class="status-icon">
-                <i class="ti ti-bell"></i>
-              </div>
-              <div class="status-content">
-                <div class="status-title">Follow Up</div>
-                <div class="status-subtitle"><?php echo e(($result['flowup'] ?? 0) == 1 ? 'Follow Up Required' : 'No Follow Up'); ?></div>
+              <div class="d-flex justify-content-between">
+                <div class="status-icon">
+                  <i class="ti ti-bell"></i>
+                </div>
+                <div class="status-content">
+                  <div class="status-title">Follow Up</div>
+                  <div class="status-subtitle"><?php echo e(($result['flowup'] ?? 0) == 1 ? 'Follow Up Required' : 'No Follow Up'); ?></div>
+                </div>
               </div>
               <div class="status-toggle">
                 <input type="checkbox"
@@ -490,12 +493,14 @@ $account = App\Models\Accounts::where('ref_id', $result['id'])->where('account_t
             <div class="status-card llicense-card <?php echo e(($result['l_license'] ?? 0) == 1 ? 'active' : ''); ?>"
               data-rider-id="<?php echo e($result['id'] ?? ''); ?>"
               data-type="llicense">
-              <div class="status-icon">
-                <i class="ti ti-certificate"></i>
-              </div>
-              <div class="status-content">
-                <div class="status-title">Learning License</div>
-                <div class="status-subtitle"><?php echo e(($result['l_license'] ?? 0) == 1 ? 'Learning License Required' : 'No Learning License'); ?></div>
+              <div class="d-flex justify-content-between">
+                <div class="status-icon">
+                  <i class="ti ti-certificate"></i>
+                </div>
+                <div class="status-content">
+                  <div class="status-title">Learning License</div>
+                  <div class="status-subtitle"><?php echo e(($result['l_license'] ?? 0) == 1 ? 'Learning License Required' : 'No Learning License'); ?></div>
+                </div>
               </div>
               <div class="status-toggle">
                 <input type="checkbox"
@@ -578,6 +583,11 @@ $account = App\Models\Accounts::where('ref_id', $result['id'])->where('account_t
                   <?php if (app(\Illuminate\Contracts\Auth\Access\Gate::class)->check('incentives_create')): ?>
                   <a href="javascript:void(0);" data-action="<?php echo e(route('riders.incentive' , $result['id'])); ?>" class='dropdown-item show-modal' data-size="xl" data-title="Incentive">
                     Incentive
+                  </a>
+                  <?php endif; ?>
+                  <?php if (app(\Illuminate\Contracts\Auth\Access\Gate::class)->check('payment_create')): ?>
+                  <a href="javascript:void(0);" data-action="<?php echo e(route('riders.payment' , $result['id'])); ?>" class='dropdown-item show-modal' data-size="xl" data-title="Payment">
+                    Payment
                   </a>
                   <?php endif; ?>
                 </div>

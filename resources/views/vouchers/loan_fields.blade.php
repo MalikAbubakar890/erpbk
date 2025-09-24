@@ -63,8 +63,7 @@ $rider_account = \App\Models\Accounts::where('ref_id', $rider->id)->first();
     <div class="row">
         <div class="form-group col-md-3">
             <label for="exampleInputEmail1">Select Account</label>
-            <input type="hidden" name="account_id[]" value="{{ \App\Helpers\HeadAccount::ADVANCE_LOAN }}" />
-            {!! Form::select('account_id[]', $accounts, \App\Helpers\HeadAccount::ADVANCE_LOAN, ['class' => 'form-select form-select-sm select2', 'disabled' => true]) !!}
+            {!! Form::select('account_id[]', $bank_accounts, null, ['class' => 'form-select form-select-sm select2', ]) !!}
         </div>
         <div class="form-group col-md-4">
             <label>Narration</label>

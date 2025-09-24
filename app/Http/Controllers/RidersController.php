@@ -714,7 +714,9 @@ class RidersController extends AppBaseController
   {
     $rider = Riders::find($rider_id);
     $account = Accounts::where('ref_id', $rider_id)->where('account_type', 'expense')->first();
-    return view('riders.visaloan-modal', compact('rider', 'account'));
+    $accounts = Accounts::dropdown(null);
+    $bank_accounts = Accounts::bankAccountsDropdown();
+    return view('riders.visaloan-modal', compact('rider', 'account', 'accounts', 'bank_accounts'));
   }
 
   public function advanceloan($rider_id)
@@ -722,7 +724,8 @@ class RidersController extends AppBaseController
     $rider = Riders::find($rider_id);
     $account = Accounts::where('ref_id', $rider_id)->where('account_type', 'expense')->first();
     $accounts = Accounts::dropdown(null);
-    return view('riders.advanceloan-modal', compact('rider', 'account', 'accounts'));
+    $bank_accounts = Accounts::bankAccountsDropdown();
+    return view('riders.advanceloan-modal', compact('rider', 'account', 'accounts', 'bank_accounts'));
   }
 
   public function files($rider_id, FilesDataTable $filesDataTable)
@@ -1060,7 +1063,8 @@ class RidersController extends AppBaseController
     $rider = Riders::find($rider_id);
     $account = Accounts::where('ref_id', $rider_id)->where('account_type', 'expense')->first();
     $accounts = Accounts::dropdown(null);
-    return view('riders.cod-modal', compact('rider', 'account', 'accounts'));
+    $bank_accounts = Accounts::bankAccountsDropdown();
+    return view('riders.cod-modal', compact('rider', 'account', 'accounts', 'bank_accounts'));
   }
 
   public function penalty($rider_id)
@@ -1068,7 +1072,8 @@ class RidersController extends AppBaseController
     $rider = Riders::find($rider_id);
     $account = Accounts::where('ref_id', $rider_id)->where('account_type', 'expense')->first();
     $accounts = Accounts::dropdown(null);
-    return view('riders.penalty-modal', compact('rider', 'account', 'accounts'));
+    $bank_accounts = Accounts::bankAccountsDropdown();
+    return view('riders.penalty-modal', compact('rider', 'account', 'accounts', 'bank_accounts'));
   }
 
   public function storecod(Request $request)
@@ -1318,7 +1323,17 @@ class RidersController extends AppBaseController
     $rider = Riders::find($rider_id);
     $account = Accounts::where('ref_id', $rider_id)->where('account_type', 'expense')->first();
     $accounts = Accounts::dropdown(null);
-    return view('riders.incentive-modal', compact('rider', 'account', 'accounts'));
+    $bank_accounts = Accounts::bankAccountsDropdown();
+    return view('riders.incentive-modal', compact('rider', 'account', 'accounts', 'bank_accounts'));
+  }
+
+  public function payment($rider_id)
+  {
+    $rider = Riders::find($rider_id);
+    $account = Accounts::where('ref_id', $rider_id)->where('account_type', 'expense')->first();
+    $accounts = Accounts::dropdown(null);
+    $bank_accounts = Accounts::bankAccountsDropdown();
+    return view('riders.payment-modal', compact('rider', 'account', 'accounts', 'bank_accounts'));
   }
 
   public function storeincentive(Request $request)
