@@ -251,7 +251,6 @@
                     </a>
                 </div>
                 <div class="action-buttons">
-                    @can('rider_create')
                     <div class="action-dropdown-container">
                         <button class="action-dropdown-btn" id="addRiderDropdownBtn">
                             <i class="ti ti-plus"></i>
@@ -259,6 +258,8 @@
                             <i class="ti ti-chevron-down"></i>
                         </button>
                         <div class="action-dropdown-menu" id="addRiderDropdown">
+
+                            @can('rider_create')
                             <a class="action-dropdown-item" href="{{ route('riders.create') }}">
                                 <i class="ti ti-user-plus"></i>
                                 <div>
@@ -266,6 +267,7 @@
                                     <div class="action-dropdown-item-desc">Add a new rider to the system</div>
                                 </div>
                             </a>
+                            @endcan
                             <a class="action-dropdown-item show-modal" href="javascript:void(0);" data-size="sm" data-title="Import Today Attendance" data-action="{{ route('rider.attendance_import') }}">
                                 <i class="ti ti-calendar-check"></i>
                                 <div>
@@ -289,7 +291,6 @@
                             </a>
                         </div>
                     </div>
-                    @endcan
                 </div>
             </div>
         </div>

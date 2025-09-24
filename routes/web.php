@@ -103,6 +103,7 @@ Route::middleware(['auth', 'web'])->group(function () {
   Route::post('VisaExpense/createInstallmentPlan', [\App\Http\Controllers\VisaexpenseController::class, 'createInstallmentPlan'])->name('VisaExpense.createInstallmentPlan');
   Route::post('VisaExpense/payInstallment', [\App\Http\Controllers\VisaexpenseController::class, 'payInstallment'])->name('VisaExpense.payInstallment');
   Route::post('VisaExpense/updateInstallmentField', [\App\Http\Controllers\VisaexpenseController::class, 'updateInstallmentField'])->name('VisaExpense.updateInstallmentField');
+  Route::post('VisaExpense/finalizePayment', [\App\Http\Controllers\VisaexpenseController::class, 'finalizePayment'])->name('VisaExpense.finalizePayment');
   Route::get('VisaExpense/deleteInstallment/{id}', [\App\Http\Controllers\VisaexpenseController::class, 'deleteInstallment'])->name('VisaExpense.deleteInstallment');
   Route::get('VisaExpense/generateInstallmentInvoice/{riderId}', [\App\Http\Controllers\VisaexpenseController::class, 'generateInstallmentInvoice'])->name('VisaExpense.generateInstallmentInvoice');
   Route::get('VisaExpense/autoMarkInstallments/{riderId?}', [\App\Http\Controllers\VisaexpenseController::class, 'autoMarkInstallmentsAsPaid'])->name('VisaExpense.autoMarkInstallments');

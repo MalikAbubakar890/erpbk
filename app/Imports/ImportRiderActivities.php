@@ -98,8 +98,6 @@ class ImportRiderActivities implements ToCollection
               $ret = $activity_exist->update($data); // ✅ Update on model instance
             }
           }
-
-
         }
         DB::commit();
       } catch (QueryException $e) {
@@ -108,5 +106,4 @@ class ImportRiderActivities implements ToCollection
       }
     }
   }
-
 }

@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Installment Plan Invoice - {{ $rider->name }}</title>
+    <title>Installment Plan Invoice - <?php echo e($rider->name); ?></title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -225,7 +225,7 @@
 
         <!-- Invoice Header -->
         <div class="invoice-header">
-            <div class="company-image"><img src="{{ asset('assets/img/logo.png') }}" alt="Company Logo" style="width: 37px; height: 31px;"><span style="font-size: 32px; font-weight: bold;">{{config('variables.templateName')}}</span></div>
+            <div class="company-image"><img src="<?php echo e(asset('assets/img/logo.png')); ?>" alt="Company Logo" style="width: 37px; height: 31px;"><span style="font-size: 32px; font-weight: bold;"><?php echo e(config('variables.templateName')); ?></span></div>
             <div class="invoice-title">Loan Installment Plan Invoice</div>
 
         </div>
@@ -236,30 +236,30 @@
                 <h4>Rider Information</h4>
                 <div class="detail-row">
                     <span class="detail-label">Name:</span>
-                    <span>{{ $rider->name }}</span>
+                    <span><?php echo e($rider->name); ?></span>
                 </div>
                 <div class="detail-row">
                     <span class="detail-label">Rider ID:</span>
-                    <span>{{ $rider->rider_id }}</span>
+                    <span><?php echo e($rider->rider_id); ?></span>
                 </div>
                 <div class="detail-row">
                     <span class="detail-label">Contact:</span>
-                    <span>{{ $rider->contact_no ?? 'N/A' }}</span>
+                    <span><?php echo e($rider->contact_no ?? 'N/A'); ?></span>
                 </div>
                 <div class="detail-row">
                     <span class="detail-label">Account ID:</span>
-                    <span>{{ $installments->first()->rider_id }}</span>
+                    <span><?php echo e($installments->first()->rider_id); ?></span>
                 </div>
             </div>
             <div class="invoice-details" style="text-align: end;">
                 <h4>Invoice Details</h4>
                 <div class="detail-row">
                     <span class="detail-label">Invoice #:</span>
-                    <span>INV-{{ str_pad($installments->first()->id, 6, '0', STR_PAD_LEFT) }}</span>
+                    <span>INV-<?php echo e(str_pad($installments->first()->id, 6, '0', STR_PAD_LEFT)); ?></span>
                 </div>
                 <div class="detail-row">
                     <span class="detail-label">Date Created:</span>
-                    <span>{{ $installments->first()->created_at->format('M d, Y') }}</span>
+                    <span><?php echo e($installments->first()->created_at->format('M d, Y')); ?></span>
                 </div>
             </div>
 
@@ -278,23 +278,23 @@
                 </tr>
             </thead>
             <tbody>
-                @foreach($installments as $index => $installment)
+                <?php $__currentLoopData = $installments; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $index => $installment): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                 <tr>
-                    <td>{{ $index + 1 }}</td>
-                    <td>{{ \Carbon\Carbon::parse($installment->date)->format('d M, Y') }}</td>
-                    <td>{{ \Carbon\Carbon::parse($installment->billing_month)->format('F Y') }}</td>
-                    <td colspan="2">Installment {{ $index + 1 }}</td>
-                    <td>{{ $installment->status === 'paid' ? 'Paid' : 'Pending' }}</td>
-                    <td class="">AED {{ number_format($installment->amount, 2) }}</td>
+                    <td><?php echo e($index + 1); ?></td>
+                    <td><?php echo e(\Carbon\Carbon::parse($installment->date)->format('d M, Y')); ?></td>
+                    <td><?php echo e(\Carbon\Carbon::parse($installment->billing_month)->format('F Y')); ?></td>
+                    <td colspan="2">Installment <?php echo e($index + 1); ?></td>
+                    <td><?php echo e($installment->status === 'paid' ? 'Paid' : 'Pending'); ?></td>
+                    <td class="">AED <?php echo e(number_format($installment->amount, 2)); ?></td>
                 </tr>
-                @endforeach
+                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                 <tr>
                     <td></td>
-                    <td style="font-weight: bold;">Total Installments:{{ $installments->count() }}</td>
+                    <td style="font-weight: bold;">Total Installments:<?php echo e($installments->count()); ?></td>
                     <td></td>
                     <td colspan="2" style="text-align: center; font-weight: bold;">Total Amount:</td>
                     <td></td>
-                    <td style="font-weight: bold;">AED {{ number_format($installments->sum('amount'), 2) }}</td>
+                    <td style="font-weight: bold;">AED <?php echo e(number_format($installments->sum('amount'), 2)); ?></td>
                 </tr>
             </tbody>
         </table>
@@ -314,7 +314,7 @@
                     <div class="signature-line"></div>
                     <div class="signature-label">
                         <strong>Rider Signature</strong><br>
-                        <small>{{ $rider->name }}</small><br>
+                        <small><?php echo e($rider->name); ?></small><br>
                     </div>
                 </div>
 
@@ -322,7 +322,7 @@
                     <div class="signature-line"></div>
                     <div class="signature-label">
                         <strong>Authorized Signature</strong><br>
-                        <small>{{ auth()->user()->name ?? 'Company Representative' }}</small><br>
+                        <small><?php echo e(auth()->user()->name ?? 'Company Representative'); ?></small><br>
                     </div>
                 </div>
             </div>
@@ -355,4 +355,4 @@
     </script>
 </body>
 
-</html>
+</html><?php /**PATH D:\xammp1\htdocs\erpbk\resources\views/visa_expenses/installmentInvoice.blade.php ENDPATH**/ ?>

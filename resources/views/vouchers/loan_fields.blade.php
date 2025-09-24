@@ -28,11 +28,6 @@ $rider_account = \App\Models\Accounts::where('ref_id', $rider->id)->first();
             <label>Cr Amount</label>
             <input type="number" step="any" name="cr_amount[]" class="form-control cr_amount" placeholder="Paid Amount" onchange="getTotal();">
         </div> --}}
-    <div class="form-group col-md-1 d-flex align-items-end">
-        <button type="button" class="btn btn-danger btn-sm btn-remove-row" disabled title="Cannot delete first row">
-            <i class="fa fa-trash"></i>
-        </button>
-    </div>
 </div>
 <div id="rows-container" class="mb-3" style="width: 100%;">
     @isset($data)
@@ -49,12 +44,6 @@ $rider_account = \App\Models\Accounts::where('ref_id', $rider->id)->first();
         <div class="form-group col-md-2">
             <label>Amount</label>
             <input type="number" step="any" name="dr_amount[]" value="{{$entry->debit}}" class="form-control  dr_amount" onchange="getTotal();" placeholder="Paid Amount">
-        </div>
-
-        <div class="form-group col-md-1 d-flex align-items-end">
-            <button type="button" class="btn btn-danger btn-sm btn-remove-row">
-                <i class="fa fa-trash"></i>
-            </button>
         </div>
     </div>
     @endforeach
@@ -73,23 +62,11 @@ $rider_account = \App\Models\Accounts::where('ref_id', $rider->id)->first();
             <label>Amount</label>
             <input type="number" step="any" name="dr_amount[]" class="form-control dr_amount" placeholder="Loan Amount" onchange="getTotal();" required readonly>
         </div>
-        <div class="form-group col-md-1 d-flex align-items-end">
-            <button type="button" class="btn btn-danger btn-sm btn-remove-row" disabled title="Cannot delete last row">
-                <i class="fa fa-trash"></i>
-            </button>
-        </div>
     </div>
     @endisset
 </div>
 
-<!-- Add Row Button -->
-<div class="row mb-3">
-    <div class="col-md-12 text-center">
-        <button type="button" class="btn btn-success btn-sm" id="add-row-btn">
-            <i class="fa fa-plus"></i> Add New Row
-        </button>
-    </div>
-</div>
+
 
 <script>
     $(document).ready(function() {

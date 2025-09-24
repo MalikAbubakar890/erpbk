@@ -516,9 +516,7 @@ class VisaexpenseController extends AppBaseController
 
     public function payInstallment(Request $request)
     {
-        if (!auth()->user()->hasPermissionTo('visaexpense_pay')) {
-            abort(403, 'Unauthorized action.');
-        }
+
 
         $validated = $request->validate([
             'installment_id' => 'required|exists:visa_installment_plans,id'
@@ -705,6 +703,364 @@ class VisaexpenseController extends AppBaseController
         } catch (\Exception $e) {
             DB::rollBack();
             Flash::error('Error updating installment: ' . $e->getMessage());
+            return redirect()->back();
+        }
+    }
+
+    public function finalizePayment(Request $request)
+    {
+        if (!auth()->user()->hasPermissionTo('visaexpense_edit')) {
+            abort(403, 'Unauthorized action.');
+        }
+
+        $validated = $request->validate([
+            'changes' => 'nullable|string',
+            'deletions' => 'nullable|string',
+            'additions' => 'nullable|string',
+        ]);
+
+        $changes = $request->filled('changes') ? json_decode($validated['changes'], true) : [];
+        $deletions = $request->filled('deletions') ? json_decode($validated['deletions'], true) : [];
+        $additions = $request->filled('additions') ? json_decode($validated['additions'], true) : [];
+        if ((!is_array($changes) || empty($changes)) && (empty($deletions) || !is_array($deletions)) && (empty($additions) || !is_array($additions))) {
+            \Flash::warning('Nothing to finalize.');
+            return redirect()->back();
+        }
+
+        try {
+            \DB::beginTransaction();
+
+            $firstRiderId = null;
+            $sumPendingVisibleDelta = 0.0;
+
+            foreach ($changes as $installmentId => $newAmount) {
+                if (!is_numeric($installmentId)) {
+                    throw new \InvalidArgumentException('Invalid installment id provided.');
+                }
+                if (!is_numeric($newAmount) || $newAmount <= 0) {
+                    throw new \InvalidArgumentException('Invalid amount provided for installment ' . $installmentId . '.');
+                }
+
+                /** @var \App\Models\visa_installment_plan $installment */
+                $installment = visa_installment_plan::findOrFail($installmentId);
+
+                if ($installment->status === visa_installment_plan::STATUS_PAID) {
+                    throw new \RuntimeException('Cannot edit a paid installment (ID: ' . $installmentId . ').');
+                }
+
+                $firstRiderId = $firstRiderId ?: $installment->rider_id;
+
+                // Accounts context
+                $riderAccount = Accounts::findOrFail($installment->rider_id);
+                $liabilityAccount = Accounts::where('ref_id', $riderAccount->ref_id)
+                    ->where('account_type', 'Liability')
+                    ->where('parent_id', 1)
+                    ->first();
+
+                $rider = Riders::findOrFail($riderAccount->ref_id);
+
+                // Existing values
+                $oldAmount = (float) $installment->amount;
+
+                // Update installment amount
+                $installment->amount = (float) $newAmount;
+                $installment->updated_by = auth()->user()->id;
+                $installment->save();
+                $sumPendingVisibleDelta += ((float)$newAmount - (float)$oldAmount);
+
+                // Ensure billing month format for downstream updates
+                $billingMonth = $installment->billing_month;
+                if (strlen($billingMonth) <= 7) {
+                    $billingMonth = $billingMonth . '-01';
+                }
+
+                // Update or create voucher
+                $voucher = Vouchers::where('ref_id', $installment->id)
+                    ->where('voucher_type', 'VL')
+                    ->first();
+
+                if ($voucher) {
+                    $voucher->amount = (float) $newAmount;
+                    $voucher->updated_by = auth()->user()->id;
+                    $voucher->save();
+                } else {
+                    $trans_code = Account::trans_code();
+                    $trans_date = Carbon::parse($installment->date ?? Carbon::today());
+
+                    $voucher = Vouchers::create([
+                        'rider_id' => $rider->id,
+                        'trans_date' => $trans_date,
+                        'trans_code' => $trans_code,
+                        'billing_month' => $billingMonth,
+                        'payment_type' => 1,
+                        'voucher_type' => 'VL',
+                        'remarks' => $rider->rider_id . ' - ' . $rider->name . ' - visa loan installment',
+                        'amount' => (float) $newAmount,
+                        'Created_By' => auth()->user()->id,
+                        'ref_id' => $installment->id,
+                    ]);
+
+                    // Create transactions for the voucher
+                    $TransactionService = new TransactionService();
+                    $TransactionService->recordTransaction([
+                        'account_id' => $liabilityAccount?->id,
+                        'reference_id' => $installment->id,
+                        'reference_type' => 'VL',
+                        'trans_code' => $trans_code,
+                        'trans_date' => $trans_date,
+                        'narration' => $rider->rider_id . ' - ' . $rider->name . ' - deducting installment - ' . $installment->billing_month,
+                        'debit' => (float) $newAmount,
+                        'billing_month' => $billingMonth,
+                        'created_by' => auth()->user()->id,
+                    ]);
+
+                    $TransactionService->recordTransaction([
+                        'account_id' => $riderAccount->id,
+                        'reference_id' => $installment->id,
+                        'reference_type' => 'VL',
+                        'trans_code' => $trans_code,
+                        'trans_date' => $trans_date,
+                        'narration' => $rider->rider_id . ' - ' . $rider->name . ' - deducting installment - ' . $installment->billing_month,
+                        'credit' => (float) $newAmount,
+                        'billing_month' => $billingMonth,
+                    ]);
+                }
+
+                // Update transactions (if existed prior)
+                $transactions = Transactions::where('reference_id', $installment->id)
+                    ->where('reference_type', 'VL')
+                    ->get();
+
+                foreach ($transactions as $transaction) {
+                    if ($transaction->credit > 0) {
+                        $transaction->credit = (float) $newAmount;
+                    } else {
+                        $transaction->debit = (float) $newAmount;
+                    }
+                    $transaction->updated_at = now();
+                    $transaction->save();
+                }
+
+                // Update or insert ledger entry for liability account
+                if ($liabilityAccount) {
+                    $ledgerEntry = \DB::table('ledger_entries')
+                        ->where('account_id', $liabilityAccount->id)
+                        ->where('billing_month', $billingMonth)
+                        ->first();
+
+                    if ($ledgerEntry) {
+                        \DB::table('ledger_entries')
+                            ->where('account_id', $liabilityAccount->id)
+                            ->where('billing_month', $billingMonth)
+                            ->update([
+                                'debit_balance' => (float) $newAmount,
+                                'closing_balance' => (float) $ledgerEntry->opening_balance + (float) $newAmount,
+                                'updated_at' => now(),
+                            ]);
+                    } else {
+                        $lastLedger = \DB::table('ledger_entries')
+                            ->where('account_id', $liabilityAccount->id)
+                            ->orderBy('billing_month', 'desc')
+                            ->first();
+                        $opening_balance = $lastLedger ? (float) $lastLedger->closing_balance : 0.00;
+                        \DB::table('ledger_entries')->insert([
+                            'account_id' => $liabilityAccount->id,
+                            'billing_month' => $billingMonth,
+                            'opening_balance' => $opening_balance,
+                            'debit_balance' => (float) $newAmount,
+                            'credit_balance' => 0.00,
+                            'closing_balance' => $opening_balance + (float) $newAmount,
+                            'created_at' => now(),
+                            'updated_at' => now(),
+                        ]);
+                    }
+                }
+            }
+
+            // Apply deletions if any
+            if (is_array($deletions) && !empty($deletions)) {
+                foreach ($deletions as $deleteId) {
+                    /** @var \App\Models\visa_installment_plan $inst */
+                    $inst = visa_installment_plan::findOrFail($deleteId);
+                    if ($inst->status === visa_installment_plan::STATUS_PAID) {
+                        throw new \RuntimeException('Cannot delete a paid installment (ID: ' . $deleteId . ').');
+                    }
+
+                    $firstRiderId = $firstRiderId ?: $inst->rider_id;
+
+                    // Delete related vouchers and transactions
+                    Vouchers::where('ref_id', $inst->id)
+                        ->where('voucher_type', 'VL')
+                        ->delete();
+                    Transactions::where('reference_id', $inst->id)
+                        ->where('reference_type', 'VL')
+                        ->delete();
+
+                    // Delete related ledger entries for the liability account for that billing month
+                    $riderAccount = Accounts::findOrFail($inst->rider_id);
+                    $liabilityAccount = Accounts::where('ref_id', $riderAccount->ref_id)
+                        ->where('account_type', 'Liability')
+                        ->where('parent_id', 1)
+                        ->first();
+                    if ($liabilityAccount) {
+                        \DB::table('ledger_entries')
+                            ->where('account_id', $liabilityAccount->id)
+                            ->where('billing_month', $inst->billing_month)
+                            ->delete();
+                    }
+
+                    $inst->delete();
+                }
+            }
+
+            // Create additions if any
+            if (is_array($additions) && !empty($additions)) {
+                // Determine context from any existing installment
+                $contextInstallment = null;
+                if (!empty($changes)) {
+                    $firstChangeId = array_key_first($changes);
+                    $contextInstallment = visa_installment_plan::find($firstChangeId);
+                }
+                if (!$contextInstallment && !empty($deletions)) {
+                    $contextInstallment = visa_installment_plan::find($deletions[0]);
+                }
+                if (!$contextInstallment) {
+                    $contextInstallment = visa_installment_plan::first();
+                }
+                if (!$contextInstallment) {
+                    throw new \RuntimeException('Unable to determine rider for new installment.');
+                }
+
+                $firstRiderId = $firstRiderId ?: $contextInstallment->rider_id;
+                $riderAccount = Accounts::findOrFail($contextInstallment->rider_id);
+                $liabilityAccount = Accounts::where('ref_id', $riderAccount->ref_id)
+                    ->where('account_type', 'Liability')
+                    ->where('parent_id', 1)
+                    ->first();
+                $rider = Riders::findOrFail($riderAccount->ref_id);
+                $existingTotalAmount = (float) (visa_installment_plan::where('rider_id', $contextInstallment->rider_id)->value('total_amount') ?? 0);
+
+                foreach ($additions as $addition) {
+                    $amount = isset($addition['amount']) ? (float) $addition['amount'] : null;
+                    $bm = $addition['billing_month'] ?? null; // 'YYYY-MM'
+                    $date = $addition['date'] ?? null; // 'YYYY-MM-DD'
+                    if (!$amount || $amount <= 0 || !$bm) {
+                        throw new \InvalidArgumentException('Invalid addition payload.');
+                    }
+                    if (!$date) {
+                        $date = Carbon::parse($bm . '-01')->copy()->addMonth()->day(10)->format('Y-m-d');
+                    }
+
+                    $installment = visa_installment_plan::create([
+                        'rider_id' => $contextInstallment->rider_id,
+                        'billing_month' => $bm,
+                        'amount' => $amount,
+                        'total_amount' => $existingTotalAmount,
+                        'status' => visa_installment_plan::STATUS_PENDING,
+                        'date' => $date,
+                        'created_by' => auth()->user()->id,
+                    ]);
+
+                    // Create voucher and transactions for the new installment
+                    $trans_code = Account::trans_code();
+                    $trans_date = Carbon::parse($date);
+                    $billingMonthFull = strlen($bm) <= 7 ? $bm . '-01' : $bm;
+
+                    Vouchers::create([
+                        'rider_id' => $rider->id,
+                        'trans_date' => $trans_date,
+                        'trans_code' => $trans_code,
+                        'billing_month' => $billingMonthFull,
+                        'payment_type' => 1,
+                        'voucher_type' => 'VL',
+                        'remarks' => $rider->rider_id . ' - ' . $rider->name . ' - visa loan installment (new)',
+                        'amount' => $amount,
+                        'Created_By' => auth()->user()->id,
+                        'ref_id' => $installment->id,
+                    ]);
+
+                    $TransactionService = new TransactionService();
+                    if ($liabilityAccount) {
+                        $TransactionService->recordTransaction([
+                            'account_id' => $liabilityAccount->id,
+                            'reference_id' => $installment->id,
+                            'reference_type' => 'VL',
+                            'trans_code' => $trans_code,
+                            'trans_date' => $trans_date,
+                            'narration' => $rider->rider_id . ' - ' . $rider->name . ' - deducting installment - ' . $bm,
+                            'debit' => $amount,
+                            'billing_month' => $billingMonthFull,
+                            'created_by' => auth()->user()->id,
+                        ]);
+
+                        // Update or insert ledger entry for liability
+                        $ledgerEntry = \DB::table('ledger_entries')
+                            ->where('account_id', $liabilityAccount->id)
+                            ->where('billing_month', $billingMonthFull)
+                            ->first();
+                        if ($ledgerEntry) {
+                            \DB::table('ledger_entries')
+                                ->where('account_id', $liabilityAccount->id)
+                                ->where('billing_month', $billingMonthFull)
+                                ->update([
+                                    'debit_balance' => (float) $amount,
+                                    'closing_balance' => (float) $ledgerEntry->opening_balance + (float) $amount,
+                                    'updated_at' => now(),
+                                ]);
+                        } else {
+                            $lastLedger = \DB::table('ledger_entries')
+                                ->where('account_id', $liabilityAccount->id)
+                                ->orderBy('billing_month', 'desc')
+                                ->first();
+                            $opening_balance = $lastLedger ? (float) $lastLedger->closing_balance : 0.00;
+                            \DB::table('ledger_entries')->insert([
+                                'account_id' => $liabilityAccount->id,
+                                'billing_month' => $billingMonthFull,
+                                'opening_balance' => $opening_balance,
+                                'debit_balance' => (float) $amount,
+                                'credit_balance' => 0.00,
+                                'closing_balance' => $opening_balance + (float) $amount,
+                                'created_at' => now(),
+                                'updated_at' => now(),
+                            ]);
+                        }
+                    }
+
+                    // Credit rider account
+                    $TransactionService->recordTransaction([
+                        'account_id' => $riderAccount->id,
+                        'reference_id' => $installment->id,
+                        'reference_type' => 'VL',
+                        'trans_code' => $trans_code,
+                        'trans_date' => $trans_date,
+                        'narration' => $rider->rider_id . ' - ' . $rider->name . ' - deducting installment - ' . $bm,
+                        'credit' => $amount,
+                        'billing_month' => $billingMonthFull,
+                    ]);
+                }
+            }
+
+            // Server-side validation: paid + pending must equal required total
+            if ($firstRiderId) {
+                $totalAmount = (float) visa_installment_plan::where('rider_id', $firstRiderId)->value('total_amount') ?? 0.0;
+                $paidTotal = (float) visa_installment_plan::where('rider_id', $firstRiderId)->where('status', 'paid')->sum('amount');
+                $pendingTotal = (float) visa_installment_plan::where('rider_id', $firstRiderId)->where('status', 'pending')->sum('amount');
+                $combined = $paidTotal + $pendingTotal;
+                if (abs($totalAmount - $combined) > 0.009) {
+                    throw new \RuntimeException('Totals mismatch after finalize. Please adjust amounts to match the required total.');
+                }
+            }
+
+            \DB::commit();
+
+            \Flash::success('Payment finalized. Changes saved and vouchers updated successfully.');
+            if ($firstRiderId) {
+                return redirect()->route('VisaExpense.installmentPlan', $firstRiderId);
+            }
+            return redirect()->back();
+        } catch (\Exception $e) {
+            \DB::rollBack();
+            \Flash::error('Error finalizing payment: ' . $e->getMessage());
             return redirect()->back();
         }
     }

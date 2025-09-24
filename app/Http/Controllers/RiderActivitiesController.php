@@ -17,7 +17,7 @@ use Maatwebsite\Excel\Facades\Excel;
 
 class RiderActivitiesController extends AppBaseController
 {
-    use GlobalPagination;
+  use GlobalPagination;
   /** @var RiderActivitiesRepository $riderActivitiesRepository*/
   private $riderActivitiesRepository;
 
@@ -31,8 +31,8 @@ class RiderActivitiesController extends AppBaseController
    */
   public function index(Request $request)
   {
-    $perPage = (int) $request->input('per_page', 50);
-    $perPage = $perPage > 0 ? $perPage : 50;
+    // Use global pagination trait
+    $paginationParams = $this->getPaginationParams($request, $this->getDefaultPerPage());
 
     $query = RiderActivities::query()
       ->orderBy('id', 'desc');
@@ -82,7 +82,7 @@ class RiderActivitiesController extends AppBaseController
     }
 
     // Apply pagination using the trait
-        $data = $this->applyPagination($query, $paginationParams);
+    $data = $this->applyPagination($query, $paginationParams);
 
     // Dropdown data
     $riders = DB::table('riders')
