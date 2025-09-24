@@ -1,6 +1,6 @@
-<?php echo Form::open(['route' => ['riders.update', $rider->id], 'method' => 'PUT', 'id'=>'formajax']); ?>
+<?php echo Form::open(['url' => route('riders.storeitems', $rider->id), 'method' => 'POST', 'id'=>'formajax']); ?>
 
-<input type="hidden" name="rider_id" value="<?php echo e($rider->id); ?>" />
+<?php echo csrf_field(); ?>
 <div class="card-body">
     <div class="row">
         <?php echo $__env->make('riders.itemsfields', \Illuminate\Support\Arr::except(get_defined_vars(), ['__data', '__path']))->render(); ?>
@@ -8,7 +8,43 @@
 </div>
 <div class="card-footer bg-light border-top">
     <div class="d-flex justify-content-end gap-3">
-        <button type="submit" class="btn btn-primary px-4">Save Information</button>
+        <button type="submit" class="btn btn-primary px-4">Save Items</button>
     </div>
 </div>
-<?php echo Form::close(); ?><?php /**PATH D:\xammp1\htdocs\erpbk\resources\views/riders/additems.blade.php ENDPATH**/ ?>
+<?php echo Form::close(); ?>
+
+
+<script>
+    $(document).ready(function() {
+        $('#formajax').on('submit', function(e) {
+            e.preventDefault();
+
+            var form = $(this);
+            var url = form.attr('action');
+
+            $.ajax({
+                type: "POST",
+                url: url,
+                data: form.serialize(),
+                success: function(response) {
+                    if (response.success) {
+                        toastr.success(response.message);
+                        // Refresh the items list or close modal
+                        if (typeof refreshItemsList === 'function') {
+                            refreshItemsList();
+                        }
+                        $('.modal').modal('hide');
+                    } else {
+                        toastr.error(response.message);
+                    }
+                },
+                error: function(xhr) {
+                    if (xhr.responseJSON && xhr.responseJSON.message) {
+                        toastr.error(xhr.responseJSON.message);
+                    } else {
+                        toastr.error('An error occurred while saving items');
+                    }
+                }
+            });
+        });
+    });<?php /**PATH D:\xammp1\htdocs\erpbk\resources\views/riders/additems.blade.php ENDPATH**/ ?>

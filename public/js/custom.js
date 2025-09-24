@@ -341,3 +341,6 @@ $('#edit-icon').on('click', function() {
     $('#photo-upload-form').fadeToggle('fast');
 });
 
+
+
+

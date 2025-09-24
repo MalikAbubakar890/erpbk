@@ -155,6 +155,11 @@ Route::middleware(['auth', 'web'])->group(function () {
   Route::get('riders/files/{id}', [\App\Http\Controllers\RidersController::class, 'files'])->name('rider.files');
   Route::get('riders/items/{id}', [\App\Http\Controllers\RidersController::class, 'items'])->name('rider.items');
   Route::get('riders/additems/{id}', [\App\Http\Controllers\RidersController::class, 'additems'])->name('riders.additems');
+  Route::post('riders/storeitems/{id}', [\App\Http\Controllers\RidersController::class, 'storeitems'])->name('riders.storeitems');
+  Route::post('riders/{rider_id}/additem', [\App\Http\Controllers\RidersController::class, 'additem'])->name('riders.additem');
+  Route::get('riders/{rider_id}/edititem/{item_id}', [\App\Http\Controllers\RidersController::class, 'edititem'])->name('riders.edititem');
+  Route::post('riders/{rider_id}/updateitem/{item_id}', [\App\Http\Controllers\RidersController::class, 'updateitem'])->name('riders.updateitem');
+  Route::delete('riders/{rider_id}/deleteitem/{item_id}', [\App\Http\Controllers\RidersController::class, 'deleteitem'])->name('riders.deleteitem');
   Route::get('riders/createitems/{id}', [\App\Http\Controllers\RidersController::class, 'createitems'])->name('riders.createitems');
   Route::get('riders/visaloan/{id}', [\App\Http\Controllers\RidersController::class, 'visaloan'])->name('riders.visaloan');
   Route::get('riders/advanceloan/{id}', [\App\Http\Controllers\RidersController::class, 'advanceloan'])->name('riders.advanceloan');

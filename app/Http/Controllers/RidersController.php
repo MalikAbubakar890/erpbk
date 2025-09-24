@@ -693,6 +693,208 @@ class RidersController extends AppBaseController
     $rider = $this->ridersRepository->find($rider_id);
     return view('riders.additems', compact('rider'));
   }
+
+  public function storeitems(Request $request, $rider_id)
+  {
+    $rider = $this->ridersRepository->find($rider_id);
+
+    if (empty($rider)) {
+      return response()->json([
+        'success' => false,
+        'message' => 'Rider not found'
+      ], 404);
+    }
+
+    try {
+      if ($request->items) {
+        $items = $request->items;
+        $duplicates = [];
+        $usedItems = [];
+
+        // Check for duplicates in the submitted items
+        foreach ($items['id'] as $key => $val) {
+          if ($val != 0) {
+            if (in_array($val, $usedItems)) {
+              $duplicates[] = $val;
+            }
+            $usedItems[] = $val;
+          }
+        }
+
+        // Check for existing items
+        foreach ($usedItems as $itemId) {
+          $existingItem = RiderItemPrice::where('RID', $rider_id)
+            ->where('item_id', $itemId)
+            ->first();
+          if ($existingItem) {
+            $duplicates[] = $itemId;
+          }
+        }
+
+        if (!empty($duplicates)) {
+          $duplicateItems = \App\Models\Items::whereIn('id', array_unique($duplicates))->pluck('name');
+          return response()->json([
+            'success' => false,
+            'message' => 'The following items are duplicates or already assigned: ' . implode(', ', $duplicateItems->toArray())
+          ], 422);
+        }
+
+        // If no duplicates, proceed with saving
+        foreach ($items['id'] as $key => $val) {
+          if ($val != 0) {
+            $riderItemPrice = new RiderItemPrice();
+            $riderItemPrice->item_id = $val;
+            $riderItemPrice->price = $items['price'][$key] ?? 0;
+            $riderItemPrice->RID = $rider_id;
+            $riderItemPrice->save();
+          }
+        }
+
+        return response()->json([
+          'success' => true,
+          'message' => 'Items added successfully'
+        ]);
+      }
+    } catch (\Exception $e) {
+      return response()->json([
+        'success' => false,
+        'message' => 'Error adding items: ' . $e->getMessage()
+      ], 500);
+    }
+  }
+
+  /**
+   * Add a single item for a rider (inline add)
+   */
+  public function additem(Request $request, $rider_id)
+  {
+    try {
+      $request->validate([
+        'item_id' => 'required|integer|min:1',
+        'price' => 'required|numeric|min:0',
+      ]);
+
+      $rider = $this->ridersRepository->find($rider_id);
+      if (empty($rider)) {
+        return response()->json([
+          'success' => false,
+          'message' => 'Rider not found'
+        ], 404);
+      }
+
+      // Check duplicate in DB
+      $exists = RiderItemPrice::where('RID', $rider_id)
+        ->where('item_id', $request->item_id)
+        ->exists();
+
+      if ($exists) {
+        return response()->json([
+          'success' => false,
+          'message' => 'This item is already assigned to the rider'
+        ], 422);
+      }
+
+      $rip = new RiderItemPrice();
+      $rip->RID = $rider_id;
+      $rip->item_id = (int) $request->item_id;
+      $rip->price = (float) $request->price;
+      $rip->save();
+
+      $item = \App\Models\Items::find($rip->item_id);
+
+      return response()->json([
+        'success' => true,
+        'message' => 'Item added successfully',
+        'data' => [
+          'id' => $rip->id,
+          'item_id' => $rip->item_id,
+          'item_name' => $item->name ?? 'Item',
+          'price' => $rip->price,
+        ]
+      ]);
+    } catch (\Exception $e) {
+      return response()->json([
+        'success' => false,
+        'message' => 'Error adding item: ' . $e->getMessage()
+      ], 500);
+    }
+  }
+
+  public function edititem($rider_id, $item_id)
+  {
+    try {
+      $riderItem = RiderItemPrice::where('RID', $rider_id)
+        ->where('id', $item_id)
+        ->firstOrFail();
+
+      return response()->json([
+        'success' => true,
+        'data' => $riderItem
+      ]);
+    } catch (\Exception $e) {
+      return response()->json([
+        'success' => false,
+        'message' => 'Item not found'
+      ], 404);
+    }
+  }
+
+  public function updateitem(Request $request, $rider_id, $item_id)
+  {
+    try {
+      // Check if item already exists for this rider
+      $existingItem = RiderItemPrice::where('RID', $rider_id)
+        ->where('item_id', $request->item_id)
+        ->where('id', '!=', $item_id)
+        ->first();
+
+      if ($existingItem) {
+        return response()->json([
+          'success' => false,
+          'message' => 'This item is already assigned to the rider'
+        ], 422);
+      }
+
+      $riderItem = RiderItemPrice::where('RID', $rider_id)
+        ->where('id', $item_id)
+        ->firstOrFail();
+
+      $riderItem->item_id = $request->item_id;
+      $riderItem->price = $request->price;
+      $riderItem->save();
+
+      return response()->json([
+        'success' => true,
+        'message' => 'Item updated successfully'
+      ]);
+    } catch (\Exception $e) {
+      return response()->json([
+        'success' => false,
+        'message' => 'Error updating item: ' . $e->getMessage()
+      ], 500);
+    }
+  }
+
+  public function deleteitem($rider_id, $item_id)
+  {
+    try {
+      $riderItem = RiderItemPrice::where('RID', $rider_id)
+        ->where('id', $item_id)
+        ->firstOrFail();
+
+      $riderItem->delete();
+
+      return response()->json([
+        'success' => true,
+        'message' => 'Item deleted successfully'
+      ]);
+    } catch (\Exception $e) {
+      return response()->json([
+        'success' => false,
+        'message' => 'Error deleting item: ' . $e->getMessage()
+      ], 500);
+    }
+  }
   public function attendance($rider_id, RiderAttendanceDataTable $riderAttendanceDataTable)
   {
     return $riderAttendanceDataTable->with(['rider_id' => $rider_id])->render('riders.attendance');

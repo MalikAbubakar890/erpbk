@@ -1,12 +1,12 @@
-﻿@extends('layouts.app')
+﻿
 
-@section('title','Traffic Fine Details')
-@section('content')
+<?php $__env->startSection('title','Traffic Fine Details'); ?>
+<?php $__env->startSection('content'); ?>
 <section class="content-header">
     <div class="container-fluid">
         <div class="row mb-2">
             <div class="col-sm-6">
-                <h3>Traffic Fine Ticket #{{ $data->ticket_no }}</h3>
+                <h3>Traffic Fine Ticket #<?php echo e($data->ticket_no); ?></h3>
             </div>
             <div class="col-sm-6">
                 <div class="modal modal-default filtetmodal fade" id="createaccount" tabindex="-1" data-bs-backdrop="static" role="dialog" aria-hidden="true">
@@ -17,8 +17,8 @@
                                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                             </div>
                             <div class="modal-body">
-                                <form action="{{ route('rtaFines.accountcreate') }}" method="POST">
-                                    @csrf
+                                <form action="<?php echo e(route('rtaFines.accountcreate')); ?>" method="POST">
+                                    <?php echo csrf_field(); ?>
                                     <div class="row">
                                         <div class="form-group col-md-12">
                                             <label for="name">Name</label>
@@ -39,7 +39,7 @@
 </section>
 
 <div class="content px-3">
-    @include('flash::message')
+    <?php echo $__env->make('flash::message', \Illuminate\Support\Arr::except(get_defined_vars(), ['__data', '__path']))->render(); ?>
     <div class="clearfix"></div>
     <div class="row">
         <div class="col-xl-3 col-md-3 col-lg-5 order-1 order-md-0">
@@ -48,7 +48,7 @@
                     <div class="user-avatar-section">
                         <div class=" d-flex align-items-center flex-column">
                             <div class="user-info text-center">
-                                <h6>{{ $accounts->name }}</h6>
+                                <h6><?php echo e($accounts->name); ?></h6>
                             </div>
                         </div>
                     </div>
@@ -57,19 +57,19 @@
                         <ul class="list-unstyled mb-6">
                             <ul class="p-0 mb-3">
                                 <li class="list-group-item pb-1">
-                                    <b>Account Code:</b> <span class="float-right">{{ $accounts->account_code }}</span>
+                                    <b>Account Code:</b> <span class="float-right"><?php echo e($accounts->account_code); ?></span>
                                 </li>
 
                                 <li class="list-group-item pb-1">
-                                    <b>Account Type:</b> <span class="float-right">{{ $accounts->account_type }}</span>
+                                    <b>Account Type:</b> <span class="float-right"><?php echo e($accounts->account_type); ?></span>
                                 </li>
                                 <li class="list-group-item pb-1">
                                     <b>Status:</b> <span class="float-right">
-                                        @if($accounts->status == '1')
+                                        <?php if($accounts->status == '1'): ?>
                                         <span class="badge  bg-success">Active</span></span>
-                                    @else
+                                    <?php else: ?>
                                     <span class="badge  bg-success">Active</span></span>
-                                    @endif
+                                    <?php endif; ?>
                                 </li>
                             </ul>
                         </ul>
@@ -91,62 +91,62 @@
                             <table class="table table-striped">
                                 <tr>
                                     <th>Ticket Number</th>
-                                    <td class="text-end">{{ $data->ticket_no }}</td>
+                                    <td class="text-end"><?php echo e($data->ticket_no); ?></td>
                                 </tr>
                                 <tr>
                                     <th>Rider name</th>
-                                    @php
+                                    <?php
                                     $rider_account = DB::table('riders')->where('id', $data->rider_id)->first();
                                     if ($rider_account) {
                                     $rider = $rider_account;
                                     } else {
                                     $rider = DB::table('accounts')->where('ref_name', 'Rider')->where('id', $data->rider_id)->first();
                                     }
-                                    @endphp
-                                    <td class="text-end">{{ $rider->name ?? '-' }}</td>
+                                    ?>
+                                    <td class="text-end"><?php echo e($rider->name ?? '-'); ?></td>
                                 </tr>
                                 <tr>
                                     <th>Bike Number</th>
-                                    <td class="text-end">{{ $data->plate_no }}</td>
+                                    <td class="text-end"><?php echo e($data->plate_no); ?></td>
                                 </tr>
                                 <tr>
                                     <th>Credit Account</th>
-                                    <td class="text-end">{{ $accounts->name }}</td>
+                                    <td class="text-end"><?php echo e($accounts->name); ?></td>
                                 </tr>
                                 <tr>
                                     <th>Transaction Date</th>
-                                    <td class="text-end">{{ $data->trip_date }}</td>
+                                    <td class="text-end"><?php echo e($data->trip_date); ?></td>
                                 </tr>
                                 <tr>
                                     <th>Transaction Time</th>
-                                    <td class="text-end">{{ $data->trip_time }}</td>
+                                    <td class="text-end"><?php echo e($data->trip_time); ?></td>
                                 </tr>
                                 <tr>
                                     <th>Service Charges</th>
-                                    <td class="text-end">AED {{ number_format($accounts->account_tax , 2) }}</td>
+                                    <td class="text-end">AED <?php echo e(number_format($accounts->account_tax , 2)); ?></td>
                                 </tr>
                                 <tr>
                                     <th>Fine</th>
-                                    <td class="text-end">AED {{ number_format($data->amount , 2)  }}</td>
+                                    <td class="text-end">AED <?php echo e(number_format($data->amount , 2)); ?></td>
                                 </tr>
                                 <tr>
                                     <th>Total Amount</th>
-                                    <td class="text-end">AED {{ number_format($accounts->account_tax + $data->amount, 2)  }}</td>
+                                    <td class="text-end">AED <?php echo e(number_format($accounts->account_tax + $data->amount, 2)); ?></td>
                                 </tr>
                                 <tr>
                                     <th>View Files</th>
-                                    @php
+                                    <?php
                                     $fileUrl = asset('storage/' . $data->attachment_path);
-                                    @endphp
-                                    <td class="text-end"> <a target="_blank" href="{{ $fileUrl }}">View File</a> </td>
+                                    ?>
+                                    <td class="text-end"> <a target="_blank" href="<?php echo e($fileUrl); ?>">View File</a> </td>
                                 </tr>
                                 <tr>
                                     <th></th>
-                                    @if($data->status == 'paid')
+                                    <?php if($data->status == 'paid'): ?>
                                     <td class="text-end"><a href="javascript:void(0);" class="btn btn-action btn-success">Paid</a> </td>
-                                    @else
+                                    <?php else: ?>
                                     <td class="text-end"><a href="javascript:void(0);" data-bs-toggle="modal" data-bs-target="#payfine" class="btn btn-action btn-primary">Proceed to Pay Fine</a> </td>
-                                    @endif
+                                    <?php endif; ?>
                                 </tr>
                             </table>
                         </div>
@@ -165,19 +165,19 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body" id="searchTopbody">
-                <form enctype="multipart/form-data" action="{{ route('rtaFines.payfine') }}" method="POST">
-                    @csrf
-                    <input type="hidden" name="id" value="{{ $data->id }}">
-                    <input type="hidden" name="rider_id" value="{{ $rider->rider_id }}">
-                    <input type="hidden" name="trans_date" value="{{ $data->trans_date }}">
-                    <input type="hidden" name="trans_code" value="{{ $data->trans_code }}">
-                    <input type="hidden" name="billing_month" value="{{ $data->billing_month }}">
-                    <input type="hidden" name="payment_type" value="{{ $accounts->account_type }}">
+                <form enctype="multipart/form-data" action="<?php echo e(route('rtaFines.payfine')); ?>" method="POST">
+                    <?php echo csrf_field(); ?>
+                    <input type="hidden" name="id" value="<?php echo e($data->id); ?>">
+                    <input type="hidden" name="rider_id" value="<?php echo e($rider->rider_id); ?>">
+                    <input type="hidden" name="trans_date" value="<?php echo e($data->trans_date); ?>">
+                    <input type="hidden" name="trans_code" value="<?php echo e($data->trans_code); ?>">
+                    <input type="hidden" name="billing_month" value="<?php echo e($data->billing_month); ?>">
+                    <input type="hidden" name="payment_type" value="<?php echo e($accounts->account_type); ?>">
                     <input type="hidden" name="voucher_type" value="RFV">
-                    <input type="hidden" name="amount" value="{{ $data->total_amount }}">
-                    <input type="hidden" name="Created_By" value="{{ Auth::user()->id }}">
+                    <input type="hidden" name="amount" value="<?php echo e($data->total_amount); ?>">
+                    <input type="hidden" name="Created_By" value="<?php echo e(Auth::user()->id); ?>">
                     <div class="row">
-                        @include('rta_fines.voucherfield', ['data' => $data])
+                        <?php echo $__env->make('rta_fines.voucherfield', ['data' => $data], \Illuminate\Support\Arr::except(get_defined_vars(), ['__data', '__path']))->render(); ?>
                         <div class="col-md-12 form-group text-center">
                             <button type="submit" class="btn btn-primary pull-right mt-3"><i class="fa fa-filter mx-2"></i> Submit</button>
                         </div>
@@ -187,8 +187,8 @@
         </div>
     </div>
 </div>
-@endsection
-@section('page-script')
+<?php $__env->stopSection(); ?>
+<?php $__env->startSection('page-script'); ?>
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
 <script type="text/javascript">
@@ -215,4 +215,5 @@
         });
     });
 </script>
-@endsection
+<?php $__env->stopSection(); ?>
+<?php echo $__env->make('layouts.app', \Illuminate\Support\Arr::except(get_defined_vars(), ['__data', '__path']))->render(); ?><?php /**PATH D:\xammp1\htdocs\erpbk\resources\views/rta_fines/viewvoucher.blade.php ENDPATH**/ ?>
