@@ -96,7 +96,7 @@
                         Import Voucher
                     </a>
                     <?php $__currentLoopData = App\Helpers\General::VoucherType(); $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $key => $value): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
-                    <?php if($key !== 'RFV' && $key !== 'LV' && $key !== 'VL' && $key !== 'SV' && $key !== 'AL'): ?>
+                    <?php if($key !== 'RFV' && $key !== 'LV' && $key !== 'VL' && $key !== 'SV' && $key !== 'AL' && $key !== 'INC' && $key !== 'PN' && $key !== 'PAY' && $key !== 'COD'): ?>
                     <a class="show-modal action-btn btn btn-primary" style="margin-right:5px;"
                         href="javascript:void(0);"
                         data-size="xl"
