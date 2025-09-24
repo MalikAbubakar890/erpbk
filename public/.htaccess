@@ -5,9 +5,9 @@
 
     RewriteEngine On
 
-    # Cloudways HTTPS Fix
+    # Cloudways HTTPS Fix - preserve method/body with 307
     RewriteCond %{HTTP:X-Forwarded-Proto} !https
-    RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+    RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=307]
 
     # Handle Authorization Header
     RewriteCond %{HTTP:Authorization} .
