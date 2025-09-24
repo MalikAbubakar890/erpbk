@@ -735,20 +735,15 @@ class RidersController extends AppBaseController
 
   public function sendEmail($id, Request $request)
   {
-
     if ($request->isMethod('post')) {
-
       $data = [
         'html' => $request->email_message
       ];
       /* $res = RiderInvoices::with(['riderInv_item'])->where('id', $id)->get();
       $pdf = \PDF::loadView('invoices.rider_invoices.show', ['res' => $res]); */
-
       $fileName = $id . "_monthly_activity_{$request->month}.xlsx";
       $filePath = storage_path("app/public/{$fileName}");
-
       Excel::store(new MonthlyActivityExport($id, $request->month), "public/{$fileName}");
-
       Mail::send('emails.general', $data, function ($message) use ($request, $filePath) {
         $message->to([$request->email_to]);
         $message->cc(env('ADMIN_CC_EMAIL'));
@@ -946,7 +941,7 @@ class RidersController extends AppBaseController
       $request->validate([
         'account_id' => 'required|array|min:2',
         'account_id.*' => 'required|integer',
-        'dr_amount' => 'required|array|min:2',
+        'dr_amount' => 'required|array',
         'dr_amount.*' => 'required|numeric|min:0',
         'narration' => 'required|array|min:2',
         'narration.*' => 'required|string',
@@ -1001,7 +996,7 @@ class RidersController extends AppBaseController
       $debitTransaction = [
         'account_id' => $riderAccountId,
         'reference_id' => $voucher->id,
-        'reference_type' => 'Voucher',
+        'reference_type' => 'AL',
         'trans_code' => $transCode,
         'trans_date' => $voucherData['trans_date'],
         'narration' => $request->narration[0] ?? 'Advance Loan Received',
@@ -1016,7 +1011,7 @@ class RidersController extends AppBaseController
       $creditTransaction = [
         'account_id' => $creditAccountId,
         'reference_id' => $voucher->id,
-        'reference_type' => 'Voucher',
+        'reference_type' => 'AL',
         'trans_code' => $transCode,
         'trans_date' => $voucherData['trans_date'],
         'narration' => $request->narration[1] ?? 'Advance Loan Given to ' . $riderAccount->name,
@@ -1085,7 +1080,7 @@ class RidersController extends AppBaseController
       $request->validate([
         'account_id' => 'required|array|min:2',
         'account_id.*' => 'required|integer',
-        'dr_amount' => 'required|array|min:2',
+        'dr_amount' => 'required|array',
         'dr_amount.*' => 'required|numeric|min:0',
         'narration' => 'required|array|min:2',
         'narration.*' => 'required|string',
@@ -1140,7 +1135,7 @@ class RidersController extends AppBaseController
       $debitTransaction = [
         'account_id' => $riderAccountId,
         'reference_id' => $voucher->id,
-        'reference_type' => 'Voucher',
+        'reference_type' => 'COD',
         'trans_code' => $transCode,
         'trans_date' => $voucherData['trans_date'],
         'narration' => $request->narration[0] ?? 'COD Amount Received',
@@ -1155,7 +1150,7 @@ class RidersController extends AppBaseController
       $creditTransaction = [
         'account_id' => $creditAccountId,
         'reference_id' => $voucher->id,
-        'reference_type' => 'Voucher',
+        'reference_type' => 'COD',
         'trans_code' => $transCode,
         'trans_date' => $voucherData['trans_date'],
         'narration' => $request->narration[1] ?? 'COD Amount Given to ' . $riderAccount->name,
@@ -1206,7 +1201,7 @@ class RidersController extends AppBaseController
       $request->validate([
         'account_id' => 'required|array|min:2',
         'account_id.*' => 'required|integer',
-        'dr_amount' => 'required|array|min:2',
+        'dr_amount' => 'required|array',
         'dr_amount.*' => 'required|numeric|min:0',
         'narration' => 'required|array|min:2',
         'narration.*' => 'required|string',
@@ -1243,7 +1238,7 @@ class RidersController extends AppBaseController
       // Create voucher entry
       $voucherData = [
         'trans_date' => $request->trans_date ?? date('Y-m-d'),
-        'voucher_type' => 'PENALTY', // Penalty
+        'voucher_type' => 'PN', // Penalty
         'payment_type' => $request->payment_type ?? 1, // Default to Cash
         'payment_from' => HeadAccount::PENALTY_ACCOUNT,
         'billing_month' => date('Y-m-01'),
@@ -1261,7 +1256,7 @@ class RidersController extends AppBaseController
       $debitTransaction = [
         'account_id' => $riderAccountId,
         'reference_id' => $voucher->id,
-        'reference_type' => 'Voucher',
+        'reference_type' => 'PN',
         'trans_code' => $transCode,
         'trans_date' => $voucherData['trans_date'],
         'narration' => $request->narration[0] ?? 'Penalty Amount Received',
@@ -1276,7 +1271,7 @@ class RidersController extends AppBaseController
       $creditTransaction = [
         'account_id' => $creditAccountId,
         'reference_id' => $voucher->id,
-        'reference_type' => 'Voucher',
+        'reference_type' => 'PN',
         'trans_code' => $transCode,
         'trans_date' => $voucherData['trans_date'],
         'narration' => $request->narration[1] ?? 'Penalty Amount Given to ' . $riderAccount->name,
@@ -1336,6 +1331,127 @@ class RidersController extends AppBaseController
     return view('riders.payment-modal', compact('rider', 'account', 'accounts', 'bank_accounts'));
   }
 
+  public function storepayment(Request $request)
+  {
+    try {
+      \DB::beginTransaction();
+
+      // Validate the request
+      $request->validate([
+        'account_id' => 'required|array|min:2',
+        'account_id.*' => 'required|integer',
+        'dr_amount' => 'required|array',
+        'dr_amount.*' => 'required|numeric|min:0',
+        'narration' => 'required|array|min:2',
+        'narration.*' => 'required|string',
+      ]);
+
+      // Get rider account (first entry should be the rider's liability account)
+      $riderAccountId = $request->account_id[0];
+
+      if (empty($riderAccountId)) {
+        throw new \Exception('Rider account ID is required');
+      }
+
+      $riderAccount = Accounts::find($riderAccountId);
+
+      if (!$riderAccount) {
+        throw new \Exception('Rider account not found with ID: ' . $riderAccountId);
+      }
+
+      // Get the second account (credit account - should be Payment account)
+      $creditAccountId = $request->account_id[1];
+
+      // Get amounts
+      $riderAmount = $request->dr_amount[0] ?? 0;
+      $creditAmount = $request->dr_amount[1] ?? 0;
+
+      // Use the first amount for both entries if only one amount is provided
+      if ($creditAmount == 0) {
+        $creditAmount = $riderAmount;
+      }
+
+      // Generate transaction code
+      $transCode = \App\Helpers\Account::trans_code();
+
+      // Create voucher entry
+      $voucherData = [
+        'trans_date' => $request->trans_date ?? date('Y-m-d'),
+        'voucher_type' => 'PAY', // Payment
+        'payment_type' => $request->payment_type ?? 1, // Default to Cash
+        'payment_from' => HeadAccount::PAYMENT_ACCOUNT,
+        'billing_month' => date('Y-m-01'),
+        'amount' => $riderAmount,
+        'remarks' => 'Payment Amount to Rider',
+        'ref_id' => $riderAccount->ref_id, // Rider ID
+        'trans_code' => $transCode,
+        'Created_By' => auth()->id(),
+        'status' => 1
+      ];
+
+      $voucher = Vouchers::create($voucherData);
+
+      // Create debit transaction for rider account (first entry)
+      $debitTransaction = [
+        'account_id' => $riderAccountId,
+        'reference_id' => $voucher->id,
+        'reference_type' => 'PAY',
+        'trans_code' => $transCode,
+        'trans_date' => $voucherData['trans_date'],
+        'narration' => $request->narration[0] ?? 'Payment Amount Received',
+        'debit' => $riderAmount,
+        'billing_month' => $voucherData['billing_month'],
+        'Created_By' => auth()->id()
+      ];
+
+      Transactions::create($debitTransaction);
+
+      // Create credit transaction for payment account (second entry)
+      $creditTransaction = [
+        'account_id' => $creditAccountId,
+        'reference_id' => $voucher->id,
+        'reference_type' => 'PAY',
+        'trans_code' => $transCode,
+        'trans_date' => $voucherData['trans_date'],
+        'narration' => $request->narration[1] ?? 'Payment Amount Given to ' . $riderAccount->name,
+        'credit' => $creditAmount,
+        'billing_month' => $voucherData['billing_month'],
+        'Created_By' => auth()->id()
+      ];
+
+      Transactions::create($creditTransaction);
+
+      \DB::commit();
+
+      // Return success response
+      return response()->json([
+        'success' => true,
+        'message' => 'Payment amount recorded successfully',
+        'voucher_id' => $voucher->id,
+        'trans_code' => $transCode
+      ]);
+    } catch (\Exception $e) {
+      \DB::rollback();
+
+      // Log the request data for debugging
+      \Log::error('Payment error', [
+        'request_data' => $request->all(),
+        'error' => $e->getMessage(),
+        'trace' => $e->getTraceAsString()
+      ]);
+
+      return response()->json([
+        'success' => false,
+        'message' => 'Error recording payment amount: ' . $e->getMessage(),
+        'debug' => [
+          'account_ids' => $request->account_id ?? 'not provided',
+          'dr_amounts' => $request->dr_amount ?? 'not provided',
+          'narrations' => $request->narration ?? 'not provided'
+        ]
+      ], 500);
+    }
+  }
+
   public function storeincentive(Request $request)
   {
     try {
@@ -1345,7 +1461,7 @@ class RidersController extends AppBaseController
       $request->validate([
         'account_id' => 'required|array|min:2',
         'account_id.*' => 'required|integer',
-        'dr_amount' => 'required|array|min:2',
+        'dr_amount' => 'required|array',
         'dr_amount.*' => 'required|numeric|min:0',
         'narration' => 'required|array|min:2',
         'narration.*' => 'required|string',
@@ -1382,7 +1498,7 @@ class RidersController extends AppBaseController
       // Create voucher entry
       $voucherData = [
         'trans_date' => $request->trans_date ?? date('Y-m-d'),
-        'voucher_type' => 'INCENTIVE', // Incentive
+        'voucher_type' => 'INC', // Incentive
         'payment_type' => $request->payment_type ?? 1, // Default to Cash
         'payment_from' => HeadAccount::INCENTIVE_ACCOUNT,
         'billing_month' => date('Y-m-01'),
@@ -1400,7 +1516,7 @@ class RidersController extends AppBaseController
       $debitTransaction = [
         'account_id' => $creditAccountId,
         'reference_id' => $voucher->id,
-        'reference_type' => 'Voucher',
+        'reference_type' => 'INC',
         'trans_code' => $transCode,
         'trans_date' => $voucherData['trans_date'],
         'narration' => $request->narration[0] ?? 'Incentive Amount Received',
@@ -1415,7 +1531,7 @@ class RidersController extends AppBaseController
       $creditTransaction = [
         'account_id' => $riderAccountId,
         'reference_id' => $voucher->id,
-        'reference_type' => 'Voucher',
+        'reference_type' => 'INC',
         'trans_code' => $transCode,
         'trans_date' => $voucherData['trans_date'],
         'narration' => $request->narration[1] ?? 'Incentive Amount Given to ' . $riderAccount->name,

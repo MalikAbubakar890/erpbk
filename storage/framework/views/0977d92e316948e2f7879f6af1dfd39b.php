@@ -66,6 +66,10 @@ $voucherType = request("vt");
     <?php ($accounts = \App\Models\Accounts::dropdown(null)); ?>
     <?php echo $__env->make("vouchers.visaloan_fields", ['bank_accounts' => $bank_accounts ?? \App\Models\Accounts::bankAccountsDropdown()], \Illuminate\Support\Arr::except(get_defined_vars(), ['__data', '__path']))->render(); ?>
     <?php endif; ?>
+    <?php if($voucherType == 'PAYMENT'): ?>
+    <?php ($accounts = \App\Models\Accounts::dropdown(null)); ?>
+    <?php echo $__env->make("vouchers.payment_fields", ['bank_accounts' => $bank_accounts ?? \App\Models\Accounts::bankAccountsDropdown()], \Illuminate\Support\Arr::except(get_defined_vars(), ['__data', '__path']))->render(); ?>
+    <?php endif; ?>
 
     
 </div>
@@ -77,9 +81,6 @@ $voucherType = request("vt");
     <div class="col-md-2 content-right mt-1">Total:&nbsp;<a href="javascript:void(0);" onclick="getTotal();" class="btn btn-default btn-sm"><i class="fa fa-refresh"></i></a></div>
     <div class="form-group col-md-2">
         <input type="number" class="form-control " id="total_dr" readonly placeholder="Total Dr">
-    </div>
-    <div class="form-group col-md-2">
-        <input type="number" class="form-control " id="total_cr" readonly placeholder="Total Cr">
     </div>
 </div>
 

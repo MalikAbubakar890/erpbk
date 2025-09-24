@@ -38,8 +38,8 @@
             <textarea name="narration[]" class="form-control" rows="10" placeholder="Incentive Amount Received" style="height: 40px !important;">Incentive Amount Received</textarea>
         </div>
         <div class="form-group col-md-2">
-            <label>Amount</label>
-            <input type="number" step="any" name="dr_amount[]" class="form-control dr_amount" placeholder="Incentive Amount" onchange="getTotal();" required>
+            <label>Amount (Dr)</label>
+            <input type="number" step="any" name="dr_amount[]" class="form-control dr_amount main_amount" placeholder="Incentive Amount" onchange="getTotal();" required>
         </div>
     </div>
     <div id="rows-container" class="mb-3" style="width: 100%;">
@@ -66,7 +66,7 @@
         <div class="row">
             <div class="form-group col-md-3">
                 <label for="exampleInputEmail1">Select Account</label>
-                <?php echo Form::select('account_id[]', $accounts, null, ['class' => 'form-select form-select-sm select2']); ?>
+                <?php echo Form::select('account_id[]', $bank_accounts ?? \App\Models\Accounts::bankAccountsDropdown(), null, ['class' => 'form-select form-select-sm select2']); ?>
 
             </div>
             <div class="form-group col-md-4">
@@ -74,8 +74,8 @@
                 <textarea name="narration[]" class="form-control" rows="10" placeholder="Incentive Amount Given" style="height: 40px !important;">Incentive Amount Given to <?php echo e($rider->name ?? 'Rider'); ?></textarea>
             </div>
             <div class="form-group col-md-2">
-                <label>Amount</label>
-                <input type="number" step="any" name="dr_amount[]" class="form-control dr_amount" placeholder="Incentive Amount" onchange="getTotal();" required>
+                <label>Amount (Cr)</label>
+                <input type="number" step="any" name="cr_amount[]" class="form-control cr_amount" placeholder="Incentive Amount" onchange="getTotal();" required readonly>
             </div>
         </div>
         <?php endif; ?>
@@ -93,6 +93,14 @@
         $(document).ready(function() {
             var base_url = $('#base_url').val();
             getTotal();
+
+            // Auto-copy amount from first field to second field
+            $('.main_amount').on('input', function() {
+                var amount = $(this).val();
+                // Copy to the cr_amount field (credit account)
+                $('.cr_amount').val(amount);
+                getTotal();
+            });
 
             $(".cr_amount").on("focus keyup change", function() {
                 getTotal();
@@ -132,5 +140,4 @@
                 $("#total_dr").val(dr_sum.toFixed(2));
             }
         });
-    </script>
-</div><?php /**PATH D:\xammp1\htdocs\erpbk\resources\views/vouchers/incentive_fields.blade.php ENDPATH**/ ?>
+    </script><?php /**PATH D:\xammp1\htdocs\erpbk\resources\views/vouchers/incentive_fields.blade.php ENDPATH**/ ?>

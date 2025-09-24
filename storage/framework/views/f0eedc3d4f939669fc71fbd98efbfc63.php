@@ -3,7 +3,7 @@
 
 <input type="hidden" id="reload_page" value="1">
 <div class="row">
-    <?php echo $__env->make('vouchers.penalty_fields', \Illuminate\Support\Arr::except(get_defined_vars(), ['__data', '__path']))->render(); ?>
+    <?php echo $__env->make('vouchers.penalty_fields', ['bank_accounts' => $bank_accounts], \Illuminate\Support\Arr::except(get_defined_vars(), ['__data', '__path']))->render(); ?>
 </div>
 
 <div class="card-footer">

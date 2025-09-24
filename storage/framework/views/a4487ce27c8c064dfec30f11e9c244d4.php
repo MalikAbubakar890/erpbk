@@ -87,9 +87,6 @@
         <div class="form-group col-md-2">
             <input type="number" class="form-control " id="total_dr" readonly placeholder="Total Dr">
         </div>
-        <div class="form-group col-md-2">
-            <input type="number" class="form-control " id="total_cr" readonly placeholder="Total Cr">
-        </div>
     </div>
 
     <script>

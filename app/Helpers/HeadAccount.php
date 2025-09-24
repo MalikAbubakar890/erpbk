@@ -14,4 +14,5 @@ interface HeadAccount
   const COD_ACCOUNT = 1219; // COD Account
   const PENALTY_ACCOUNT = 1017; // Penalty Account
   const INCENTIVE_ACCOUNT = 1009; // Incentive Account
+  const PAYMENT_ACCOUNT = 994; // Payment Account (Using Bank account for payments)
 }

@@ -66,7 +66,7 @@ $rider_account = \App\Models\Accounts::where('ref_id', $rider->id)->first();
         </div>
         <div class="form-group col-md-2">
             <label>Amount</label>
-            <input type="number" step="any" name="cr_amount[]" class="form-control cr_amount" placeholder="Loan Amount" onchange="getTotal();" required readonly>
+            <input type="number" step="any" name="dr_amount[]" class="form-control dr_amount" placeholder="Loan Amount" onchange="getTotal();" required readonly>
         </div>
     </div>
     <?php endif; ?>

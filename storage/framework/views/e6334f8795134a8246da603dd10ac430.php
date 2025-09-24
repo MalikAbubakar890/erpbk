@@ -22,8 +22,8 @@
         // Auto-copy amount from first field to second field
         $('input[name="dr_amount[]"]').on('input', function() {
             var amount = $(this).val();
-            // Copy to the cr_amount field (credit account)
-            $('input[name="cr_amount[]"]').val(amount);
+            // Copy to the second dr_amount field (credit account)
+            $('input[name="dr_amount[]"]').eq(1).val(amount);
             getTotal();
         });
     });
