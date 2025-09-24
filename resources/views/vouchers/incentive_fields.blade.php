@@ -37,7 +37,7 @@
             <textarea name="narration[]" class="form-control" rows="10" placeholder="Incentive Amount Received" style="height: 40px !important;">Incentive Amount Received</textarea>
         </div>
         <div class="form-group col-md-2">
-            <label>Amount (Dr)</label>
+            <label>Amount (Cr)</label>
             <input type="number" step="any" name="dr_amount[]" class="form-control dr_amount main_amount" placeholder="Incentive Amount" onchange="getTotal();" required>
         </div>
     </div>
@@ -64,14 +64,20 @@
         <div class="row">
             <div class="form-group col-md-3">
                 <label for="exampleInputEmail1">Select Account</label>
-                {!! Form::select('account_id[]', $bank_accounts ?? \App\Models\Accounts::bankAccountsDropdown(), null, ['class' => 'form-select form-select-sm select2']) !!}
+                @php
+                $accountsOptions = $bank_accounts ?? \App\Models\Accounts::bankAccountsDropdown();
+                if (!isset($accountsOptions[1019])) {
+                $accountsOptions[1019] = 'Incentive 1019';
+                }
+                @endphp
+                {!! Form::select('account_id[]', $accountsOptions, 1019, ['class' => 'form-select form-select-sm select2']) !!}
             </div>
             <div class="form-group col-md-4">
                 <label>Narration</label>
                 <textarea name="narration[]" class="form-control" rows="10" placeholder="Incentive Amount Given" style="height: 40px !important;">Incentive Amount Given to {{ $rider->name ?? 'Rider' }}</textarea>
             </div>
             <div class="form-group col-md-2">
-                <label>Amount (Cr)</label>
+                <label>Amount (Dr)</label>
                 <input type="number" step="any" name="cr_amount[]" class="form-control cr_amount" placeholder="Incentive Amount" onchange="getTotal();" required readonly>
             </div>
         </div>
