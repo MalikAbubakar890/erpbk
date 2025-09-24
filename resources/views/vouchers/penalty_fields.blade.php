@@ -70,7 +70,7 @@
                 ->pluck('name', 'id')
                 ->toArray();
                 @endphp
-                {!! Form::select('account_id[]', null, ['class' => 'form-select form-select-sm select2']) !!}
+                {!! Form::select('account_id[]', $penaltyAccounts, null, ['class' => 'form-select form-select-sm select2']) !!}
             </div>
             <div class="form-group col-md-4">
                 <label>Narration</label>
