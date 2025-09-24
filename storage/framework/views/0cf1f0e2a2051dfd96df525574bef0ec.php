@@ -1,4 +1,5 @@
 <?php $__env->startSection('page_content'); ?>
+<?php echo $__env->make('flash::message', \Illuminate\Support\Arr::except(get_defined_vars(), ['__data', '__path']))->render(); ?>
 <div class="card border">
     <div class="card-header d-flex justify-content-between align-items-center">
         <div><i class="ti ti-notes ti-sm me-1_5 me-2" style="background: #28c76f45;color: #28c76f;"></i><b>Items & Prices</b></div>
@@ -70,21 +71,25 @@
         </div>
     </div>
 </div>
-
-<?php $__env->stopSection(); ?>
-
-<?php $__env->startPush('scripts'); ?>
 <script>
     (function() {
-        var csrf = '<?php echo e(csrf_token()); ?>';
-        var riderId = {
-            {
-                $rider - > id
-            }
-        };
+        var csrf = "<?php echo e(csrf_token()); ?>";
+        var riderId = "<?php echo e($rider->id); ?>";
 
-        function alertMsg(msg) {
-            window.alert(msg);
+        function toastError(msg) {
+            if (window.toastr) {
+                toastr.error(msg);
+            } else {
+                window.alert(msg);
+            }
+        }
+
+        function toastSuccess(msg) {
+            if (window.toastr) {
+                toastr.success(msg);
+            } else {
+                window.alert(msg);
+            }
         }
 
         // Add new row
@@ -92,12 +97,8 @@
             var itemId = document.getElementById('new_item_id').value;
             var price = document.getElementById('new_price').value;
 
-            if (!itemId) {
-                return alertMsg('Please select an item');
-            }
-            if (!price || parseFloat(price) < 0) {
-                return alertMsg('Please enter a valid price');
-            }
+            if (!itemId) return toastError('Please select an item');
+            if (!price || parseFloat(price) < 0) return toastError('Please enter a valid price');
 
             fetch(`/riders/${riderId}/additem`, {
                 method: 'POST',
@@ -111,15 +112,13 @@
                     price: price
                 })
             }).then(r => r.json()).then(function(res) {
-                if (!res.success) {
-                    return alertMsg(res.message || 'Error adding');
-                }
-                location.reload();
-            }).catch(function() {
-                alertMsg('Error adding');
-            });
+                if (!res.success) return toastError(res.message || 'Error adding');
+                toastSuccess('Item added successfully');
+                location.reload(); // simple reload to reflect changes
+            }).catch(() => toastError('Error adding'));
         });
 
+        // Clear new row inputs
         document.getElementById('btn-clear-row').addEventListener('click', function() {
             document.getElementById('new_item_id').value = '';
             document.getElementById('new_price').value = '';
@@ -133,15 +132,11 @@
                 var itemId = tr.querySelector('.item-select').value;
                 var price = tr.querySelector('.item-price').value;
 
-                if (!itemId) {
-                    return alertMsg('Please select an item');
-                }
-                if (!price || parseFloat(price) < 0) {
-                    return alertMsg('Please enter a valid price');
-                }
+                if (!itemId) return toastError('Please select an item');
+                if (!price || parseFloat(price) < 0) return toastError('Please enter a valid price');
 
                 fetch(`/riders/${riderId}/updateitem/${ripId}`, {
-                    method: 'POST',
+                    method: 'POST', // or 'PUT' if route expects it
                     headers: {
                         'Content-Type': 'application/json',
                         'X-CSRF-TOKEN': csrf,
@@ -152,16 +147,24 @@
                         price: price
                     })
                 }).then(r => r.json()).then(function(res) {
-                    if (!res.success) {
-                        return alertMsg(res.message || 'Error saving');
-                    }
+                    if (!res.success) return toastError(res.message || 'Error saving');
+                    toastSuccess('Item updated successfully');
                     location.reload();
-                }).catch(function() {
-                    alertMsg('Error saving');
-                });
+                }).catch(() => toastError('Error saving'));
             });
         });
     })();
+    // Flash -> toastr
+    <?php if(session('success')): ?>
+    if (window.toastr) {
+        toastr.success(<?php echo json_encode(session('success'), 15, 512) ?>);
+    }
+    <?php endif; ?>
+    <?php if(session('error')): ?>
+    if (window.toastr) {
+        toastr.error(<?php echo json_encode(session('error'), 15, 512) ?>);
+    }
+    <?php endif; ?>
 </script>
-<?php $__env->stopPush(); ?>
+<?php $__env->stopSection(); ?>
 <?php echo $__env->make('riders.view', \Illuminate\Support\Arr::except(get_defined_vars(), ['__data', '__path']))->render(); ?><?php /**PATH D:\xammp1\htdocs\erpbk\resources\views/riders/items.blade.php ENDPATH**/ ?>

@@ -883,16 +883,11 @@ class RidersController extends AppBaseController
         ->firstOrFail();
 
       $riderItem->delete();
-
-      return response()->json([
-        'success' => true,
-        'message' => 'Item deleted successfully'
-      ]);
+      Flash::success('Rider item deleted successfully.');
+      return redirect()->back();
     } catch (\Exception $e) {
-      return response()->json([
-        'success' => false,
-        'message' => 'Error deleting item: ' . $e->getMessage()
-      ], 500);
+      Flash::error('Error deleting rider item: ' . $e->getMessage());
+      return redirect()->back();
     }
   }
   public function attendance($rider_id, RiderAttendanceDataTable $riderAttendanceDataTable)

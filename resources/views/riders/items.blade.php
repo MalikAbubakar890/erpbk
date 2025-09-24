@@ -1,5 +1,6 @@
 @extends('riders.view')
 @section('page_content')
+@include('flash::message')
 <div class="card border">
     <div class="card-header d-flex justify-content-between align-items-center">
         <div><i class="ti ti-notes ti-sm me-1_5 me-2" style="background: #28c76f45;color: #28c76f;"></i><b>Items & Prices</b></div>
@@ -71,21 +72,25 @@
         </div>
     </div>
 </div>
-
-@endsection
-
-@push('scripts')
 <script>
     (function() {
-        var csrf = '{{ csrf_token() }}';
-        var riderId = {
-            {
-                $rider - > id
-            }
-        };
+        var csrf = "{{ csrf_token() }}";
+        var riderId = "{{ $rider->id }}";
 
-        function alertMsg(msg) {
-            window.alert(msg);
+        function toastError(msg) {
+            if (window.toastr) {
+                toastr.error(msg);
+            } else {
+                window.alert(msg);
+            }
+        }
+
+        function toastSuccess(msg) {
+            if (window.toastr) {
+                toastr.success(msg);
+            } else {
+                window.alert(msg);
+            }
         }
 
         // Add new row
@@ -93,12 +98,8 @@
             var itemId = document.getElementById('new_item_id').value;
             var price = document.getElementById('new_price').value;
 
-            if (!itemId) {
-                return alertMsg('Please select an item');
-            }
-            if (!price || parseFloat(price) < 0) {
-                return alertMsg('Please enter a valid price');
-            }
+            if (!itemId) return toastError('Please select an item');
+            if (!price || parseFloat(price) < 0) return toastError('Please enter a valid price');
 
             fetch(`/riders/${riderId}/additem`, {
                 method: 'POST',
@@ -112,15 +113,13 @@
                     price: price
                 })
             }).then(r => r.json()).then(function(res) {
-                if (!res.success) {
-                    return alertMsg(res.message || 'Error adding');
-                }
-                location.reload();
-            }).catch(function() {
-                alertMsg('Error adding');
-            });
+                if (!res.success) return toastError(res.message || 'Error adding');
+                toastSuccess('Item added successfully');
+                location.reload(); // simple reload to reflect changes
+            }).catch(() => toastError('Error adding'));
         });
 
+        // Clear new row inputs
         document.getElementById('btn-clear-row').addEventListener('click', function() {
             document.getElementById('new_item_id').value = '';
             document.getElementById('new_price').value = '';
@@ -134,15 +133,11 @@
                 var itemId = tr.querySelector('.item-select').value;
                 var price = tr.querySelector('.item-price').value;
 
-                if (!itemId) {
-                    return alertMsg('Please select an item');
-                }
-                if (!price || parseFloat(price) < 0) {
-                    return alertMsg('Please enter a valid price');
-                }
+                if (!itemId) return toastError('Please select an item');
+                if (!price || parseFloat(price) < 0) return toastError('Please enter a valid price');
 
                 fetch(`/riders/${riderId}/updateitem/${ripId}`, {
-                    method: 'POST',
+                    method: 'POST', // or 'PUT' if route expects it
                     headers: {
                         'Content-Type': 'application/json',
                         'X-CSRF-TOKEN': csrf,
@@ -153,15 +148,23 @@
                         price: price
                     })
                 }).then(r => r.json()).then(function(res) {
-                    if (!res.success) {
-                        return alertMsg(res.message || 'Error saving');
-                    }
+                    if (!res.success) return toastError(res.message || 'Error saving');
+                    toastSuccess('Item updated successfully');
                     location.reload();
-                }).catch(function() {
-                    alertMsg('Error saving');
-                });
+                }).catch(() => toastError('Error saving'));
             });
         });
     })();
+    // Flash -> toastr
+    @if(session('success'))
+    if (window.toastr) {
+        toastr.success(@json(session('success')));
+    }
+    @endif
+    @if(session('error'))
+    if (window.toastr) {
+        toastr.error(@json(session('error')));
+    }
+    @endif
 </script>
-@endpush
+@endsection
