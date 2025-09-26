@@ -1244,7 +1244,7 @@ class VisaexpenseController extends AppBaseController
                     default => null,
                 };
                 $photo = $request->file('attach_file');
-                $docFile = $photo->store('vouchers');
+                $docFile = $photo->store('vouchers', 'public');
                 $remarks = $request->voucher_type === 'LV' ? 'Visa Expense Voucher' : 'Journal Voucher';
 
                 $trans_code = Account::trans_code();
