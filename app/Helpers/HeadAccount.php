@@ -15,4 +15,5 @@ interface HeadAccount
   const PENALTY_ACCOUNT = 1017; // Penalty Account
   const INCENTIVE_ACCOUNT = 1009; // Incentive Account
   const PAYMENT_ACCOUNT = 994; // Payment Account (Using Bank account for payments)
+  const VENDOR_CHARGES_ACCOUNT = 1005; // Vendor Charges Account
 }

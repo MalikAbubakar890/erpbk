@@ -590,6 +590,11 @@ $account = App\Models\Accounts::where('ref_id', $result['id'])->where('account_t
                     Payment
                   </a>
                   <?php endif; ?>
+                  <?php if (app(\Illuminate\Contracts\Auth\Access\Gate::class)->check('vendorcharges_create')): ?>
+                  <a href="javascript:void(0);" data-action="<?php echo e(route('riders.vendorcharges' , $result['id'])); ?>" class='dropdown-item show-modal' data-size="xl" data-title="Vendor Charges">
+                    Vendor Charges
+                  </a>
+                  <?php endif; ?>
                 </div>
               </div>
             </li>

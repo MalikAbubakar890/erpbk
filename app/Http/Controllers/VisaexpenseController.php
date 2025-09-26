@@ -519,7 +519,9 @@ class VisaexpenseController extends AppBaseController
                     'billing_month' => $billingMonth,
                     'payment_type' => 1, // Liability payment
                     'voucher_type' => 'VL', // Visa Loan
-                    'remarks' => 'Loan Voucher - Installment ' . ($i + 1) . ' of ' . $validated['number_of_installments'] . ' (Amount: ' . number_format($installmentAmount, 2) . ')',
+                    'remarks' => 'Loan Voucher - <b>Installment ' . ($i + 1) . '</b> of '
+                        . $validated['number_of_installments']
+                        . ' (Amount: ' . number_format($installmentAmount, 2) . ')',
                     'amount' => $installmentAmount,
                     'Created_By' => auth()->user()->id,
                     'ref_id' => $installment->id,
@@ -532,7 +534,7 @@ class VisaexpenseController extends AppBaseController
                     'reference_type' => 'VL',
                     'trans_code' => $trans_code,
                     'trans_date' => $trans_date,
-                    'narration' => $rider->rider_id . ' - ' . $rider->name . ' - deducting installment ' . ($i + 1) . ' - ' . $billingMonthFormatted . ' (Amount: ' . number_format($installmentAmount, 2) . ')',
+                    'narration' => $rider->rider_id . ' - ' . $rider->name . ' - deducting <b> installment ' . ($i + 1) . '</b> - ' . $billingMonthFormatted . ' (Amount: ' . number_format($installmentAmount, 2) . ')',
                     'debit' => $installmentAmount,
                     'billing_month' => $billingMonth,
                     'created_by' => auth()->user()->id,
@@ -545,7 +547,7 @@ class VisaexpenseController extends AppBaseController
                     'reference_type' => 'VL',
                     'trans_code' => $trans_code,
                     'trans_date' => $trans_date,
-                    'narration' => $rider->rider_id . ' - ' . $rider->name . ' - deducting installment ' . ($i + 1) . ' - ' . $billingMonthFormatted . ' (Amount: ' . number_format($installmentAmount, 2) . ')',
+                    'narration' => $rider->rider_id . ' - ' . $rider->name . ' - deducting <b> installment ' . ($i + 1) . '</b> - ' . $billingMonthFormatted . ' (Amount: ' . number_format($installmentAmount, 2) . ')',
                     'credit' => $installmentAmount,
                     'billing_month' => $billingMonth,
                 ]);
@@ -577,7 +579,7 @@ class VisaexpenseController extends AppBaseController
 
             $installmentDetails = '';
             foreach ($installmentAmounts as $index => $amount) {
-                $installmentDetails .= 'Installment ' . ($index + 1) . ': ' . number_format($amount, 2) . ', ';
+                $installmentDetails .= '<b>Installment ' . ($index + 1) . '</b>: ' . number_format($amount, 2) . ', ';
             }
             $installmentDetails = rtrim($installmentDetails, ', ');
 
@@ -733,7 +735,7 @@ class VisaexpenseController extends AppBaseController
             foreach ($transactions as $transaction) {
                 if ($validated['field'] === 'billing_month') {
                     $transaction->billing_month = $billingMonth;
-                    $transaction->narration = $rider->rider_id . ' - ' . $rider->name . ' - deducting installment - ' . $validated['value'];
+                    $transaction->narration = $rider->rider_id . ' - ' . $rider->name . ' - deducting <b> installment </b> - ' . $validated['value'];
                 } elseif ($validated['field'] === 'amount') {
                     if ($transaction->credit > 0) {
                         $transaction->credit = $validated['value'];
@@ -884,7 +886,7 @@ class VisaexpenseController extends AppBaseController
                         'reference_type' => 'VL',
                         'trans_code' => $trans_code,
                         'trans_date' => $trans_date,
-                        'narration' => $rider->rider_id . ' - ' . $rider->name . ' - deducting installment - ' . $installment->billing_month,
+                        'narration' => $rider->rider_id . ' - ' . $rider->name . ' - deducting <b> installment </b> - ' . $installment->billing_month,
                         'debit' => (float) $newAmount,
                         'billing_month' => $billingMonth,
                         'created_by' => auth()->user()->id,
@@ -896,7 +898,7 @@ class VisaexpenseController extends AppBaseController
                         'reference_type' => 'VL',
                         'trans_code' => $trans_code,
                         'trans_date' => $trans_date,
-                        'narration' => $rider->rider_id . ' - ' . $rider->name . ' - deducting installment - ' . $installment->billing_month,
+                        'narration' => $rider->rider_id . ' - ' . $rider->name . ' - deducting <b> installment </b> - ' . $installment->billing_month,
                         'credit' => (float) $newAmount,
                         'billing_month' => $billingMonth,
                     ]);

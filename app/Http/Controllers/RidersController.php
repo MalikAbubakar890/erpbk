@@ -1792,6 +1792,136 @@ class RidersController extends AppBaseController
     }
   }
 
+  public function vendorcharges($rider_id)
+  {
+    $rider = Riders::find($rider_id);
+    $account = Accounts::where('ref_id', $rider_id)->where('account_type', 'expense')->first();
+    $accounts = Accounts::dropdown(null);
+    $bank_accounts = Accounts::bankAccountsDropdown();
+    return view('riders.vendorcharges-modal', compact('rider', 'account', 'accounts', 'bank_accounts'));
+  }
+
+  public function storevendorcharges(Request $request)
+  {
+    try {
+      \DB::beginTransaction();
+
+      // Validate the request
+      $request->validate([
+        'account_id' => 'required|array|min:2',
+        'account_id.*' => 'required|integer',
+        'dr_amount' => 'required|array',
+        'dr_amount.*' => 'required|numeric|min:0',
+        'narration' => 'required|array|min:2',
+        'narration.*' => 'required|string',
+      ]);
+
+      // Get rider account (first entry should be the rider's liability account)
+      $riderAccountId = $request->account_id[0];
+
+      if (empty($riderAccountId)) {
+        throw new \Exception('Rider account ID is required');
+      }
+
+      $riderAccount = Accounts::find($riderAccountId);
+
+      if (!$riderAccount) {
+        throw new \Exception('Rider account not found with ID: ' . $riderAccountId);
+      }
+
+      // Get the second account (credit account - should be Vendor Charges account)
+      $creditAccountId = $request->account_id[1];
+
+      // Get amounts
+      $riderAmount = $request->dr_amount[0] ?? 0;
+      $creditAmount = $request->dr_amount[1] ?? 0;
+
+      // Use the first amount for both entries if only one amount is provided
+      if ($creditAmount == 0) {
+        $creditAmount = $riderAmount;
+      }
+
+      // Generate transaction code
+      $transCode = \App\Helpers\Account::trans_code();
+
+      // Create voucher entry
+      $voucherData = [
+        'trans_date' => $request->trans_date ?? date('Y-m-d'),
+        'voucher_type' => 'VC', // Vendor Charges
+        'payment_type' => $request->payment_type ?? 1, // Default to Cash
+        'payment_from' => HeadAccount::VENDOR_CHARGES_ACCOUNT,
+        'billing_month' => $this->normalizeBillingMonth($request->billing_month ?? null),
+        'amount' => $riderAmount,
+        'remarks' => 'Vendor Charges to Rider ' . $riderAccount->name,
+        'ref_id' => $riderAccount->ref_id, // Rider ID
+        'trans_code' => $transCode,
+        'Created_By' => auth()->id(),
+        'status' => 1
+      ];
+
+      $voucher = Vouchers::create($voucherData);
+
+      // Create debit transaction for rider account (first entry)
+      $debitTransaction = [
+        'account_id' => $riderAccountId,
+        'reference_id' => $voucher->id,
+        'reference_type' => 'VC',
+        'trans_code' => $transCode,
+        'trans_date' => $voucherData['trans_date'],
+        'narration' => $request->narration[0] ?? 'Vendor Charges ' . $riderAccount->name,
+        'debit' => $riderAmount,
+        'billing_month' => $voucherData['billing_month'],
+        'Created_By' => auth()->id()
+      ];
+
+      Transactions::create($debitTransaction);
+
+      // Create credit transaction for vendor charges account (second entry)
+      $creditTransaction = [
+        'account_id' => $creditAccountId,
+        'reference_id' => $voucher->id,
+        'reference_type' => 'VC',
+        'trans_code' => $transCode,
+        'trans_date' => $voucherData['trans_date'],
+        'narration' => $request->narration[1] ?? 'Vendor Charges from ' . $riderAccount->name,
+        'credit' => $creditAmount,
+        'billing_month' => $voucherData['billing_month'],
+        'Created_By' => auth()->id()
+      ];
+
+      Transactions::create($creditTransaction);
+
+      \DB::commit();
+
+      // Return success response
+      return response()->json([
+        'success' => true,
+        'message' => 'Vendor charges recorded successfully',
+        'voucher_id' => $voucher->id,
+        'trans_code' => $transCode
+      ]);
+    } catch (\Exception $e) {
+      \DB::rollback();
+
+      // Log the request data for debugging
+      \Log::error('Vendor charges error', [
+        'request_data' => $request->all(),
+        'error' => $e->getMessage(),
+        'trace' => $e->getTraceAsString()
+      ]);
+
+      return response()->json([
+        'success' => false,
+        'message' => 'Error recording vendor charges: ' . $e->getMessage(),
+        'debug' => [
+          'account_ids' => $request->account_id ?? 'not provided',
+          'dr_amounts' => $request->dr_amount ?? 'not provided',
+          'narrations' => $request->narration ?? 'not provided'
+        ]
+      ], 500);
+    }
+  }
+
   /**
    * Add new recruiter to dropdown options
    */

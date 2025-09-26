@@ -8,6 +8,7 @@ use App\Http\Requests\CreateRiderInvoicesRequest;
 use App\Http\Requests\UpdateRiderInvoicesRequest;
 use App\Http\Controllers\AppBaseController;
 use App\Imports\ImportRiderInvoice;
+use App\Imports\ImportPaidRiderInvoice;
 use App\Models\Accounts;
 use App\Models\Items;
 use App\Models\RiderInvoices;
@@ -23,7 +24,7 @@ use Maatwebsite\Excel\Facades\Excel;
 
 class RiderInvoicesController extends AppBaseController
 {
-    use GlobalPagination;
+  use GlobalPagination;
   /** @var RiderInvoicesRepository $riderInvoicesRepository*/
   private $riderInvoicesRepository;
 
@@ -38,7 +39,7 @@ class RiderInvoicesController extends AppBaseController
   public function index(Request $request)
   {
     // Use global pagination trait
-        $paginationParams = $this->getPaginationParams($request, $this->getDefaultPerPage());
+    $paginationParams = $this->getPaginationParams($request, $this->getDefaultPerPage());
 
     $query = RiderInvoices::query()
       ->orderBy('billing_month', 'desc');
@@ -69,7 +70,7 @@ class RiderInvoicesController extends AppBaseController
     }
 
     // Apply pagination using the trait
-        $data = $this->applyPagination($query, $paginationParams);
+    $data = $this->applyPagination($query, $paginationParams);
 
     // ✅ Billing month ka check for total calculation
     $billingMonth = $request->has('billing_month') && !empty($request->billing_month)
@@ -225,6 +226,34 @@ class RiderInvoicesController extends AppBaseController
     }
 
     return view('rider_invoices.import');
+  }
+
+  /**
+   * Import paid rider invoices from Excel
+   */
+  public function importPaid(Request $request)
+  {
+    if ($request->isMethod('post')) {
+      $rules = [
+        'file' => 'required|max:50000|mimes:xlsx'
+      ];
+      $message = [
+        'file.required' => 'Excel File Required'
+      ];
+
+      $this->validate($request, $rules, $message);
+
+      try {
+        Excel::import(new ImportPaidRiderInvoice(), $request->file('file'));
+        Flash::success('Paid rider invoices imported successfully.');
+      } catch (\Exception $e) {
+        Flash::error('Error importing paid invoices: ' . $e->getMessage());
+      }
+
+      return redirect()->back();
+    }
+
+    return view('rider_invoices.import_paid');
   }
 
   public function sendEmail($id, Request $request)

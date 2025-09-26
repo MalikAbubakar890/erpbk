@@ -770,6 +770,8 @@ class General
       'PN' => 'Penalty Voucher',
       'INC' => 'Incentive Voucher',
       'PAY' => 'Payment Voucher',
+      'VC' => 'Vendor Charges Voucher',
+      'RI' => 'Rider Invoice Voucher',
       /* 9 => 'Vendor Voucher',
       10 => 'Bike Rent Voucher',
       11 => 'Fuel Voucher',

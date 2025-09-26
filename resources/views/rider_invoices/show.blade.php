@@ -316,17 +316,12 @@
             $penalty = DB::table('vouchers')->where('ref_id' , $riderInvoice->rider->id)->where('voucher_type' , 'PN')->where('billing_month' , $riderInvoice->billing_month)->sum('amount');
             $incentive = DB::table('vouchers')->where('ref_id' , $riderInvoice->rider->id)->where('voucher_type' , 'INC')->where('billing_month' , $riderInvoice->billing_month)->sum('amount');
             $advance_salary = DB::table('vouchers')->where('ref_id' , $riderInvoice->rider->id)->where('voucher_type' , 'AL')->where('billing_month' , $riderInvoice->billing_month)->sum('amount');
-            $fuel_charges = DB::table('vouchers')->where('ref_id' , $riderInvoice->rider->id)->where('voucher_type' , 'FUEL')->where('billing_month' , $riderInvoice->billing_month)->sum('amount');
-            $maintenance_charges = DB::table('vouchers')->where('ref_id' , $riderInvoice->rider->id)->where('voucher_type' , 'MAINT')->where('billing_month' , $riderInvoice->billing_month)->sum('amount');
-            $overtime_bonus = DB::table('vouchers')->where('ref_id' , $riderInvoice->rider->id)->where('voucher_type' , 'OT')->where('billing_month' , $riderInvoice->billing_month)->sum('amount');
-            $performance_bonus = DB::table('vouchers')->where('ref_id' , $riderInvoice->rider->id)->where('voucher_type' , 'PB')->where('billing_month' , $riderInvoice->billing_month)->sum('amount');
-            $uniform_charges = DB::table('vouchers')->where('ref_id' , $riderInvoice->rider->id)->where('voucher_type' , 'UNI')->where('billing_month' , $riderInvoice->billing_month)->sum('amount');
-            $insurance_deduction = DB::table('vouchers')->where('ref_id' , $riderInvoice->rider->id)->where('voucher_type' , 'INS')->where('billing_month' , $riderInvoice->billing_month)->sum('amount');
+            $vendor_charges = DB::table('vouchers')->where('ref_id' , $riderInvoice->rider->id)->where('voucher_type' , 'VC')->where('billing_month' , $riderInvoice->billing_month)->sum('amount');
             $additional_row_count = 0;
             @endphp
             @php
-            $total_deductions = $fines + $salik + $cod + $penalty + $advance_salary + $fuel_charges + $maintenance_charges + $uniform_charges + $insurance_deduction;
-            $total_incentives = $incentive + $overtime_bonus + $performance_bonus;
+            $total_deductions = $fines + $salik + $cod + $penalty + $advance_salary + $vendor_charges;
+            $total_incentives = $incentive;
             // Simple logic: add all amounts except incentives (which are subtracted)
             $running_total_temp = $running_total + $total_deductions - $total_incentives;
             @endphp
@@ -453,75 +448,15 @@
             </tr>
             @endif
 
-            @if($fuel_charges > 0)
+            @if($vendor_charges > 0)
             @php
             $additional_row_count++;
-            $running_total -= $fuel_charges;
+            $running_total -= $vendor_charges;
             @endphp
             <tr>
                 <td>{{ count($riderInvoice->items) + $additional_row_count }}</td>
-                <td colspan="4">Fuel Charges</td>
-                <td class="num">{{ number_format($fuel_charges, 2) }}</td>
-                <td>0%</td>
-                <td class="num">0.00</td>
-                <td class="num">{{ number_format($running_total, 2) }}</td>
-            </tr>
-            @endif
-
-            @if($maintenance_charges > 0)
-            @php
-            $additional_row_count++;
-            $running_total -= $maintenance_charges;
-            @endphp
-            <tr>
-                <td>{{ count($riderInvoice->items) + $additional_row_count }}</td>
-                <td colspan="4">Maintenance Charges</td>
-                <td class="num">-{{ number_format($maintenance_charges, 2) }}</td>
-                <td>0%</td>
-                <td class="num">0.00</td>
-                <td class="num">{{ number_format($running_total, 2) }}</td>
-            </tr>
-            @endif
-
-            @if($overtime_bonus > 0)
-            @php
-            $additional_row_count++;
-            $running_total += $overtime_bonus;
-            @endphp
-            <tr>
-                <td>{{ count($riderInvoice->items) + $additional_row_count }}</td>
-                <td colspan="4">Overtime Bonus</td>
-                <td class="num">+{{ number_format($overtime_bonus, 2) }}</td>
-                <td>0%</td>
-                <td class="num">0.00</td>
-                <td class="num">{{ number_format($running_total, 2) }}</td>
-            </tr>
-            @endif
-
-            @if($performance_bonus > 0)
-            @php
-            $additional_row_count++;
-            $running_total += $performance_bonus;
-            @endphp
-            <tr>
-                <td>{{ count($riderInvoice->items) + $additional_row_count }}</td>
-                <td colspan="4">Performance Bonus</td>
-                <td class="num">+{{ number_format($performance_bonus, 2) }}</td>
-                <td>0%</td>
-                <td class="num">0.00</td>
-                <td class="num">{{ number_format($running_total, 2) }}</td>
-            </tr>
-            @endif
-
-            @if($uniform_charges > 0)
-            @php
-            $additional_row_count++;
-            $running_total -= $uniform_charges;
-            @endphp
-            <tr>
-                <td>{{ count($riderInvoice->items) + $additional_row_count }}</td>
-                <td colspan="4">Uniform Charges</td>
-                <td class="num">{{ number_format($uniform_charges, 2) }}</td>
+                <td colspan="4">Vendor Charges</td>
+                <td class="num">-{{ number_format($vendor_charges, 2) }}</td>
                 <td>0%</td>
                 <td class="num">0.00</td>
                 <td class="num">{{ number_format($running_total, 2) }}</td>

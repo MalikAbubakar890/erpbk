@@ -179,6 +179,8 @@ Route::middleware(['auth', 'web'])->group(function () {
   Route::post('riders/toggle-flowup/{id}', [\App\Http\Controllers\RidersController::class, 'toggleFlowup'])->name('riders.toggleFlowup');
   Route::post('riders/toggle-llicense/{id}', [\App\Http\Controllers\RidersController::class, 'toggleLlicense'])->name('riders.toggleLlicense');
   Route::post('riders/add-recruiter', [\App\Http\Controllers\RidersController::class, 'addRecruiter'])->name('riders.addRecruiter');
+  Route::get('riders/vendorcharges/{id}', [\App\Http\Controllers\RidersController::class, 'vendorcharges'])->name('riders.vendorcharges');
+  Route::post('riders/storevendorcharges', [\App\Http\Controllers\RidersController::class, 'storevendorcharges'])->name('riders.storevendorcharges');
 
 
 
@@ -206,6 +208,7 @@ Route::middleware(['auth', 'web'])->group(function () {
 
   Route::resource('riderInvoices', App\Http\Controllers\RiderInvoicesController::class);
   Route::any('rider/invoice-import', [\App\Http\Controllers\RiderInvoicesController::class, 'import'])->name('rider.invoice_import');
+  Route::any('rider/invoice-import-paid', [\App\Http\Controllers\RiderInvoicesController::class, 'importPaid'])->name('riderInvoices.importPaid');
   Route::get('search_item_price/{RID}/{itemID}', [\App\Http\Controllers\ItemsController::class, 'search_item_price']);
   Route::get('riderInvoices/delete/{id}', [\App\Http\Controllers\RiderInvoicesController::class, 'destroy'])->name('riderInvoices.delete');
 

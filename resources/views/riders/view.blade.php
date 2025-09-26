@@ -591,6 +591,11 @@ $account = App\Models\Accounts::where('ref_id', $result['id'])->where('account_t
                     Payment
                   </a>
                   @endcan
+                  @can('vendorcharges_create')
+                  <a href="javascript:void(0);" data-action="{{ route('riders.vendorcharges' , $result['id']) }}" class='dropdown-item show-modal' data-size="xl" data-title="Vendor Charges">
+                    Vendor Charges
+                  </a>
+                  @endcan
                 </div>
               </div>
             </li>

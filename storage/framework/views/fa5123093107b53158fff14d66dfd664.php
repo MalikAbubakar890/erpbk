@@ -11,7 +11,7 @@
     </div>
 </div>
 <div class="scrollbar">
-    <h5>Penalty Voucher</h5>
+    <h5>Vendor Charges Voucher</h5>
 
     <?php
     $rider_account = null;
@@ -32,11 +32,11 @@
         </div>
         <div class="form-group col-md-4">
             <label>Narration</label>
-            <textarea name="narration[]" class="form-control" rows="10" placeholder="Penalty Amount Received" style="height: 40px !important;">Penalty Amount Received</textarea>
+            <textarea name="narration[]" class="form-control" rows="10" placeholder="Vendor Charges Applied" style="height: 40px !important;">Vendor Charges Applied</textarea>
         </div>
         <div class="form-group col-md-2">
             <label>Amount (Dr)</label>
-            <input type="number" step="any" name="dr_amount[]" class="form-control dr_amount main_amount" placeholder="Penalty Amount" onchange="getTotal();" required>
+            <input type="number" step="any" name="dr_amount[]" class="form-control dr_amount main_amount" placeholder="Vendor Charges Amount" onchange="getTotal();" required>
         </div>
     </div>
     <div id="rows-container" class="mb-3" style="width: 100%;">
@@ -54,31 +54,25 @@
             </div>
             <div class="form-group col-md-2">
                 <label>Amount</label>
-                <input type="number" step="any" name="dr_amount[]" value="<?php echo e($entry->debit); ?>" class="form-control  dr_amount" onchange="getTotal();" placeholder="Penalty Amount">
+                <input type="number" step="any" name="dr_amount[]" value="<?php echo e($entry->debit); ?>" class="form-control  dr_amount" onchange="getTotal();" placeholder="Vendor Charges Amount">
             </div>
         </div>
         <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
         <?php else: ?>
-        <!-- Second row for credit account (Penalty account) -->
+        <!-- Second row for credit account (Vendor Charges account) -->
         <div class="row">
             <div class="form-group col-md-3">
                 <label for="exampleInputEmail1">Select Account</label>
-                <?php
-                $penaltyAccounts = \App\Models\Accounts::where('parent_id', 1017)
-                ->orderBy('name')
-                ->pluck('name', 'id')
-                ->toArray();
-                ?>
-                <?php echo Form::select('account_id[]', $penaltyAccounts, null, ['class' => 'form-select form-select-sm select2']); ?>
+                <?php echo Form::select('account_id[]', $accounts, \App\Helpers\HeadAccount::VENDOR_CHARGES_ACCOUNT, ['class' => 'form-select form-select-sm select2']); ?>
 
             </div>
             <div class="form-group col-md-4">
                 <label>Narration</label>
-                <textarea name="narration[]" class="form-control" rows="10" placeholder="Penalty Amount Given" style="height: 40px !important;">Penalty Amount Given to <?php echo e($rider->name ?? 'Rider'); ?></textarea>
+                <textarea name="narration[]" class="form-control" rows="10" placeholder="Vendor Charges from rider" style="height: 40px !important;">Vendor Charges from <?php echo e($rider->name ?? 'Rider'); ?></textarea>
             </div>
             <div class="form-group col-md-2">
                 <label>Amount (Cr)</label>
-                <input type="number" step="any" name="cr_amount[]" class="form-control cr_amount" placeholder="Penalty Amount" onchange="getTotal();" required readonly>
+                <input type="number" step="any" name="cr_amount[]" class="form-control cr_amount" placeholder="Vendor Charges Amount" onchange="getTotal();" required readonly>
             </div>
         </div>
         <?php endif; ?>
@@ -143,4 +137,4 @@
                 $("#total_dr").val(dr_sum.toFixed(2));
             }
         });
-    </script><?php /**PATH D:\xammp1\htdocs\erpbk\resources\views/vouchers/penalty_fields.blade.php ENDPATH**/ ?>
+    </script><?php /**PATH D:\xammp1\htdocs\erpbk\resources\views/vouchers/vendorcharges_fields.blade.php ENDPATH**/ ?>

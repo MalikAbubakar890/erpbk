@@ -126,9 +126,36 @@ class LedgerDataTable extends DataTable
           $voucher_text = '<span class="text-danger">No Voucher Found</span>';
         }
       }
+      if ($row->reference_type == 'VC') {
+        $vouchers =  DB::table('vouchers')->where('trans_code', $row->trans_code)->first();
+        if ($vouchers) {
+          $voucher_ID = $vouchers->voucher_type . '-' . str_pad($vouchers->id, 4, '0', STR_PAD_LEFT);
+          $voucher_text = '<span class="d-none">' . $voucher_ID . '</span><a href="javascript:void(0);" data-title="Voucher # ' . $voucher_ID . '" data-size="xl" data-action="' . route('vouchers.show', $vouchers->id) . '" class="no-print show-modal" >' . $voucher_ID . '</a>';
+        } else {
+          $voucher_text = '<span class="text-danger">No Voucher Found</span>';
+        }
+      }
+      if ($row->reference_type == 'AL') {
+        $vouchers =  DB::table('vouchers')->where('trans_code', $row->trans_code)->first();
+        if ($vouchers) {
+          $voucher_ID = $vouchers->voucher_type . '-' . str_pad($vouchers->id, 4, '0', STR_PAD_LEFT);
+          $voucher_text = '<span class="d-none">' . $voucher_ID . '</span><a href="javascript:void(0);" data-title="Voucher # ' . $voucher_ID . '" data-size="xl" data-action="' . route('vouchers.show', $vouchers->id) . '" class="no-print show-modal" >' . $voucher_ID . '</a>';
+        } else {
+          $voucher_text = '<span class="text-danger">No Voucher Found</span>';
+        }
+      }
       if ($row->reference_type == 'Invoice') {
         $invoice_ID = $row->reference_id;
         $voucher_text = '<span class="d-none">RD-' . $invoice_ID . '</span><a href="javascript:void(0);" data-title="Invoice # ' . $invoice_ID . '" data-size="xl" data-action="' . route('riderInvoices.show', $invoice_ID) . '" class="no-print show-modal">RD-' . $invoice_ID . '</a>';
+      }
+      if ($row->reference_type == 'RiderInvoice') {
+        $vouchers =  DB::table('vouchers')->where('trans_code', $row->trans_code)->first();
+        if ($vouchers) {
+          $voucher_ID = $vouchers->voucher_type . '-' . str_pad($vouchers->id, 4, '0', STR_PAD_LEFT);
+          $voucher_text = '<span class="d-none">' . $voucher_ID . '</span><a href="javascript:void(0);" data-title="Voucher # ' . $voucher_ID . '" data-size="xl" data-action="' . route('vouchers.show', $vouchers->id) . '" class="no-print show-modal" >' . $voucher_ID . '</a>';
+        } else {
+          $voucher_text = '<span class="text-danger">No Voucher Found</span>';
+        }
       }
       $month = "<span style='white-space: nowrap;'>" . date('M Y', strtotime($row->billing_month)) . "</span>";
       if ($row->reference_type == 'RTA') {

@@ -16,7 +16,7 @@ use Flash;
 
 class VendorsController extends AppBaseController
 {
-    use GlobalPagination;
+  use GlobalPagination;
   /** @var VendorsRepository $vendorsRepository*/
   private $vendorsRepository;
 
@@ -31,32 +31,32 @@ class VendorsController extends AppBaseController
   public function index(Request $request)
   {
     // Use global pagination trait
-        $paginationParams = $this->getPaginationParams($request, $this->getDefaultPerPage());
+    $paginationParams = $this->getPaginationParams($request, $this->getDefaultPerPage());
     $query = vendors::query()
-        ->orderBy('id', 'desc');
+      ->orderBy('id', 'desc');
     if ($request->has('name') && !empty($request->name)) {
-        $query->where('name', 'like', '%' . $request->name . '%');
+      $query->where('name', 'like', '%' . $request->name . '%');
     }
     if ($request->has('account_id') && !empty($request->account_id)) {
-        $query->where('account_id',$request->account_id);
+      $query->where('account_id', $request->account_id);
     }
     if ($request->has('status') && !empty($request->status)) {
-        $query->where('status', $request->status);
+      $query->where('status', $request->status);
     }
     // Apply pagination using the trait
-        $data = $this->applyPagination($query, $paginationParams);
+    $data = $this->applyPagination($query, $paginationParams);
     if ($request->ajax()) {
-        $tableData = view('vendors.table', [
-            'data' => $data,
-        ])->render();
-        $paginationLinks = $data->links('components.global-pagination')->render();
-        return response()->json([
-            'tableData' => $tableData,
-            'paginationLinks' => $paginationLinks,
-        ]);
+      $tableData = view('vendors.table', [
+        'data' => $data,
+      ])->render();
+      $paginationLinks = $data->links('components.global-pagination')->render();
+      return response()->json([
+        'tableData' => $tableData,
+        'paginationLinks' => $paginationLinks,
+      ]);
     }
     return view('vendors.index', [
-        'data' => $data,
+      'data' => $data,
     ]);
     return $vendorsDataTable->render('vendors.index');
   }
@@ -169,14 +169,12 @@ class VendorsController extends AppBaseController
 
     if ($vendor->transactions->count() > 0) {
       return response()->json(['errors' => ['error' => 'Vendor have transactions!']], 422);
-
     } else {
 
       if ($vendor->account) {
         $vendor->account->delete();
       }
       $this->vendorsRepository->delete($id);
-
     }
 
 

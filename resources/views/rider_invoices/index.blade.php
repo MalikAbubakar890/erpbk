@@ -17,6 +17,11 @@
                     Import Invoices
                 </a>
 
+                <a class="btn btn-warning action-btn show-modal mx-2"
+                    href="javascript:void(0);" data-size="sm" data-title="Import Paid Invoices" data-action="{{ route('riderInvoices.importPaid') }}">
+                    Import Paid Invoices
+                </a>
+
                 <a class="btn btn-primary action-btn show-modal"
                     href="javascript:void(0);" data-size="xl" data-title="Create Rider Invoice" data-action="{{ route('riderInvoices.create') }}">
                     Create Invoice
@@ -115,7 +120,7 @@
                                         <div class="form-group col-md-4">
                                             <label for="status">Filter by Status</label>
                                             <select class="form-control " id="status" name="status">
-                                                <option value="" selected>Select</option>
+                                                <option value="">Select</option>
                                                 <option value="1" {{ request('status') == 1 ? 'selected' : '' }}>Paid</option>
                                                 <option value="0" {{ request('status') == 0 ? 'selected' : '' }}>Unpaid</option>
                                             </select>

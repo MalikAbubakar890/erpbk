@@ -200,7 +200,6 @@
         'tableColumns' => $tableColumns,
         'tableIdentifier' => 'vouchers_table'
         ], \Illuminate\Support\Arr::except(get_defined_vars(), ['__data', '__path']))->render(); ?>
-
         <!-- Column Control Overlay -->
         <div class="filter-overlay" id="columnControlOverlay"></div>
 
