@@ -38,6 +38,11 @@ class VisaexpenseController extends AppBaseController
      */
     public function index(Request $request)
     {
+        // Check if user is authenticated first
+        if (!auth()->check()) {
+            return redirect()->route('login')->with('error', 'Please log in to access this page.');
+        }
+
         if (!auth()->user()->hasPermissionTo('visaexpense_view')) {
             abort(403, 'Unauthorized action.');
         }
@@ -161,6 +166,11 @@ class VisaexpenseController extends AppBaseController
 
     public function generatentries(Request $request, $id)
     {
+        // Check if user is authenticated first
+        if (!auth()->check()) {
+            return redirect()->route('login')->with('error', 'Please log in to access this page.');
+        }
+
         if (!auth()->user()->hasPermissionTo('visaexpense_view')) {
             abort(403, 'Unauthorized action.');
         }
@@ -172,14 +182,14 @@ class VisaexpenseController extends AppBaseController
         $query = visa_expenses::query()
             ->orderBy('id', 'asc')->where('rider_id', $id);
         if ($request->has('trans_date') && !empty($request->trans_date)) {
-            $fromDate = \Carbon\Carbon::createFromFormat('Y-d-m', $request->trans_date);
-            $query->where('trans_date', $billingMonth->year);
+            $fromDate = \Carbon\Carbon::createFromFormat('Y-m-d', $request->trans_date);
+            $query->where('trans_date', $fromDate);
         }
         if ($request->has('trans_code') && !empty($request->trans_code)) {
             $query->where('trans_code', $request->trans_code);
         }
         if ($request->filled('date')) {
-            $toDate = \Carbon\Carbon::createFromFormat('Y-d-m', $request->date);
+            $toDate = \Carbon\Carbon::createFromFormat('Y-m-d', $request->date);
             $query->where('date', '<=', $toDate);
         }
         if ($request->has('visa_status') && !empty($request->visa_status)) {
@@ -269,6 +279,11 @@ class VisaexpenseController extends AppBaseController
     }
     public function installmentPlan(Request $request, $id)
     {
+        // Check if user is authenticated first
+        if (!auth()->check()) {
+            return redirect()->route('login')->with('error', 'Please log in to access this page.');
+        }
+
         if (!auth()->user()->hasPermissionTo('visaloan_view')) {
             abort(403, 'Unauthorized action.');
         }
@@ -1639,15 +1654,26 @@ class VisaexpenseController extends AppBaseController
      */
     private function checkAndAutoMarkInstallments($riderId)
     {
-        $updatedCount = $this->autoMarkInstallmentsAsPaid($riderId);
+        try {
+            // Only run if user is authenticated
+            if (!auth()->check()) {
+                return 0;
+            }
 
-        // Silent operation - no flash messages to user
-        // Only log for admin/debugging purposes
-        if ($updatedCount > 0) {
-            \Log::info("Auto-marked {$updatedCount} installment(s) as paid for rider {$riderId}");
+            $updatedCount = $this->autoMarkInstallmentsAsPaid($riderId);
+
+            // Silent operation - no flash messages to user
+            // Only log for admin/debugging purposes
+            if ($updatedCount > 0) {
+                \Log::info("Auto-marked {$updatedCount} installment(s) as paid for rider {$riderId}");
+            }
+
+            return $updatedCount;
+        } catch (\Exception $e) {
+            // Log error but don't break the main request
+            \Log::error("Error in checkAndAutoMarkInstallments for rider {$riderId}: " . $e->getMessage());
+            return 0;
         }
-
-        return $updatedCount;
     }
 
     /**

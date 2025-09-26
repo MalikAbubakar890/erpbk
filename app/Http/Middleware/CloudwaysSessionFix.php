@@ -65,9 +65,12 @@ class CloudwaysSessionFix
             ini_set('session.cookie_lifetime', 86400);
         }
 
-        // Force secure cookies if HTTPS
-        if (config('cloudways.session_fixes.force_secure_cookies') && request()->isSecure()) {
+        // Force secure cookies only for HTTPS and when in production
+        if (config('cloudways.session_fixes.force_secure_cookies') && request()->isSecure() && app()->environment('production')) {
             ini_set('session.cookie_secure', '1');
+        } else {
+            // Allow non-secure cookies for local development
+            ini_set('session.cookie_secure', '0');
         }
 
         // Set proper session path
