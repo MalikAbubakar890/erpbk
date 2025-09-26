@@ -66,7 +66,13 @@
         <div class="row">
             <div class="form-group col-md-3">
                 <label for="exampleInputEmail1">Select Account</label>
-                <?php echo Form::select('account_id[]', $bank_accounts ?? \App\Models\Accounts::bankAccountsDropdown(), null, ['class' => 'form-select form-select-sm select2']); ?>
+                <?php
+                $codAccounts = \App\Models\Accounts::where('parent_id', 1913)
+                ->orderBy('name')
+                ->pluck('name', 'id')
+                ->toArray();
+                ?>
+                <?php echo Form::select('account_id[]', $codAccounts, null, ['class' => 'form-select form-select-sm select2']); ?>
 
             </div>
             <div class="form-group col-md-4">

@@ -42,8 +42,7 @@ $voucherType = request("vt");
 @endif
 <div class="form-group col-md-2">
     <label for="exampleInputEmail1">Billing Month</label>
-    {{-- {!! Form::select('billing_month',App\Helpers\CommonHelper::BillingMonth(),null ,['class' => 'form-control  select2 ','id'=>'billing_month']) !!}
- --}} <input type="month" name="billing_month" class="form-control " value="@isset($vouchers->billing_month){{date('Y-m',strtotime($vouchers->billing_month)) }}@endisset" required>
+    <input type="month" name="billing_month" class="form-control " required>
 </div>
 
 </div>

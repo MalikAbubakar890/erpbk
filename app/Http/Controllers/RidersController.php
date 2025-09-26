@@ -41,6 +41,28 @@ class RidersController extends AppBaseController
   /** @var RidersRepository $ridersRepository*/
   private $ridersRepository;
 
+  /**
+   * Normalize billing month input to first day of month (Y-m-01).
+   */
+  private function normalizeBillingMonth($input)
+  {
+    if (empty($input)) {
+      return date('Y-m-01');
+    }
+    // Accept formats like YYYY-MM or YYYY-MM-DD
+    // If only year-month provided, append -01
+    if (preg_match('/^\d{4}-\d{2}$/', $input)) {
+      return $input . '-01';
+    }
+    // Try to parse any date string and return first day of that month
+    $ts = strtotime($input);
+    if ($ts !== false) {
+      return date('Y-m-01', $ts);
+    }
+    // Fallback to current month start
+    return date('Y-m-01');
+  }
+
   public function __construct(RidersRepository $ridersRepo)
   {
     $this->ridersRepository = $ridersRepo;
@@ -1178,7 +1200,7 @@ class RidersController extends AppBaseController
         'voucher_type' => 'AL', // Advance Loan
         'payment_type' => $request->payment_type ?? 1, // Default to Cash
         'payment_from' => HeadAccount::ADVANCE_LOAN,
-        'billing_month' => date('Y-m-01'),
+        'billing_month' => $this->normalizeBillingMonth($request->billing_month ?? null),
         'amount' => $riderAmount,
         'remarks' => 'Advance Loan to Rider',
         'ref_id' => $riderAccount->ref_id, // Rider ID
@@ -1317,7 +1339,7 @@ class RidersController extends AppBaseController
         'voucher_type' => 'COD', // COD
         'payment_type' => $request->payment_type ?? 1, // Default to Cash
         'payment_from' => HeadAccount::COD_ACCOUNT,
-        'billing_month' => date('Y-m-01'),
+        'billing_month' => $this->normalizeBillingMonth($request->billing_month ?? null),
         'amount' => $riderAmount,
         'remarks' => 'COD Amount to Rider',
         'ref_id' => $riderAccount->ref_id, // Rider ID
@@ -1438,7 +1460,7 @@ class RidersController extends AppBaseController
         'voucher_type' => 'PN', // Penalty
         'payment_type' => $request->payment_type ?? 1, // Default to Cash
         'payment_from' => HeadAccount::PENALTY_ACCOUNT,
-        'billing_month' => date('Y-m-01'),
+        'billing_month' => $this->normalizeBillingMonth($request->billing_month ?? null),
         'amount' => $riderAmount,
         'remarks' => 'Penalty Amount to Rider',
         'ref_id' => $riderAccount->ref_id, // Rider ID
@@ -1577,7 +1599,7 @@ class RidersController extends AppBaseController
         'voucher_type' => 'PAY', // Payment
         'payment_type' => $request->payment_type ?? 1, // Default to Cash
         'payment_from' => HeadAccount::PAYMENT_ACCOUNT,
-        'billing_month' => date('Y-m-01'),
+        'billing_month' => $this->normalizeBillingMonth($request->billing_month ?? null),
         'amount' => $riderAmount,
         'remarks' => 'Payment Amount to Rider',
         'ref_id' => $riderAccount->ref_id, // Rider ID
@@ -1698,7 +1720,7 @@ class RidersController extends AppBaseController
         'voucher_type' => 'INC', // Incentive
         'payment_type' => $request->payment_type ?? 1, // Default to Cash
         'payment_from' => HeadAccount::INCENTIVE_ACCOUNT,
-        'billing_month' => date('Y-m-01'),
+        'billing_month' => $this->normalizeBillingMonth($request->billing_month ?? null),
         'amount' => $riderAmount,
         'remarks' => 'Incentive Amount to Rider',
         'ref_id' => $riderAccount->ref_id, // Rider ID

@@ -1,7 +1,4 @@
 <input type="hidden" name="payment_from" value="<?php echo e(\App\Helpers\HeadAccount::ADVANCE_LOAN); ?>" />
-<input type="hidden" name="voucher_type" value="AL" />
-<input type="hidden" name="trans_date" value="<?php echo e(date('Y-m-d')); ?>" />
-<input type="hidden" name="billing_month" value="<?php echo e(date('Y-m-01')); ?>" />
 
 <?php
 $rider_account = \App\Models\Accounts::where('ref_id', $rider->id)->where('account_type', 'Liability')->first();

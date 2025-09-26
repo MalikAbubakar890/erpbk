@@ -1,7 +1,4 @@
 <script src="{{ asset('js/modal_custom.js') }}"></script>
-<input type="hidden" name="voucher_type" value="COD" />
-<input type="hidden" name="trans_date" value="{{ date('Y-m-d') }}" />
-<input type="hidden" name="billing_month" value="{{ date('Y-m-01') }}" />
 
 <div class="row mt-0 mb-2">
     <div class="form-group col-md-3">
@@ -64,7 +61,13 @@
         <div class="row">
             <div class="form-group col-md-3">
                 <label for="exampleInputEmail1">Select Account</label>
-                {!! Form::select('account_id[]', $bank_accounts ?? \App\Models\Accounts::bankAccountsDropdown(), null, ['class' => 'form-select form-select-sm select2']) !!}
+                @php
+                $codAccounts = \App\Models\Accounts::where('parent_id', 1913)
+                ->orderBy('name')
+                ->pluck('name', 'id')
+                ->toArray();
+                @endphp
+                {!! Form::select('account_id[]', $codAccounts, null, ['class' => 'form-select form-select-sm select2']) !!}
             </div>
             <div class="form-group col-md-4">
                 <label>Narration</label>

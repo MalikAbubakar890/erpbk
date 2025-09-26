@@ -199,7 +199,6 @@
         'tableColumns' => $tableColumns,
         'tableIdentifier' => 'vouchers_table'
         ])
-
         <!-- Column Control Overlay -->
         <div class="filter-overlay" id="columnControlOverlay"></div>
 
@@ -212,7 +211,7 @@
                     <input type="text" id="quickSearch" name="quick_search" class="form-control" placeholder="Quick Search..." value="{{ request('quick_search') }}">
                 </div>
             </div>
-            <div class="card-body table-responsive px-2 py-0" id="table-data">
+            <div class="card-body  px-2 py-0" id="table-data">
                 @include('vouchers.table', ['data' => $data ?? collect()])
             </div>
         </div>

@@ -428,25 +428,59 @@
 </section>
 
 <?php
-$tableColumns = [
-['data' => 'rider_id', 'title' => 'Rider ID'],
-['data' => 'name', 'title' => 'Name'],
-['data' => 'company_contact', 'title' => 'Contact'],
-['data' => 'fleet_supervisor', 'title' => 'Fleet Supv'],
-['data' => 'emirate_hub', 'title' => 'Hub'],
-['data' => 'customer_id', 'title' => 'Customer'],
-['data' => 'designation', 'title' => 'Desig'],
+use Illuminate\Support\Facades\Schema;
+
+// 1) Get all columns from riders table
+$dbColumns = Schema::getColumnListing('riders');
+
+// 2) Prefer showing these first if present, then append the rest
+$preferredOrder = [
+'rider_id',
+'name',
+'company_contact',
+'fleet_supervisor',
+'emirate_hub',
+'customer_id',
+'designation',
+'shift',
+'attendance',
+'status',
+];
+
+$columns = [];
+$added = [];
+$makeTitle = function ($key) {
+return ucwords(str_replace('_', ' ', $key));
+};
+
+// Add preferred DB columns first
+foreach ($preferredOrder as $key) {
+if (in_array($key, $dbColumns)) {
+$columns[] = ['data' => $key, 'title' => $makeTitle($key)];
+$added[$key] = true;
+}
+}
+
+// Add remaining DB columns
+foreach ($dbColumns as $key) {
+if (empty($added[$key])) {
+$columns[] = ['data' => $key, 'title' => $makeTitle($key)];
+}
+}
+
+// 3) Append special/computed columns used in UI
+$columns = array_merge($columns, [
 ['data' => 'bike', 'title' => 'Bike'],
-['data' => 'status', 'title' => 'Status'],
-['data' => 'shift', 'title' => 'Shift'],
-['data' => 'attendance', 'title' => 'ATTN'],
 ['data' => 'orders_sum', 'title' => 'Orders'],
 ['data' => 'days', 'title' => 'Days'],
 ['data' => 'balance', 'title' => 'Balance'],
 ['data' => 'action', 'title' => 'Actions'],
+// Keep last two fixed utility columns for search and control icons
 ['data' => 'search', 'title' => 'Search'],
-['data' => 'control', 'title' => 'Control']
-];
+['data' => 'control', 'title' => 'Control'],
+]);
+
+$tableColumns = $columns;
 ?>
 <?php echo $__env->make('components.column-control-panel', [
 'tableColumns' => $tableColumns,
@@ -466,7 +500,7 @@ $tableColumns = [
         </div>
         <div class="card-body table-responsive px-2 py-0" id="table-data">
             <div class="riders-table-container">
-                <?php echo $__env->make('riders.table', ['data' => $data], \Illuminate\Support\Arr::except(get_defined_vars(), ['__data', '__path']))->render(); ?>
+                <?php echo $__env->make('riders.table', ['data' => $data, 'tableColumns' => $tableColumns], \Illuminate\Support\Arr::except(get_defined_vars(), ['__data', '__path']))->render(); ?>
             </div>
             <div class="filter-loading-overlay" style="display: none;">
                 <div class="filter-loading-content">

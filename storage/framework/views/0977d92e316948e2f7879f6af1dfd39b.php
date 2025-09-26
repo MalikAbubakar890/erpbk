@@ -38,7 +38,7 @@ $voucherType = request("vt");
 <?php endif; ?>
 <div class="form-group col-md-2">
     <label for="exampleInputEmail1">Billing Month</label>
-     <input type="month" name="billing_month" class="form-control " value="<?php if(isset($vouchers->billing_month)): ?><?php echo e(date('Y-m',strtotime($vouchers->billing_month))); ?><?php endif; ?>" required>
+    <input type="month" name="billing_month" class="form-control " required>
 </div>
 
 </div>

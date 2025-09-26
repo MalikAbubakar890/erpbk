@@ -1,7 +1,4 @@
 <script src="<?php echo e(asset('js/modal_custom.js')); ?>"></script>
-<input type="hidden" name="voucher_type" value="PAYMENT" />
-<input type="hidden" name="trans_date" value="<?php echo e(date('Y-m-d')); ?>" />
-<input type="hidden" name="billing_month" value="<?php echo e(date('Y-m-01')); ?>" />
 
 <div class="row mt-0 mb-2">
     <div class="form-group col-md-3">

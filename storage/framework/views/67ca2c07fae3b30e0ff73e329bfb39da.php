@@ -213,7 +213,7 @@
                     <input type="text" id="quickSearch" name="quick_search" class="form-control" placeholder="Quick Search..." value="<?php echo e(request('quick_search')); ?>">
                 </div>
             </div>
-            <div class="card-body table-responsive px-2 py-0" id="table-data">
+            <div class="card-body  px-2 py-0" id="table-data">
                 <?php echo $__env->make('vouchers.table', ['data' => $data ?? collect()], \Illuminate\Support\Arr::except(get_defined_vars(), ['__data', '__path']))->render(); ?>
             </div>
         </div>

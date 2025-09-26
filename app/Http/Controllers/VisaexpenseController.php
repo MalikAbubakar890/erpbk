@@ -269,7 +269,7 @@ class VisaexpenseController extends AppBaseController
     }
     public function installmentPlan(Request $request, $id)
     {
-        if (!auth()->user()->hasPermissionTo('visaexpense_view')) {
+        if (!auth()->user()->hasPermissionTo('visaloan_view')) {
             abort(403, 'Unauthorized action.');
         }
 
@@ -313,14 +313,32 @@ class VisaexpenseController extends AppBaseController
 
     public function createInstallmentPlanForm($riderId)
     {
-        if (!auth()->user()->hasPermissionTo('visaexpense_create')) {
+        if (!auth()->user()->hasPermissionTo('visaloan_create')) {
             abort(403, 'Unauthorized action.');
         }
 
         // Auto-mark installments silently in the background
         $this->checkAndAutoMarkInstallments($riderId);
 
+
         $account = Accounts::findOrFail($riderId);
+
+        // First check if rider has any visa expenses at all
+        $hasVisaExpenses = visa_expenses::where('rider_id', $riderId)->exists();
+
+        if (!$hasVisaExpenses) {
+            $errorMessage = 'No visa expense entries found for this rider. Please add visa expenses before creating an installment plan.';
+
+            if (request()->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'errors' => ['rider_id' => $errorMessage]
+                ], 422);
+            }
+
+            Flash::error($errorMessage);
+            return redirect()->back();
+        }
 
         // Calculate total unpaid amount for this rider
         $totalUnpaidAmount = visa_expenses::where('rider_id', $riderId)
@@ -328,7 +346,16 @@ class VisaexpenseController extends AppBaseController
             ->sum('amount');
 
         if ($totalUnpaidAmount <= 0) {
-            Flash::error('No unpaid visa expenses found for this rider.');
+            $errorMessage = 'No unpaid visa expenses found for this rider. All visa expenses are already paid.';
+
+            if (request()->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'errors' => ['rider_id' => $errorMessage]
+                ], 422);
+            }
+
+            Flash::error($errorMessage);
             return redirect()->back();
         }
 
@@ -341,7 +368,6 @@ class VisaexpenseController extends AppBaseController
         if ($existingCurrentMonthPlan) {
             Flash::warning('An installment plan already exists for this rider in ' . Carbon::now()->format('F Y') . '. You can still create a new plan, but please select a different starting month.');
         }
-
         return view('visa_expenses.createInstallmentPlan', compact('account', 'totalUnpaidAmount', 'existingCurrentMonthPlan'));
     }
 
@@ -365,6 +391,41 @@ class VisaexpenseController extends AppBaseController
 
             // Get the rider account (visa expense account)
             $riderAccount = Accounts::findOrFail($validated['rider_id']);
+
+            // Double-check that rider has visa expenses before creating installment plan
+            $hasVisaExpenses = visa_expenses::where('rider_id', $validated['rider_id'])->exists();
+            if (!$hasVisaExpenses) {
+                $errorMessage = 'No visa expense entries found for this rider. Please add visa expenses before creating an installment plan.';
+
+                if ($request->ajax()) {
+                    return response()->json([
+                        'success' => false,
+                        'errors' => ['rider_id' => $errorMessage]
+                    ], 422);
+                }
+
+                Flash::error($errorMessage);
+                return redirect()->back();
+            }
+
+            // Check for unpaid visa expenses
+            $hasUnpaidExpenses = visa_expenses::where('rider_id', $validated['rider_id'])
+                ->where('payment_status', 'unpaid')
+                ->exists();
+
+            if (!$hasUnpaidExpenses) {
+                $errorMessage = 'No unpaid visa expenses found for this rider. All visa expenses are already paid.';
+
+                if ($request->ajax()) {
+                    return response()->json([
+                        'success' => false,
+                        'errors' => ['rider_id' => $errorMessage]
+                    ], 422);
+                }
+
+                Flash::error($errorMessage);
+                return redirect()->back();
+            }
 
 
 
@@ -1524,30 +1585,38 @@ class VisaexpenseController extends AppBaseController
         }
 
         $installmentsToUpdate = $query->get();
-
         if ($installmentsToUpdate->isEmpty()) {
-            return 0; // No installments to update
+            return 0;
         }
 
         $updatedCount = 0;
-
         foreach ($installmentsToUpdate as $installment) {
             try {
                 DB::beginTransaction();
 
+                // Extract billing month (assuming 'billing_month' is Y-m-d or Y-m format in DB)
+                $billingMonth = Carbon::parse($installment->billing_month);
+
+                // Set the 20th of that billing month
+                $billingDueDate = $billingMonth->copy()->day(20);
+
+                // Skip if today's date is before the 20th of that month
+                if (Carbon::today()->lt($billingDueDate)) {
+                    DB::rollBack();
+                    continue;
+                }
+
                 // Mark installment as paid
                 $installment->status = visa_installment_plan::STATUS_PAID;
-                $installment->updated_by = auth()->user()->id ?? 1; // Default to admin if no auth user
+                $installment->updated_by = auth()->user()->id ?? 1;
                 $installment->save();
 
-                // Update related voucher status if needed
+                // Update related voucher
                 $voucher = Vouchers::where('ref_id', $installment->id)
                     ->where('voucher_type', 'VL')
                     ->first();
 
                 if ($voucher) {
-                    // You might want to add a status field to vouchers table
-                    // $voucher->status = 'paid';
                     $voucher->remarks = ($voucher->remarks ?? '') . ' - Auto-paid on ' . $today;
                     $voucher->save();
                 }
@@ -1562,7 +1631,6 @@ class VisaexpenseController extends AppBaseController
                 ]);
             }
         }
-
         return $updatedCount;
     }
 
@@ -1588,7 +1656,7 @@ class VisaexpenseController extends AppBaseController
      */
     public function recalculateInstallments(Request $request)
     {
-        if (!auth()->user()->hasPermissionTo('visaexpense_edit')) {
+        if (!auth()->user()->hasPermissionTo('visaloan_edit')) {
             abort(403, 'Unauthorized action.');
         }
 
