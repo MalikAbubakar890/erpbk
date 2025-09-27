@@ -20,6 +20,10 @@
                     Import Paid Invoices
                 </a>
 
+                <a class="btn btn-info mx-2" href="<?php echo e(route('riderInvoices.manualPayment')); ?>">
+                    <i class="fas fa-hand-holding-usd"></i> Manual Payment
+                </a>
+
                 <a class="btn btn-primary action-btn show-modal"
                     href="javascript:void(0);" data-size="xl" data-title="Create Rider Invoice" data-action="<?php echo e(route('riderInvoices.create')); ?>">
                     Create Invoice

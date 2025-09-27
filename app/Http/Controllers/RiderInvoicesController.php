@@ -19,6 +19,7 @@ use App\Services\TransactionService;
 use Illuminate\Http\Request;
 use App\Traits\GlobalPagination;
 use Flash;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
 use Maatwebsite\Excel\Facades\Excel;
 
@@ -254,6 +255,144 @@ class RiderInvoicesController extends AppBaseController
     }
 
     return view('rider_invoices.import_paid');
+  }
+
+  /**
+   * Manual payment interface - show unpaid invoices
+   */
+  public function manualPayment(Request $request)
+  {
+    if ($request->isMethod('post')) {
+      $rules = [
+        'invoice_ids' => 'required|array|min:1',
+        'invoice_ids.*' => 'exists:rider_invoices,id',
+        'bank_account_id' => 'required|exists:accounts,id',
+        'payment_date' => 'required|date'
+      ];
+
+      $this->validate($request, $rules, [
+        'invoice_ids.required' => 'Please select at least one invoice',
+        'bank_account_id.required' => 'Please select a bank account',
+        'payment_date.required' => 'Payment date is required'
+      ]);
+
+      try {
+        DB::beginTransaction();
+
+        $processedInvoices = [];
+        $totalAmount = 0;
+
+        foreach ($request->invoice_ids as $invoiceId) {
+          $invoice = RiderInvoices::where('id', $invoiceId)
+            ->where('status', 0) // Only unpaid invoices
+            ->first();
+
+          if ($invoice) {
+            // Update invoice status to paid
+            $invoice->update(['status' => 1]);
+
+            // Create voucher entries
+            $this->createManualVoucherEntries(
+              $invoice,
+              $request->bank_account_id,
+              $request->payment_date
+            );
+
+            $processedInvoices[] = $invoice->id;
+            $totalAmount += $invoice->total_amount;
+          }
+        }
+
+        DB::commit();
+
+        Flash::success(count($processedInvoices) . ' invoices marked as paid successfully. Total amount: ' . number_format($totalAmount, 2));
+      } catch (\Exception $e) {
+        DB::rollBack();
+        Flash::error('Error processing payment: ' . $e->getMessage());
+      }
+
+      return redirect()->back();
+    }
+
+    // Get unpaid invoices with rider information
+    $query = RiderInvoices::with('rider')
+      ->where('status', 0) // unpaid only
+      ->orderBy('billing_month', 'desc')
+      ->orderBy('inv_date', 'desc');
+
+    // Apply filters if any
+    if ($request->filled('rider_id')) {
+      $query->where('rider_id', $request->rider_id);
+    }
+
+    if ($request->filled('billing_month')) {
+      $billingMonth = \Carbon\Carbon::parse($request->billing_month);
+      $query->whereYear('billing_month', $billingMonth->year)
+        ->whereMonth('billing_month', $billingMonth->month);
+    }
+
+    $unpaidInvoices = $query->get();
+
+    // Get bank accounts for dropdown
+    $bankAccounts = Accounts::bankAccountsDropdown();
+
+    // Get riders for filter
+    $riders = Riders::dropdown();
+
+    return view('rider_invoices.manual_payment', compact('unpaidInvoices', 'bankAccounts', 'riders'));
+  }
+
+  /**
+   * Create voucher entries for manual payment
+   */
+  private function createManualVoucherEntries($invoice, $bankAccountId, $paymentDate)
+  {
+    $transactionService = new TransactionService();
+    $trans_code = \App\Helpers\Account::trans_code();
+    $totalAmount = $invoice->total_amount;
+
+    // Debit rider account
+    $transactionDataDebit = [
+      'account_id' => $invoice->rider->account_id,
+      'reference_id' => $invoice->id,
+      'reference_type' => 'RiderInvoice',
+      'trans_code' => $trans_code,
+      'trans_date' => $paymentDate,
+      'narration' => "Manual payment for Rider Invoice #" . $invoice->id,
+      'debit' => $totalAmount,
+      'credit' => 0,
+      'billing_month' => $invoice->billing_month,
+    ];
+    $transactionService->recordTransaction($transactionDataDebit);
+
+    // Credit bank account
+    $transactionDataCredit = [
+      'account_id' => $bankAccountId,
+      'reference_id' => $invoice->id,
+      'reference_type' => 'RiderInvoice',
+      'trans_code' => $trans_code,
+      'trans_date' => $paymentDate,
+      'narration' => "Manual payment received for Rider Invoice #" . $invoice->id,
+      'debit' => 0,
+      'credit' => $totalAmount,
+      'billing_month' => $invoice->billing_month,
+    ];
+    $transactionService->recordTransaction($transactionDataCredit);
+
+    // Create voucher record
+    $voucherData = [
+      'trans_date' => $paymentDate,
+      'voucher_type' => 'RI',
+      'payment_type' => 1,
+      'payment_from' => $bankAccountId,
+      'billing_month' => $invoice->billing_month,
+      'amount' => $totalAmount,
+      'trans_code' => $trans_code,
+      'Created_By' => auth()->id(),
+      'remarks' => "Manual payment for Rider Invoice #" . $invoice->id,
+    ];
+
+    DB::table('vouchers')->insert($voucherData);
   }
 
   public function sendEmail($id, Request $request)

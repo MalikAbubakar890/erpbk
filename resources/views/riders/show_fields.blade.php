@@ -67,6 +67,10 @@
                 <label>Customer </label>
                 <p>{{@$rider->customer->name}}</p>
             </div>
+            <div class="col-md-3 form-group col-3">
+                <label>Recruiter </label>
+                <p>{{@$result['recuriter']}}</p>
+            </div>
         </div>
 
     </div>
@@ -124,6 +128,15 @@
                     <select class="form-control form-control-sm select2" name="customer_id">
                         @foreach($customers as $id => $name)
                         <option value="{{$id}}" {{$result['customer_id'] == $id ? 'selected' : ''}}>{{$name}}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="col-md-3 form-group col-3">
+                    <label>Recruiter</label>
+                    <select class="form-control form-control-sm select2" name="recuriter">
+                        <option value="">Select Recruiter</option>
+                        @foreach(Common::Dropdowns('recuriter') as $key => $value)
+                        <option value="{{$key}}" {{$result['recuriter'] == $key ? 'selected' : ''}}>{{$value}}</option>
                         @endforeach
                     </select>
                 </div>

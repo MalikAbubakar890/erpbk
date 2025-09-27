@@ -437,8 +437,18 @@ class RidersController extends AppBaseController
       $riders->status = 3;
       $riders->save();
     }
-    Flash::error('Rider created successfully.');
-    return redirect()->back();
+
+    // Check if request is AJAX
+    if (request()->ajax()) {
+      return response()->json([
+        'success' => true,
+        'message' => 'Rider created successfully!',
+        'redirect_url' => route('riders.index')
+      ]);
+    }
+
+    Flash::success('Rider created successfully.');
+    return redirect(route('riders.index'));
   }
 
   /**
@@ -510,6 +520,15 @@ class RidersController extends AppBaseController
         }
       }
     }
+    // Check if request is AJAX
+    if (request()->ajax()) {
+      return response()->json([
+        'success' => true,
+        'message' => 'Rider information updated successfully!',
+        'redirect_url' => route('riders.index')
+      ]);
+    }
+
     /*     Flash::success('Riders updated successfully.');
      */
     return redirect(route('riders.index'));

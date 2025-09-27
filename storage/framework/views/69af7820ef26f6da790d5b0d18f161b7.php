@@ -112,10 +112,128 @@
 <?php $__env->stopSection(); ?>
 <?php $__env->startPush('page-scripts'); ?>
 
-
 <!-- Select2 CSS and JS -->
 <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+
+<!-- Fast AJAX Form Submission -->
+<script>
+    $(document).ready(function() {
+        // Intercept form submission for fast AJAX processing
+        $('#formajax').on('submit', function(e) {
+            e.preventDefault();
+
+            const form = $(this);
+            const submitButton = form.find('button[type="submit"]');
+            const originalText = submitButton.html();
+
+            // Show immediate loading state
+            submitButton.html('<i class="fa fa-spinner fa-spin me-2"></i>Saving...').prop('disabled', true);
+
+            // Get form data
+            const formData = new FormData(this);
+
+            // Fast AJAX submission
+            $.ajax({
+                url: form.attr('action'),
+                type: 'POST',
+                data: formData,
+                processData: false,
+                contentType: false,
+                headers: {
+                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                },
+                success: function(response) {
+                    // Show success immediately
+                    showQuickNotification('Rider information updated successfully!', 'success');
+
+                    // Redirect after short delay
+                    setTimeout(function() {
+                        window.location.href = $('#redirect_url').val();
+                    }, 800);
+                },
+                error: function(xhr) {
+                    // Handle errors
+                    submitButton.html(originalText).prop('disabled', false);
+
+                    if (xhr.status === 422) {
+                        // Validation errors
+                        const errors = xhr.responseJSON.errors;
+                        let errorMessage = 'Please fix the following errors:\n';
+                        Object.keys(errors).forEach(function(key) {
+                            errorMessage += '• ' + errors[key][0] + '\n';
+                        });
+                        showQuickNotification(errorMessage, 'error');
+                    } else if (xhr.status === 500) {
+                        showQuickNotification('Server error occurred. Please try again.', 'error');
+                    } else {
+                        showQuickNotification('An error occurred while saving. Please try again.', 'error');
+                    }
+                },
+                timeout: 30000 // 30 seconds timeout
+            });
+        });
+
+        // Quick notification function
+        function showQuickNotification(message, type) {
+            // Remove any existing notifications
+            $('.quick-notification').remove();
+
+            const notification = $(`
+            <div class="quick-notification alert alert-${type === 'success' ? 'success' : 'danger'}" style="
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                z-index: 9999;
+                min-width: 300px;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+                border: none;
+                border-radius: 8px;
+                animation: slideInRight 0.3s ease;
+            ">
+                <div class="d-flex align-items-center">
+                    <i class="ti ti-${type === 'success' ? 'check' : 'x'} me-2"></i>
+                    <span style="white-space: pre-line;">${message}</span>
+                </div>
+            </div>
+        `);
+
+            $('body').append(notification);
+
+            // Auto remove after 4 seconds
+            setTimeout(function() {
+                notification.fadeOut(300, function() {
+                    $(this).remove();
+                });
+            }, 4000);
+        }
+    });
+</script>
+
+<!-- Animation styles -->
+<style>
+    @keyframes slideInRight {
+        from {
+            transform: translateX(100%);
+            opacity: 0;
+        }
+
+        to {
+            transform: translateX(0);
+            opacity: 1;
+        }
+    }
+
+    .quick-notification {
+        animation: slideInRight 0.3s ease;
+    }
+
+    /* Loading button styles */
+    .btn:disabled {
+        opacity: 0.7;
+        cursor: not-allowed;
+    }
+</style>
 
 <script>
     $(document).ready(function() {

@@ -195,6 +195,61 @@
             }
         });
 
+        // Fast AJAX Form Submission
+        $('#formajax').on('submit', function(e) {
+            e.preventDefault();
+
+            const form = $(this);
+            const submitButton = form.find('button[type="submit"]');
+            const originalText = submitButton.html();
+
+            // Show immediate loading state
+            submitButton.html('<i class="fa fa-spinner fa-spin me-2"></i>Creating...').prop('disabled', true);
+
+            // Get form data
+            const formData = new FormData(this);
+
+            // Fast AJAX submission
+            $.ajax({
+                url: form.attr('action'),
+                type: 'POST',
+                data: formData,
+                processData: false,
+                contentType: false,
+                headers: {
+                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                },
+                success: function(response) {
+                    // Show success immediately
+                    showNotification('Rider created successfully!', 'success');
+
+                    // Redirect after short delay
+                    setTimeout(function() {
+                        window.location.href = $('#redirect_url').val();
+                    }, 800);
+                },
+                error: function(xhr) {
+                    // Handle errors
+                    submitButton.html(originalText).prop('disabled', false);
+
+                    if (xhr.status === 422) {
+                        // Validation errors
+                        const errors = xhr.responseJSON.errors;
+                        let errorMessage = 'Please fix the following errors:\n';
+                        Object.keys(errors).forEach(function(key) {
+                            errorMessage += '• ' + errors[key][0] + '\n';
+                        });
+                        showNotification(errorMessage, 'error');
+                    } else if (xhr.status === 500) {
+                        showNotification('Server error occurred. Please try again.', 'error');
+                    } else {
+                        showNotification('An error occurred while creating. Please try again.', 'error');
+                    }
+                },
+                timeout: 30000 // 30 seconds timeout
+            });
+        });
+
         // Function to show notifications
         function showNotification(message, type) {
             // Create notification element
@@ -203,7 +258,7 @@
             notification.innerHTML = `
             <div class="notification-content">
                 <i class="ti ti-${type === 'success' ? 'check' : 'x'}"></i>
-                <span>${message}</span>
+                <span style="white-space: pre-line;">${message}</span>
             </div>
         `;
 

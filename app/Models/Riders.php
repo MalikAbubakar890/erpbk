@@ -68,7 +68,8 @@ class Riders extends Model
     'vat',
     'attendance',
     'customer_id',
-    'attendance_date'
+    'attendance_date',
+    'recuriter'
   ];
 
   protected $casts = [
@@ -119,7 +120,8 @@ class Riders extends Model
     'insurance_expiry' => 'string',
     'shift' => 'string',
     'attendance' => 'string',
-    'policy_no' => 'string'
+    'policy_no' => 'string',
+    'recuriter' => 'string'
   ];
 
   public static array $rules = [
@@ -176,7 +178,8 @@ class Riders extends Model
     'labor_card_expiry' => 'nullable',
     'insurance' => 'nullable|string|max:100',
     'insurance_expiry' => 'nullable',
-    'policy_no' => 'nullable|string|max:255'
+    'policy_no' => 'nullable|string|max:255',
+    'recuriter' => 'nullable|string|max:255'
   ];
 
   public function items()

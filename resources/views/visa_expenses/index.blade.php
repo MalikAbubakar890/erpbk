@@ -21,10 +21,12 @@
           Installment Plan (No Expenses)
         </span>
         @endif
+        @can('visaexpense_create')
         <a class="btn btn-primary action-btn show-modal"
           href="javascript:void(0);" data-action="{{ route('VisaExpense.create' , $account->id) }}" data-size="lg" data-title="New expense Ticket">
           Add New
         </a>
+        @endcan
         <div class="modal modal-default filtetmodal fade" id="searchModal" tabindex="-1" data-bs-backdrop="static" role="dialog" aria-hidden="true">
           <div class="modal-dialog modal-lg modal-slide-top modal-full-top">
             <div class="modal-content">

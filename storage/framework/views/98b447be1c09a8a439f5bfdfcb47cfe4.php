@@ -63,6 +63,10 @@
                 <label>Customer </label>
                 <p><?php echo e(@$rider->customer->name); ?></p>
             </div>
+            <div class="col-md-3 form-group col-3">
+                <label>Recruiter </label>
+                <p><?php echo e(@$result['recuriter']); ?></p>
+            </div>
         </div>
 
     </div>
@@ -120,6 +124,15 @@
                     <select class="form-control form-control-sm select2" name="customer_id">
                         <?php $__currentLoopData = $customers; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $id => $name): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                         <option value="<?php echo e($id); ?>" <?php echo e($result['customer_id'] == $id ? 'selected' : ''); ?>><?php echo e($name); ?></option>
+                        <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+                    </select>
+                </div>
+                <div class="col-md-3 form-group col-3">
+                    <label>Recruiter</label>
+                    <select class="form-control form-control-sm select2" name="recuriter">
+                        <option value="">Select Recruiter</option>
+                        <?php $__currentLoopData = Common::Dropdowns('recuriter'); $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $key => $value): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                        <option value="<?php echo e($key); ?>" <?php echo e($result['recuriter'] == $key ? 'selected' : ''); ?>><?php echo e($value); ?></option>
                         <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                     </select>
                 </div>
