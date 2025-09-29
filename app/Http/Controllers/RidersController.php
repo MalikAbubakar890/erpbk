@@ -34,6 +34,8 @@ use Illuminate\Support\Facades\Mail;
 use Flash;
 use DB;
 use Maatwebsite\Excel\Facades\Excel;
+use Carbon\Carbon;
+use Illuminate\Support\Facades\Log;
 
 class RidersController extends AppBaseController
 {
@@ -75,8 +77,22 @@ class RidersController extends AppBaseController
   {
     // Use global pagination trait
     $paginationParams = $this->getPaginationParams($request, $this->getDefaultPerPage());
+
+    $currentMonthStart = Carbon::now()->startOfMonth()->toDateString();
+    $currentMonthEnd = Carbon::now()->endOfMonth()->toDateString();
+
     $query = Riders::query()
-      ->orderBy('id', 'desc');
+      ->leftJoin(
+        \DB::raw("(SELECT rider_id, COUNT(date) as days_count 
+                   FROM rider_activities 
+                   WHERE date BETWEEN '{$currentMonthStart}' AND '{$currentMonthEnd}' 
+                   GROUP BY rider_id) as ra"),
+        'riders.id',
+        '=',
+        'ra.rider_id'
+      )
+      ->select('riders.*', \DB::raw('COALESCE(ra.days_count, 0) as days_count'))
+      ->orderBy('days_count', 'asc');
     if ($request->has('rider_id') && !empty($request->rider_id)) {
       $query->where('rider_id', 'like', '%' . $request->rider_id . '%');
     }
@@ -235,8 +251,22 @@ class RidersController extends AppBaseController
     // Use global pagination trait
     $paginationParams = $this->getPaginationParams($request, $this->getDefaultPerPage());
 
+    $currentMonthStart = Carbon::now()->startOfMonth()->toDateString();
+    $currentMonthEnd = Carbon::now()->endOfMonth()->toDateString();
+
     $query = Riders::query()
-      ->orderBy('id', 'desc');
+      ->leftJoin(
+        \DB::raw("(SELECT rider_id, COUNT(date) as days_count 
+                   FROM rider_activities 
+                   WHERE date BETWEEN '{$currentMonthStart}' AND '{$currentMonthEnd}' 
+                   GROUP BY rider_id) as ra"),
+        'riders.id',
+        '=',
+        'ra.rider_id'
+      )
+      ->select('riders.*', \DB::raw('COALESCE(ra.days_count, 0) as days_count'))
+      ->orderBy('days_count', 'desc')
+      ->orderBy('riders.id', 'desc');
 
     if ($request->has('rider_id') && !empty($request->rider_id)) {
       $query->where('rider_id', 'like', '%' . $request->rider_id . '%');

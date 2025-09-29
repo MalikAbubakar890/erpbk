@@ -38,17 +38,20 @@ $contentLayout = (isset($container) ? (($container === 'container-xxl') ? "layou
 
   @vite('resources/sass/app.scss')
   @vite('resources/js/app.js')
+
+  <!-- Session Fix Script -->
+  <script src="{{ asset('js/session-fix.js') }}"></script>
 </head>
 
-<body >
+<body>
 
-<input type="hidden" name="base_url" id="base_url" value="{{ url("/")}}" />
+  <input type="hidden" name="base_url" id="base_url" value="{{ url("/")}}" />
   <!-- Layout Content -->
   @yield('layoutContent')
   <!--/ Layout Content -->
 
-@include('_partials.modal')
-@include('_partials.offcanvas')
+  @include('_partials.modal')
+  @include('_partials.offcanvas')
   <!-- Include Scripts -->
   <!-- $isFront is used to append the front layout scripts only on the front layout otherwise the variable will be blank -->
   @include('layouts/sections/scripts' . $isFront)

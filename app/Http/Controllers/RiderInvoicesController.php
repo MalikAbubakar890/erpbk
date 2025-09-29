@@ -19,7 +19,6 @@ use App\Services\TransactionService;
 use Illuminate\Http\Request;
 use App\Traits\GlobalPagination;
 use Flash;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
 use Maatwebsite\Excel\Facades\Excel;
 
@@ -122,15 +121,18 @@ class RiderInvoicesController extends AppBaseController
    */
   public function store(CreateRiderInvoicesRequest $request)
   {
-    $input = $request->all();
+    try {
+      $input = $request->all();
 
-    $riderInvoices = $this->riderInvoicesRepository->record($request);
+      $riderInvoices = $this->riderInvoicesRepository->record($request);
 
+      Flash::success('Rider Invoices saved successfully.');
 
-
-    Flash::success('Rider Invoices saved successfully.');
-
-    return redirect(route('riderInvoices.index'));
+      return redirect(route('riderInvoices.index'));
+    } catch (\Exception $e) {
+      Flash::error($e->getMessage());
+      return redirect()->back()->withInput();
+    }
   }
 
   /**
@@ -172,19 +174,24 @@ class RiderInvoicesController extends AppBaseController
    */
   public function update($id, UpdateRiderInvoicesRequest $request)
   {
-    $riderInvoices = $this->riderInvoicesRepository->find($id);
+    try {
+      $riderInvoices = $this->riderInvoicesRepository->find($id);
 
-    if (empty($riderInvoices)) {
-      Flash::error('Rider Invoices not found');
+      if (empty($riderInvoices)) {
+        Flash::error('Rider Invoices not found');
+
+        return redirect(route('riderInvoices.index'));
+      }
+
+      $riderInvoices = $this->riderInvoicesRepository->record($request, $id);
+
+      Flash::success('Rider Invoices updated successfully.');
 
       return redirect(route('riderInvoices.index'));
+    } catch (\Exception $e) {
+      Flash::error($e->getMessage());
+      return redirect()->back()->withInput();
     }
-
-    $riderInvoices = $this->riderInvoicesRepository->record($request, $id);
-
-    Flash::success('Rider Invoices updated successfully.');
-
-    return redirect(route('riderInvoices.index'));
   }
 
   /**
@@ -258,110 +265,100 @@ class RiderInvoicesController extends AppBaseController
   }
 
   /**
-   * Manual payment interface - show unpaid invoices
+   * Mark a single invoice as paid manually
    */
-  public function manualPayment(Request $request)
+  public function markAsPaid(Request $request, $id)
   {
     if ($request->isMethod('post')) {
       $rules = [
-        'invoice_ids' => 'required|array|min:1',
-        'invoice_ids.*' => 'exists:rider_invoices,id',
-        'bank_account_id' => 'required|exists:accounts,id',
-        'payment_date' => 'required|date'
+        'bank_account_id' => 'required|exists:accounts,id'
+      ];
+      $message = [
+        'bank_account_id.required' => 'Bank account is required',
+        'bank_account_id.exists' => 'Selected bank account does not exist'
       ];
 
-      $this->validate($request, $rules, [
-        'invoice_ids.required' => 'Please select at least one invoice',
-        'bank_account_id.required' => 'Please select a bank account',
-        'payment_date.required' => 'Payment date is required'
-      ]);
+      $this->validate($request, $rules, $message);
 
       try {
-        DB::beginTransaction();
+        \DB::beginTransaction();
 
-        $processedInvoices = [];
-        $totalAmount = 0;
-
-        foreach ($request->invoice_ids as $invoiceId) {
-          $invoice = RiderInvoices::where('id', $invoiceId)
-            ->where('status', 0) // Only unpaid invoices
-            ->first();
-
-          if ($invoice) {
-            // Update invoice status to paid
-            $invoice->update(['status' => 1]);
-
-            // Create voucher entries
-            $this->createManualVoucherEntries(
-              $invoice,
-              $request->bank_account_id,
-              $request->payment_date
-            );
-
-            $processedInvoices[] = $invoice->id;
-            $totalAmount += $invoice->total_amount;
-          }
+        // Find the invoice
+        $invoice = RiderInvoices::find($id);
+        if (!$invoice) {
+          Flash::error('Invoice not found.');
+          return redirect()->back();
         }
 
-        DB::commit();
+        // Check if invoice is already paid
+        if ($invoice->status == 1) {
+          Flash::error('Invoice is already marked as paid.');
+          return redirect()->back();
+        }
 
-        Flash::success(count($processedInvoices) . ' invoices marked as paid successfully. Total amount: ' . number_format($totalAmount, 2));
+        // Get rider information
+        $rider = Riders::find($invoice->rider_id);
+        if (!$rider) {
+          Flash::error('Rider not found.');
+          return redirect()->back();
+        }
+
+        // Update invoice status to paid
+        $invoice->update(['status' => 1]);
+
+        // Create voucher entries (same logic as ImportPaidRiderInvoice)
+        $this->createManualPaymentVoucher($invoice, $rider, $request->bank_account_id);
+
+        \DB::commit();
+        Flash::success('Invoice marked as paid successfully.');
       } catch (\Exception $e) {
-        DB::rollBack();
-        Flash::error('Error processing payment: ' . $e->getMessage());
+        \DB::rollBack();
+        Flash::error('Error marking invoice as paid: ' . $e->getMessage());
       }
 
       return redirect()->back();
     }
 
-    // Get unpaid invoices with rider information
-    $query = RiderInvoices::with('rider')
-      ->where('status', 0) // unpaid only
-      ->orderBy('billing_month', 'desc')
-      ->orderBy('inv_date', 'desc');
-
-    // Apply filters if any
-    if ($request->filled('rider_id')) {
-      $query->where('rider_id', $request->rider_id);
+    // GET request - show payment form
+    $invoice = RiderInvoices::with('rider')->find($id);
+    if (!$invoice) {
+      Flash::error('Invoice not found.');
+      return redirect()->back();
     }
 
-    if ($request->filled('billing_month')) {
-      $billingMonth = \Carbon\Carbon::parse($request->billing_month);
-      $query->whereYear('billing_month', $billingMonth->year)
-        ->whereMonth('billing_month', $billingMonth->month);
+    if ($invoice->status == 1) {
+      Flash::error('Invoice is already marked as paid.');
+      return redirect()->back();
     }
-
-    $unpaidInvoices = $query->get();
 
     // Get bank accounts for dropdown
     $bankAccounts = Accounts::bankAccountsDropdown();
 
-    // Get riders for filter
-    $riders = Riders::dropdown();
-
-    return view('rider_invoices.manual_payment', compact('unpaidInvoices', 'bankAccounts', 'riders'));
+    return view('rider_invoices.mark_as_paid', compact('invoice', 'bankAccounts'));
   }
 
   /**
    * Create voucher entries for manual payment
    */
-  private function createManualVoucherEntries($invoice, $bankAccountId, $paymentDate)
+  private function createManualPaymentVoucher($invoice, $rider, $bankAccountId)
   {
     $transactionService = new TransactionService();
     $trans_code = \App\Helpers\Account::trans_code();
     $totalAmount = $invoice->total_amount;
+    $invoiceDate = now()->format('Y-m-d');
+    $billingMonth = $invoice->billing_month;
 
     // Debit rider account
     $transactionDataDebit = [
-      'account_id' => $invoice->rider->account_id,
+      'account_id' => $rider->account_id,
       'reference_id' => $invoice->id,
       'reference_type' => 'RiderInvoice',
       'trans_code' => $trans_code,
-      'trans_date' => $paymentDate,
-      'narration' => "Manual payment for Rider Invoice #" . $invoice->id,
+      'trans_date' => $invoiceDate,
+      'narration' => "Manual payment for Rider Invoice #" . $invoice->id . ' - ' . ($invoice->descriptions ?? 'Manual Payment'),
       'debit' => $totalAmount,
       'credit' => 0,
-      'billing_month' => $invoice->billing_month,
+      'billing_month' => $billingMonth,
     ];
     $transactionService->recordTransaction($transactionDataDebit);
 
@@ -371,28 +368,28 @@ class RiderInvoicesController extends AppBaseController
       'reference_id' => $invoice->id,
       'reference_type' => 'RiderInvoice',
       'trans_code' => $trans_code,
-      'trans_date' => $paymentDate,
-      'narration' => "Manual payment received for Rider Invoice #" . $invoice->id,
+      'trans_date' => $invoiceDate,
+      'narration' => "Manual payment received for Rider Invoice #" . $invoice->id . ' - ' . ($invoice->descriptions ?? 'Manual Payment'),
       'debit' => 0,
       'credit' => $totalAmount,
-      'billing_month' => $invoice->billing_month,
+      'billing_month' => $billingMonth,
     ];
     $transactionService->recordTransaction($transactionDataCredit);
 
     // Create voucher record
     $voucherData = [
-      'trans_date' => $paymentDate,
-      'voucher_type' => 'RI',
+      'trans_date' => $invoiceDate,
+      'voucher_type' => 'RI', // Rider Invoice Payment Voucher
       'payment_type' => 1,
       'payment_from' => $bankAccountId,
-      'billing_month' => $invoice->billing_month,
+      'billing_month' => $billingMonth,
       'amount' => $totalAmount,
       'trans_code' => $trans_code,
-      'Created_By' => auth()->id(),
+      'Created_By' => \Auth::user()->id,
       'remarks' => "Manual payment for Rider Invoice #" . $invoice->id,
     ];
 
-    DB::table('vouchers')->insert($voucherData);
+    \DB::table('vouchers')->insert($voucherData);
   }
 
   public function sendEmail($id, Request $request)

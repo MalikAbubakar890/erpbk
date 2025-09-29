@@ -280,8 +280,9 @@ $account = App\Models\Accounts::where('ref_id', $result['id'])->where('account_t
                     </b>
 
                   </h6>
-                  <div class="mt-2" style="width: 100%;">
+                  <div class="mt-2" style="width: 100%;display: flex;gap: 10px;">
                     <span class="badge bg-label-primary">@isset($result){{$result['designation']??'not-set'}}@endisset</span>
+                    <span class="badge @isset($result) @if($result['status'] == 1) bg-label-success @else bg-label-danger @endif @endisset">@isset($result){{App\Helpers\General::RiderStatus($result['status'])??'not-set'}}@endisset</span>
                   </div>
                 </div>
                 <div class="text-end" style="width: 14%;">
@@ -382,14 +383,14 @@ $account = App\Models\Accounts::where('ref_id', $result['id'])->where('account_t
                   </b>
                 </div>
               </li>
-              <li class="list-group-item pb-1 mt-3 user_list d-flex align-items-center">
+              <!-- <li class="list-group-item pb-1 mt-3 user_list d-flex align-items-center">
                 <div class="icons me-2">
                   <i class="ti ti-user-check ti-sm me-1_5"></i>
                 </div>
                 <div class="user_list_content">
                   <span>Status:</span><br> <b class="float-right">@isset($result){{App\Helpers\General::RiderStatus($result['status'])??'not-set'}}@endisset</b>
                 </div>
-              </li>
+              </li> -->
               <li class="list-group-item pb-1 mt-3 user_list d-flex align-items-center">
                 <div class="icons me-2">
                   <i class="ti ti-calendar-due ti-sm me-1_5"></i>
@@ -398,7 +399,7 @@ $account = App\Models\Accounts::where('ref_id', $result['id'])->where('account_t
                   <span>Date Of Joining:</span><br> <b class="float-right">@isset($result){{App\Helpers\General::DateFormat($result['doj'])??'not-set'}}@endisset</b>
                 </div>
               </li>
-              <li class="list-group-item pb-1 mt-3 user_list d-flex align-items-center">
+              <!-- <li class="list-group-item pb-1 mt-3 user_list d-flex align-items-center">
                 <div class="icons me-2">
                   <i class="ti ti-user-check ti-sm me-1_5"></i>
                 </div>
@@ -413,7 +414,7 @@ $account = App\Models\Accounts::where('ref_id', $result['id'])->where('account_t
                 <div class="user_list_content">
                   <span>Attendance:</span><br> <b class="float-right">@isset($result){{$result['attendance']??'not-set'}}@endisset</b>
                 </div>
-              </li>
+              </li> -->
               <li class="list-group-item pb-1 mt-3 user_list d-flex align-items-center">
                 <div class="icons me-2">
                   <i class="ti ti-cash-banknote ti-sm me-1_5"></i>
@@ -521,90 +522,182 @@ $account = App\Models\Accounts::where('ref_id', $result['id'])->where('account_t
     </div>
   </div>
   <div class="col-xl-9 col-md-9 col-lg-7 order-0 order-md-1 position-relative">
-    <div class="nav-align-top mb-4" style="position: fixed; z-index: 1;">
+    <div class="nav-align-top mb-4" style="position: sticky; top: 0; z-index: 1000; width: 100%;">
       <div class="card" style="z-index: 1;">
-        <div class="card-body p-3">
-          <ul class="nav nav-pills flex-column flex-md-row flex-wrap mb-0 row-gap-2 justify-content-between">
-            <li class="nav-item"><a class="nav-link @if(is_numeric(request()->segment(2)) || request()->segment(2) == 'create') active @endif" href="@isset($result['id']){{route('riders.show',$result['id'])}}@else#@endif"><i class="ti ti-user-check ti-sm me-1_5"></i>Information</a></li>
-            @isset($result)
-            @can('timeline_view')
-            <li class="nav-item"><a class="nav-link @if(request()->segment(2) == 'timeline') active @endif" href="{{route('rider.timeline',$result['id'])}}"><i class="ti ti-timeline ti-sm me-1_5"></i>Timeline</a></li>
-            @endcan
-            @can('rider_document')
-            <li class="nav-item"><a class="nav-link @if(request()->segment(2) == 'files') active @endif" href="{{route('rider.files',$result['id'])}}"><i class="ti ti-file-upload ti-sm me-1_5"></i>Files</a></li>
-            @endcan
-            @can('riderinvoice_view')
-            <li class="nav-item"><a class="nav-link @if(request()->segment(2) == 'invoices') active @endif" href="{{route('rider.invoices',$result['id'])}}"><i class="ti ti-file-invoice ti-sm me-1_5"></i>Invoices</a></li>
-            @endcan
-            @can('visaexpense_view')
-            @if($account)
-            <li class="nav-item">
-              <a class="nav-link @if(request()->segment(2) == 'generatentries' || request()->segment(2) == 'installmentPlan') active @endif"
-                href="{{ route('VisaExpense.generatentries', $account->id) }}">
-                <i class="ti ti-file-invoice ti-sm me-1_5"></i>
-                Visa Expense
-              </a>
-            </li>
-            @endif
-            @endcan
-            @can('item_view')
-            <li class="nav-item"><a class="nav-link @if(request()->segment(2) == 'items') active @endif" href="{{route('rider.items',$result['id'])}}"><i class="ti ti-cash-banknote ti-sm me-1"></i>Salary</a></li>
-            @endcan
-            @can('gn_ledger')
-            <li class="nav-item"><a class="nav-link @if(request()->segment(2) == 'ledger') active @endif" href="{{route('rider.ledger',$result['id'])}}"><i class="ti ti-file ti-sm me-1_5"></i>Ledger</a></li>
-            {{-- <li class="nav-item"><a class="nav-link @if(request()->segment(2) == 'attendance') active @endif" href="{{route('rider.attendance',$result['id'])}}"><i class="ti ti-calendar-check ti-sm me-1_5"></i>Attendance</a></li> --}}
-            @endcan
-            @can('activity_view')
-            <li class="nav-item"><a class="nav-link @if(request()->segment(2) == 'activities') active @endif" href="{{route('rider.activities',$result['id'])}}"><i class="ti ti-motorbike ti-sm me-1_5"></i>Activities</a></li>
-            @endcan
-            @can('email_view')
-            <li class="nav-item"><a class="nav-link @if(request()->segment(2) == 'emails') active @endif" href="{{route('rider.emails',$result['id'])}}"><i class="ti ti-mail ti-sm me-1_5"></i>Emails</a></li>
-            @endcan
-            <li class="nav-item">
-              <div class="dropdown">
-                <button class="btn btn-outline-secondary rounded-pill p-2 waves-effect" type="button" id="actiondropdown" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                  <i class="ti ti-dots icon-md"></i>
-                </button>
-                <div class="dropdown-menu dropdown-menu-end" aria-labelledby="actiondropdown">
-                  @can('advanceloan_create')
-                  <a href="javascript:void(0);" data-action="{{ route('riders.advanceloan', ['id' => $result['id'], 'vt' => 'AL']) }}" data-size="xl" data-title="Advance Loan" class='dropdown-item show-modal'>
-                    Advance Loan
+        <div class="card-body p-2">
+          <div class="d-flex justify-content-between align-items-center flex-wrap" style="gap: 0.5rem;">
+            <div class="flex-grow-1" style="min-width: 0;">
+              <ul class="nav nav-pills flex-nowrap mb-0 overflow-hidden" id="mainNavigation" style="gap: 0.25rem;">
+                <!-- Priority navigation items (always visible when possible) -->
+                <li class="nav-item nav-priority-1">
+                  <a class="nav-link @if(is_numeric(request()->segment(2)) || request()->segment(2) == 'create') active @endif"
+                    href="@isset($result['id']){{route('riders.show',$result['id'])}}@else#@endif">
+                    <i class="ti ti-user-check ti-sm me-1_5"></i>Information
                   </a>
-                  @endcan
-                  @can('cod_create')
-                  <a href="javascript:void(0);" data-action="{{ route('riders.cod' , $result['id']) }}" data-size="xl" data-title="COD" class='dropdown-item show-modal'>
-                    COD
+                </li>
+
+                @isset($result)
+                @can('timeline_view')
+                <li class="nav-item nav-priority-2">
+                  <a class="nav-link @if(request()->segment(2) == 'timeline') active @endif"
+                    href="{{route('rider.timeline',$result['id'])}}">
+                    <i class="ti ti-timeline ti-sm me-1_5"></i>Timeline
                   </a>
-                  @endcan
-                  @can('penality_create')
-                  <a href="javascript:void(0);" data-action="{{ route('riders.penalty' , $result['id']) }}" class='dropdown-item show-modal' data-size="xl" data-title="Penality">
-                    Penality
+                </li>
+                @endcan
+
+                @can('rider_document')
+                <li class="nav-item nav-priority-3">
+                  <a class="nav-link @if(request()->segment(2) == 'files') active @endif"
+                    href="{{route('rider.files',$result['id'])}}">
+                    <i class="ti ti-file-upload ti-sm me-1_5"></i>Files
                   </a>
-                  @endcan
-                  @can('incentives_create')
-                  <a href="javascript:void(0);" data-action="{{ route('riders.incentive' , $result['id']) }}" class='dropdown-item show-modal' data-size="xl" data-title="Incentive">
-                    Incentive
+                </li>
+                @endcan
+
+                @can('riderinvoice_view')
+                <li class="nav-item nav-priority-4">
+                  <a class="nav-link @if(request()->segment(2) == 'invoices') active @endif"
+                    href="{{route('rider.invoices',$result['id'])}}">
+                    <i class="ti ti-file-invoice ti-sm me-1_5"></i>Invoices
                   </a>
-                  @endcan
-                  @can('payment_create')
-                  <a href="javascript:void(0);" data-action="{{ route('riders.payment' , $result['id']) }}" class='dropdown-item show-modal' data-size="xl" data-title="Payment">
-                    Payment
+                </li>
+                @endcan
+
+                @can('visaexpense_view')
+                @if($account)
+                <li class="nav-item nav-priority-5">
+                  <a class="nav-link @if(request()->segment(2) == 'generatentries' || request()->segment(2) == 'installmentPlan') active @endif"
+                    href="{{ route('VisaExpense.generatentries', $account->id) }}">
+                    <i class="ti ti-file-invoice ti-sm me-1_5"></i>Visa Expense
                   </a>
-                  @endcan
-                  @can('vendorcharges_create')
-                  <a href="javascript:void(0);" data-action="{{ route('riders.vendorcharges' , $result['id']) }}" class='dropdown-item show-modal' data-size="xl" data-title="Vendor Charges">
-                    Vendor Charges
+                </li>
+                @endif
+                @endcan
+
+                @can('item_view')
+                <li class="nav-item nav-priority-6">
+                  <a class="nav-link @if(request()->segment(2) == 'items') active @endif"
+                    href="{{route('rider.items',$result['id'])}}">
+                    <i class="ti ti-cash-banknote ti-sm me-1"></i>Salary
                   </a>
-                  @endcan
-                </div>
+                </li>
+                @endcan
+
+                @can('gn_ledger')
+                <li class="nav-item nav-priority-7">
+                  <a class="nav-link @if(request()->segment(2) == 'ledger') active @endif"
+                    href="{{route('rider.ledger',$result['id'])}}">
+                    <i class="ti ti-file ti-sm me-1_5"></i>Ledger
+                  </a>
+                </li>
+                @endcan
+
+                @can('activity_view')
+                <li class="nav-item nav-priority-8">
+                  <a class="nav-link @if(request()->segment(2) == 'activities') active @endif"
+                    href="{{route('rider.activities',$result['id'])}}">
+                    <i class="ti ti-motorbike ti-sm me-1_5"></i>Activities
+                  </a>
+                </li>
+                @endcan
+
+                @can('email_view')
+                <li class="nav-item nav-priority-9">
+                  <a class="nav-link @if(request()->segment(2) == 'emails') active @endif"
+                    href="{{route('rider.emails',$result['id'])}}">
+                    <i class="ti ti-mail ti-sm me-1_5"></i>Emails
+                  </a>
+                </li>
+                @endcan
+
+                <!-- Action items with lower priority -->
+                @can('advanceloan_create')
+                <li class="nav-item nav-priority-10 nav-action-item">
+                  <a href="javascript:void(0);"
+                    data-action="{{ route('riders.advanceloan', ['id' => $result['id'], 'vt' => 'AL']) }}"
+                    data-size="xl" data-title="Advance Loan"
+                    class='nav-link show-modal'>
+                    <i class="ti ti-credit-card ti-sm me-1_5"></i>Advance Loan
+                  </a>
+                </li>
+                @endcan
+
+                @can('cod_create')
+                <li class="nav-item nav-priority-11 nav-action-item">
+                  <a href="javascript:void(0);"
+                    data-action="{{ route('riders.cod' , $result['id']) }}"
+                    data-size="xl" data-title="COD"
+                    class='nav-link show-modal'>
+                    <i class="ti ti-cash ti-sm me-1_5"></i>COD
+                  </a>
+                </li>
+                @endcan
+
+                @can('penality_create')
+                <li class="nav-item nav-priority-12 nav-action-item">
+                  <a href="javascript:void(0);"
+                    data-action="{{ route('riders.penalty' , $result['id']) }}"
+                    class='nav-link show-modal'
+                    data-size="xl" data-title="Penality">
+                    <i class="ti ti-alert-triangle ti-sm me-1_5"></i>Penalty
+                  </a>
+                </li>
+                @endcan
+
+                @can('incentives_create')
+                <li class="nav-item nav-priority-13 nav-action-item">
+                  <a href="javascript:void(0);"
+                    data-action="{{ route('riders.incentive' , $result['id']) }}"
+                    class='nav-link show-modal'
+                    data-size="xl" data-title="Incentive">
+                    <i class="ti ti-award ti-sm me-1_5"></i>Incentive
+                  </a>
+                </li>
+                @endcan
+
+                @can('payment_create')
+                <li class="nav-item nav-priority-14 nav-action-item">
+                  <a href="javascript:void(0);"
+                    data-action="{{ route('riders.payment' , $result['id']) }}"
+                    class='nav-link show-modal'
+                    data-size="xl" data-title="Payment">
+                    <i class="ti ti-wallet ti-sm me-1_5"></i>Payment
+                  </a>
+                </li>
+                @endcan
+
+                @can('vendorcharges_create')
+                <li class="nav-item nav-priority-15 nav-action-item">
+                  <a href="javascript:void(0);"
+                    data-action="{{ route('riders.vendorcharges' , $result['id']) }}"
+                    class='nav-link show-modal'
+                    data-size="xl" data-title="Vendor Charges">
+                    <i class="ti ti-receipt ti-sm me-1_5"></i>Vendor Charges
+                  </a>
+                </li>
+                @endcan
+                @endisset
+              </ul>
+            </div>
+
+            <!-- Dropdown for overflow items and actions -->
+            <div class="dropdown">
+              <button class="btn btn-outline-secondary rounded-pill p-2 waves-effect"
+                type="button" id="actiondropdown" data-bs-toggle="dropdown"
+                aria-haspopup="true" aria-expanded="false">
+                <i class="ti ti-dots icon-md"></i>
+              </button>
+              <div class="dropdown-menu dropdown-menu-end" aria-labelledby="actiondropdown" id="dropdownMenu">
+                <!-- Overflow navigation and action items will be moved here -->
+                <div id="overflowItems"></div>
               </div>
-            </li>
-            @endisset
-          </ul>
+            </div>
+          </div>
         </div>
       </div>
     </div>
-    <div class="card mb-5" id="cardBody" style="margin-top: 120px; height:1300px !important;overflow: auto;margin-top: 120px;">
+    <div class="card mb-5" id="cardBody" style="margin-top: 20px; height:1300px !important;overflow: auto;">
       @yield('page_content')
     </div>
   </div>
@@ -612,56 +705,311 @@ $account = App\Models\Accounts::where('ref_id', $result['id'])->where('account_t
 
 <script>
   document.addEventListener('DOMContentLoaded', function() {
-    // Add change event listener to absconder checkbox
-    document.querySelector('.absconder-checkbox').addEventListener('change', function() {
-      const riderId = this.getAttribute('data-rider-id');
-      const isChecked = this.checked;
-      const card = this.closest('.status-card');
-      const subtitle = card.querySelector('.status-subtitle');
-
-      if (!riderId) {
-        showNotification('Rider ID not found', 'error');
-        return;
+    // Responsive Navigation Handler
+    class ResponsiveNavigation {
+      constructor() {
+        this.mainNav = document.getElementById('mainNavigation');
+        this.overflowContainer = document.getElementById('overflowItems');
+        this.dropdownButton = document.getElementById('actiondropdown');
+        this.allNavItems = [];
+        this.init();
       }
 
-      // Add loading state
-      card.classList.add('loading');
-      subtitle.textContent = 'Updating...';
+      init() {
+        // Store all navigation items with their priority
+        this.allNavItems = Array.from(this.mainNav.querySelectorAll('.nav-item')).map(item => {
+          const priorityClass = Array.from(item.classList).find(cls => cls.startsWith('nav-priority-'));
+          const priority = priorityClass ? parseInt(priorityClass.split('-')[2]) : 999;
+          return {
+            element: item,
+            priority: priority,
+            html: item.outerHTML,
+            isActive: item.querySelector('.nav-link.active') !== null
+          };
+        }).sort((a, b) => a.priority - b.priority);
 
-      // Make AJAX request
-      fetch(`/riders/toggle-absconder/${riderId}`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-          },
-          body: JSON.stringify({})
-        })
-        .then(response => response.json())
-        .then(data => {
-          if (data.success) {
-            // Update card appearance
-            updateCardStatus(card, 'absconder', isChecked);
-            showNotification(data.message, 'success');
-          } else {
-            showNotification('Error: ' + data.message, 'error');
+        this.handleResize();
+
+        // Debounced resize handler for better performance
+        let resizeTimeout;
+        window.addEventListener('resize', () => {
+          clearTimeout(resizeTimeout);
+          resizeTimeout = setTimeout(() => this.handleResize(), 100);
+        });
+
+        window.addEventListener('load', () => {
+          setTimeout(() => this.handleResize(), 200);
+        });
+
+        // Handle window focus to recalculate
+        window.addEventListener('focus', () => {
+          setTimeout(() => this.handleResize(), 100);
+        });
+
+        // Handle visibility change
+        document.addEventListener('visibilitychange', () => {
+          if (!document.hidden) {
+            setTimeout(() => this.handleResize(), 100);
+          }
+        });
+      }
+
+      handleResize() {
+        // Reset all items to main navigation
+        this.resetNavigation();
+
+        // Wait for next frame to ensure layout is updated
+        requestAnimationFrame(() => {
+          // Wait another frame for styles to apply
+          requestAnimationFrame(() => {
+            this.redistributeItems();
+          });
+        });
+      }
+
+      resetNavigation() {
+        // Clear overflow container
+        this.overflowContainer.innerHTML = '';
+
+        // Move all items back to main navigation
+        this.mainNav.innerHTML = '';
+        this.allNavItems.forEach(item => {
+          this.mainNav.appendChild(item.element);
+        });
+      }
+
+      redistributeItems() {
+        const container = this.mainNav.closest('.card-body');
+        if (!container) return;
+
+        const containerRect = container.getBoundingClientRect();
+        const containerWidth = containerRect.width;
+        const dropdownWidth = this.dropdownButton.offsetWidth + 10;
+
+        let currentWidth = 0;
+        const visibleItems = [];
+        const overflowItems = [];
+
+        // First, try to fit all items without dropdown
+        let totalItemsWidth = 0;
+        const itemWidths = this.allNavItems.map(item => {
+          const width = this.getItemWidth(item.element);
+          totalItemsWidth += width;
+          return {
+            item,
+            width
+          };
+        });
+
+        // Calculate container padding and margins
+        const containerStyles = window.getComputedStyle(container);
+        const containerPadding = parseFloat(containerStyles.paddingLeft) + parseFloat(containerStyles.paddingRight);
+        const safetyMargin = 20;
+        const usableWidth = containerWidth - containerPadding - safetyMargin;
+
+        // If all items can fit without dropdown, show them all
+        if (totalItemsWidth <= usableWidth) {
+          this.allNavItems.forEach(item => visibleItems.push(item));
+        } else {
+          // Otherwise, calculate what can fit with dropdown visible
+          const availableWidth = usableWidth - dropdownWidth;
+
+          for (let i = 0; i < itemWidths.length; i++) {
+            const {
+              item,
+              width
+            } = itemWidths[i];
+
+            if (currentWidth + width <= availableWidth) {
+              currentWidth += width;
+              visibleItems.push(item);
+            } else {
+              overflowItems.push(item);
+            }
+          }
+
+          // Ensure at least the first item (Information) is always visible
+          if (visibleItems.length === 0 && this.allNavItems.length > 0) {
+            visibleItems.push(this.allNavItems[0]);
+            overflowItems.unshift(...this.allNavItems.slice(1));
+          }
+        }
+
+        // Update the navigation
+        this.updateNavigation(visibleItems, overflowItems);
+      }
+
+      getItemWidth(element) {
+        // Create a temporary clone to measure width accurately
+        const clone = element.cloneNode(true);
+        clone.style.cssText = `
+          visibility: hidden; 
+          position: absolute; 
+          white-space: nowrap; 
+          top: -9999px; 
+          left: -9999px;
+          pointer-events: none;
+          z-index: -1;
+        `;
+
+        // Append to the same container to inherit styles
+        const container = this.mainNav.parentNode;
+        container.appendChild(clone);
+
+        const rect = clone.getBoundingClientRect();
+        const width = Math.ceil(rect.width) + 6; // Add small margin and round up
+
+        container.removeChild(clone);
+        return width;
+      }
+
+      updateNavigation(visibleItems, overflowItems) {
+        // Update main navigation
+        this.mainNav.innerHTML = '';
+        visibleItems.forEach(item => {
+          this.mainNav.appendChild(item.element);
+        });
+
+        // Update overflow container and dropdown button visibility
+        this.overflowContainer.innerHTML = '';
+
+        // Show/hide dropdown button based on overflow items
+        if (overflowItems.length > 0) {
+          this.dropdownButton.style.display = 'flex';
+          // Separate navigation and action items for better organization
+          const navigationItems = overflowItems.filter(item => !item.element.classList.contains('nav-action-item'));
+          const actionItems = overflowItems.filter(item => item.element.classList.contains('nav-action-item'));
+
+          // Add navigation items first
+          navigationItems.forEach(item => {
+            const dropdownItem = this.createDropdownItem(item);
+            this.overflowContainer.appendChild(dropdownItem);
+          });
+
+          // Add divider if both types exist
+          if (navigationItems.length > 0 && actionItems.length > 0) {
+            const divider = document.createElement('div');
+            divider.className = 'dropdown-divider';
+            this.overflowContainer.appendChild(divider);
+
+            const header = document.createElement('h6');
+            header.className = 'dropdown-header';
+            header.textContent = 'Actions';
+            this.overflowContainer.appendChild(header);
+          }
+
+          // Add action items
+          actionItems.forEach(item => {
+            const dropdownItem = this.createDropdownItem(item);
+            this.overflowContainer.appendChild(dropdownItem);
+          });
+        } else {
+          // Hide dropdown button if no overflow items
+          this.dropdownButton.style.display = 'none';
+        }
+      }
+
+      createDropdownItem(navItem) {
+        const link = navItem.element.querySelector('.nav-link');
+        const href = link.getAttribute('href');
+        const icon = link.querySelector('i');
+        const text = link.textContent.trim();
+        const isActive = link.classList.contains('active');
+        const isActionItem = navItem.element.classList.contains('nav-action-item');
+
+        const dropdownItem = document.createElement('a');
+        dropdownItem.className = `dropdown-item overflow-nav-item ${isActive ? 'active' : ''}`;
+        dropdownItem.href = href;
+
+        // Copy data attributes for action items
+        if (isActionItem) {
+          const dataAction = link.getAttribute('data-action');
+          const dataSize = link.getAttribute('data-size');
+          const dataTitle = link.getAttribute('data-title');
+
+          if (dataAction) dropdownItem.setAttribute('data-action', dataAction);
+          if (dataSize) dropdownItem.setAttribute('data-size', dataSize);
+          if (dataTitle) dropdownItem.setAttribute('data-title', dataTitle);
+
+          // Copy the show-modal class
+          if (link.classList.contains('show-modal')) {
+            dropdownItem.classList.add('show-modal');
+          }
+        }
+
+        if (icon) {
+          const iconClone = icon.cloneNode(true);
+          iconClone.className = icon.className.replace('me-1_5', 'me-2');
+          dropdownItem.appendChild(iconClone);
+        }
+
+        dropdownItem.appendChild(document.createTextNode(text));
+
+        return dropdownItem;
+      }
+    }
+
+    // Initialize responsive navigation
+    const responsiveNav = new ResponsiveNavigation();
+
+    // Force initial calculation after a short delay to ensure all styles are loaded
+    setTimeout(() => {
+      responsiveNav.handleResize();
+    }, 500);
+
+    // Add change event listener to absconder checkbox
+    const absconderCheckbox = document.querySelector('.absconder-checkbox');
+    if (absconderCheckbox) {
+      absconderCheckbox.addEventListener('change', function() {
+        const riderId = this.getAttribute('data-rider-id');
+        const isChecked = this.checked;
+        const card = this.closest('.status-card');
+        const subtitle = card.querySelector('.status-subtitle');
+
+        if (!riderId) {
+          showNotification('Rider ID not found', 'error');
+          return;
+        }
+
+        // Add loading state
+        card.classList.add('loading');
+        subtitle.textContent = 'Updating...';
+
+        // Make AJAX request
+        fetch(`/riders/toggle-absconder/${riderId}`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+            },
+            body: JSON.stringify({})
+          })
+          .then(response => response.json())
+          .then(data => {
+            if (data.success) {
+              // Update card appearance
+              updateCardStatus(card, 'absconder', isChecked);
+              showNotification(data.message, 'success');
+            } else {
+              showNotification('Error: ' + data.message, 'error');
+              // Revert checkbox state on error
+              this.checked = !isChecked;
+              updateCardStatus(card, 'absconder', !isChecked);
+            }
+          })
+          .catch(error => {
+            console.error('Error:', error);
+            showNotification('An error occurred while updating absconder status', 'error');
             // Revert checkbox state on error
             this.checked = !isChecked;
             updateCardStatus(card, 'absconder', !isChecked);
-          }
-        })
-        .catch(error => {
-          console.error('Error:', error);
-          showNotification('An error occurred while updating absconder status', 'error');
-          // Revert checkbox state on error
-          this.checked = !isChecked;
-          updateCardStatus(card, 'absconder', !isChecked);
-        })
-        .finally(() => {
-          // Remove loading state
-          card.classList.remove('loading');
-        });
-    });
+          })
+          .finally(() => {
+            // Remove loading state
+            card.classList.remove('loading');
+          });
+      });
+    }
 
     // Add change event listener to flowup checkbox
     document.querySelector('.flowup-checkbox').addEventListener('change', function() {
@@ -855,6 +1203,258 @@ $account = App\Models\Accounts::where('ref_id', $result['id'])->where('account_t
       }
     `;
     document.head.appendChild(style);
+
+    // Add responsive navigation styles
+    const navStyle = document.createElement('style');
+    navStyle.textContent = `
+      /* Responsive Navigation Styles */
+      .nav-align-top {
+        width: 100%;
+        max-width: 100%;
+      }
+      
+      .nav-align-top .card {
+        width: 100%;
+        max-width: 100%;
+        border-radius: 0.5rem;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      }
+      
+      .nav-align-top .card-body {
+        padding: 0.75rem 1rem !important;
+      }
+      
+      #mainNavigation {
+        display: flex;
+        flex-wrap: nowrap;
+        overflow: hidden;
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        gap: 0.25rem;
+      }
+      
+      #mainNavigation .nav-item {
+        flex-shrink: 0;
+        white-space: nowrap;
+        display: flex;
+      }
+      
+      #mainNavigation .nav-link {
+        padding: 0.375rem 0.75rem;
+        font-size: 0.875rem;
+        border-radius: 0.375rem;
+        text-decoration: none;
+        display: flex;
+        align-items: center;
+        transition: all 0.2s ease;
+      }
+      
+      .overflow-nav-item {
+        display: flex;
+        align-items: center;
+      }
+      
+      .overflow-nav-item.active {
+        background-color: var(--bs-primary);
+        color: white;
+      }
+      
+      .overflow-nav-item i {
+        width: 16px;
+        height: 16px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+      }
+      
+      .permanent-action {
+        border-top: 1px solid var(--bs-border-color);
+        margin-top: 0.25rem;
+        padding-top: 0.5rem;
+      }
+      
+      .permanent-action:first-of-type {
+        border-top: none;
+        margin-top: 0;
+        padding-top: 0.25rem;
+      }
+      
+      /* Action items styling */
+      .nav-action-item .nav-link {
+        background-color: var(--bs-secondary-bg);
+        border: 1px solid var(--bs-border-color);
+        color: var(--bs-secondary-color);
+        transition: all 0.2s ease;
+      }
+      
+      .nav-action-item .nav-link:hover {
+        background-color: var(--bs-primary);
+        color: white;
+        border-color: var(--bs-primary);
+        transform: translateY(-1px);
+      }
+      
+      /* Let JavaScript handle responsive behavior dynamically */
+      .nav-item {
+        display: flex !important; /* Override any CSS hiding */
+      }
+      
+      /* Dropdown styling */
+      #actiondropdown {
+        flex-shrink: 0 !important;
+        border: 1px solid var(--bs-border-color);
+        background: white;
+        color: var(--bs-body-color);
+        display: none; /* Initially hidden */
+        align-items: center;
+        justify-content: center;
+      }
+      
+      #actiondropdown:hover {
+        background-color: var(--bs-light);
+        border-color: var(--bs-primary);
+      }
+      
+      .dropdown-menu {
+        max-height: 400px;
+        overflow-y: auto;
+        border-radius: 0.5rem;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        border: 1px solid var(--bs-border-color);
+        margin-top: 0.25rem;
+        min-width: 180px;
+      }
+      
+      /* Ensure dropdown stays within viewport */
+      .dropdown-menu-end {
+        right: 0 !important;
+        left: auto !important;
+      }
+      
+      /* Loading state for navigation */
+      .nav-loading {
+        opacity: 0.7;
+        pointer-events: none;
+      }
+      
+      /* Better spacing for icons in dropdown */
+      .dropdown-item i {
+        width: 20px;
+        text-align: center;
+      }
+      
+      /* Highlight active items in dropdown */
+      .dropdown-item.active {
+        background-color: var(--bs-primary) !important;
+        color: white !important;
+      }
+      
+      /* Make navigation more compact on smaller screens */
+      @media (max-width: 768px) {
+        .nav-align-top .card-body {
+          padding: 0.5rem !important;
+        }
+        
+        #mainNavigation .nav-link {
+          padding: 0.25rem 0.5rem !important;
+          font-size: 0.8rem;
+        }
+        
+        #mainNavigation .nav-link i {
+          font-size: 0.8rem !important;
+          margin-right: 0.25rem !important;
+        }
+        
+        .nav-action-item .nav-link {
+          padding: 0.25rem 0.5rem !important;
+          font-size: 0.75rem;
+        }
+        
+        #actiondropdown {
+          padding: 0.25rem 0.5rem !important;
+        }
+      }
+      
+      /* Extra small screens - only essential items */
+      @media (max-width: 480px) {
+        .nav-align-top .card-body {
+          padding: 0.25rem 0.5rem !important;
+        }
+        
+        #mainNavigation .nav-link {
+          padding: 0.25rem 0.4rem !important;
+          font-size: 0.75rem;
+        }
+        
+        #mainNavigation .nav-link i {
+          margin-right: 0.1rem !important;
+        }
+        
+        .dropdown-menu {
+          min-width: 160px;
+          font-size: 0.8rem;
+        }
+      }
+      
+      /* Very small screens */
+      @media (max-width: 380px) {
+        #mainNavigation .nav-link {
+          padding: 0.2rem 0.3rem !important;
+          font-size: 0.7rem;
+        }
+        
+        #mainNavigation .nav-link i {
+          display: none; /* Hide icons on very small screens */
+        }
+        
+        #actiondropdown {
+          padding: 0.2rem 0.4rem !important;
+        }
+      }
+      
+      /* Ensure smooth transitions */
+      .nav-item {
+        transition: all 0.3s ease;
+      }
+      
+      /* Visual separator between nav and action items */
+      .nav-action-item:first-of-type {
+        margin-left: 0.5rem;
+        position: relative;
+      }
+      
+      .nav-action-item:first-of-type::before {
+        content: '';
+        position: absolute;
+        left: -0.25rem;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 1px;
+        height: 20px;
+        background-color: var(--bs-border-color);
+      }
+      
+      /* Improve dropdown visibility on mobile */
+      @media (max-width: 576px) {
+        .dropdown-menu {
+          right: 0 !important;
+          left: auto !important;
+          min-width: 200px;
+          font-size: 0.875rem;
+        }
+        
+        .dropdown-item {
+          padding: 0.5rem 1rem;
+        }
+        
+        .dropdown-header {
+          font-size: 0.75rem;
+          padding: 0.25rem 1rem;
+        }
+      }
+    `;
+    document.head.appendChild(navStyle);
   });
 </script>
 

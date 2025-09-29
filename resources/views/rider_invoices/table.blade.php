@@ -88,6 +88,13 @@
                      <i class="fa fa-edit mx-1"></i> Update
                   </a>
                   @endcan
+                  @if($r->status == 0)
+                  @can('riderinvoice_edit')
+                  <a href="{{ route('riderInvoices.markAsPaid', $r->id) }}" class='dropdown-item waves-effect'>
+                     <i class="fa fa-money-bill mx-1 text-success"></i> Mark as Paid
+                  </a>
+                  @endcan
+                  @endif
                   @can('riderinvoice_delete')
                   <a href="javascript:void(0);" onclick='confirmDelete("{{route('riderInvoices.delete', $r->id) }}")' class='dropdown-item waves-effect'>
                      <i class="fa fa-trash mx-1"></i> Delete
@@ -102,7 +109,7 @@
    </tbody>
 </table>
 @if(method_exists($data, 'links'))
-    {!! $data->links('components.global-pagination') !!}
+{!! $data->links('components.global-pagination') !!}
 @endif
 <div class="modal modal-default filtetmodal fade" id="customoizecolmn" tabindex="-1" data-bs-backdrop="static" role="dialog" aria-hidden="true">
    <div class="modal-dialog modal-lg modal-slide-top modal-full-top">

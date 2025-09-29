@@ -61,8 +61,8 @@ class CloudwaysSessionFix
     {
         // Extend session lifetime if needed
         if (config('cloudways.session_fixes.extend_session_lifetime')) {
-            ini_set('session.gc_maxlifetime', 86400); // 24 hours
-            ini_set('session.cookie_lifetime', 86400);
+            ini_set('session.gc_maxlifetime', 172800); // 48 hours
+            ini_set('session.cookie_lifetime', 172800);
         }
 
         // Force secure cookies only for HTTPS and when in production
@@ -73,10 +73,20 @@ class CloudwaysSessionFix
             ini_set('session.cookie_secure', '0');
         }
 
-        // Set proper session path
+        // Set proper session path and configuration
         ini_set('session.cookie_path', '/');
         ini_set('session.cookie_httponly', '1');
         ini_set('session.cookie_samesite', 'Lax');
+
+        // Additional session configuration for stability
+        ini_set('session.use_strict_mode', '1');
+        ini_set('session.use_cookies', '1');
+        ini_set('session.use_only_cookies', '1');
+        ini_set('session.cookie_domain', '');
+
+        // Increase session garbage collection probability
+        ini_set('session.gc_probability', '1');
+        ini_set('session.gc_divisor', '100');
     }
 
     /**

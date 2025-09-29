@@ -209,7 +209,7 @@ Route::middleware(['auth', 'web'])->group(function () {
   Route::resource('riderInvoices', App\Http\Controllers\RiderInvoicesController::class);
   Route::any('rider/invoice-import', [\App\Http\Controllers\RiderInvoicesController::class, 'import'])->name('rider.invoice_import');
   Route::any('rider/invoice-import-paid', [\App\Http\Controllers\RiderInvoicesController::class, 'importPaid'])->name('riderInvoices.importPaid');
-  Route::any('rider/manual-payment', [\App\Http\Controllers\RiderInvoicesController::class, 'manualPayment'])->name('riderInvoices.manualPayment');
+  Route::any('rider/invoice-mark-paid/{id}', [\App\Http\Controllers\RiderInvoicesController::class, 'markAsPaid'])->name('riderInvoices.markAsPaid');
   Route::get('search_item_price/{RID}/{itemID}', [\App\Http\Controllers\ItemsController::class, 'search_item_price']);
   Route::get('riderInvoices/delete/{id}', [\App\Http\Controllers\RiderInvoicesController::class, 'destroy'])->name('riderInvoices.delete');
 
@@ -331,6 +331,17 @@ Route::get('/artisan-storage-unlink', function () {
   Artisan::call('storage:unlink');
   return 'storage unlink';
 });
+
+// Session health check route
+Route::get('/session-health', function () {
+  return response()->json([
+    'status' => 'healthy',
+    'session_id' => session()->getId(),
+    'user_id' => auth()->id(),
+    'csrf_token' => csrf_token(),
+    'timestamp' => now()->toISOString()
+  ]);
+})->middleware('auth');
 
 /* Route::resource('calculations', App\Http\Controllers\CalculationsController::class)
     ->names([

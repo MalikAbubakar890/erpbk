@@ -430,11 +430,14 @@
 {{-- Include Column Control Panel --}}
 @php
 use Illuminate\Support\Facades\Schema;
+// Get all columns from riders table
+$filteredColumns = Schema::getColumnListing('riders');
 
-// 1) Get all columns from riders table
-$dbColumns = Schema::getColumnListing('riders');
+// Columns to exclude
+$exclude = ['email', 'NFDID', 'cdm_deposit_id', 'DEPT', 'job_status', 'attach_documents', 'other_details', 'TAID'];
 
-// 2) Prefer showing these first if present, then append the rest
+// Final filtered columns
+$dbColumns = array_diff($filteredColumns, $exclude);
 $preferredOrder = [
 'rider_id',
 'name',

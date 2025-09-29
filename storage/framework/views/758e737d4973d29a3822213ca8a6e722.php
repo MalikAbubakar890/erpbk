@@ -90,6 +90,13 @@
                      <i class="fa fa-edit mx-1"></i> Update
                   </a>
                   <?php endif; ?>
+                  <?php if($r->status == 0): ?>
+                  <?php if (app(\Illuminate\Contracts\Auth\Access\Gate::class)->check('riderinvoice_edit')): ?>
+                  <a href="<?php echo e(route('riderInvoices.markAsPaid', $r->id)); ?>" class='dropdown-item waves-effect'>
+                     <i class="fa fa-money-bill mx-1 text-success"></i> Mark as Paid
+                  </a>
+                  <?php endif; ?>
+                  <?php endif; ?>
                   <?php if (app(\Illuminate\Contracts\Auth\Access\Gate::class)->check('riderinvoice_delete')): ?>
                   <a href="javascript:void(0);" onclick='confirmDelete("<?php echo e(route('riderInvoices.delete', $r->id)); ?>")' class='dropdown-item waves-effect'>
                      <i class="fa fa-trash mx-1"></i> Delete
@@ -104,7 +111,7 @@
    </tbody>
 </table>
 <?php if(method_exists($data, 'links')): ?>
-    <?php echo $data->links('components.global-pagination'); ?>
+<?php echo $data->links('components.global-pagination'); ?>
 
 <?php endif; ?>
 <div class="modal modal-default filtetmodal fade" id="customoizecolmn" tabindex="-1" data-bs-backdrop="static" role="dialog" aria-hidden="true">

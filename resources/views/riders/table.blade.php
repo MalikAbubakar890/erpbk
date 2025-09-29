@@ -1,7 +1,7 @@
 @push('third_party_stylesheets')
 @endpush
 <table class="table table-striped dataTable no-footer" id="dataTableBuilder">
-   <thead class="text-center">
+   <thead class="">
       <tr role="row">
          @php
          $tableCols = $tableColumns ?? [];

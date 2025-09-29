@@ -79,6 +79,15 @@ class ImportRiderInvoice implements ToCollection
             $VID = $rider->VID;
             //$VID = AssignVendorRider::where('RID', $RID)->value('VID');
             if (isset($row[21])) {
+              // Check for duplicate invoice for same rider and billing month
+              $existingInvoice = RiderInvoices::where('rider_id', $RID)
+                ->where('billing_month', $billing_month)
+                ->first();
+
+              if ($existingInvoice) {
+                throw ValidationException::withMessages(['file' => 'Row(' . $i . ') - An invoice for rider ' . $row[1] . ' has already been generated for the selected billing month.']);
+              }
+
               // Map status from Excel: allow 'unpaid'/'paid' or 0/1
               $excelStatus = strtolower(trim($row[30] ?? ''));
               if ($excelStatus === 'paid' || $excelStatus === '1') {

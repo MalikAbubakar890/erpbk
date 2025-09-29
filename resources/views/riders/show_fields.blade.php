@@ -124,14 +124,6 @@
                     </select>
                 </div>
                 <div class="col-md-3 form-group col-3">
-                    <label>Customer</label>
-                    <select class="form-control form-control-sm select2" name="customer_id">
-                        @foreach($customers as $id => $name)
-                        <option value="{{$id}}" {{$result['customer_id'] == $id ? 'selected' : ''}}>{{$name}}</option>
-                        @endforeach
-                    </select>
-                </div>
-                <div class="col-md-3 form-group col-3">
                     <label>Recruiter</label>
                     <select class="form-control form-control-sm select2" name="recuriter">
                         <option value="">Select Recruiter</option>

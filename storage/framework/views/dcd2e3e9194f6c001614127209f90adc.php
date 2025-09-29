@@ -39,22 +39,24 @@ $contentLayout = (isset($container) ? (($container === 'container-xxl') ? "layou
 
   <?php echo app('Illuminate\Foundation\Vite')('resources/sass/app.scss'); ?>
   <?php echo app('Illuminate\Foundation\Vite')('resources/js/app.js'); ?>
+
+  <!-- Session Fix Script -->
+  <script src="<?php echo e(asset('js/session-fix.js')); ?>"></script>
 </head>
 
-<body >
+<body>
 
-<input type="hidden" name="base_url" id="base_url" value="<?php echo e(url("/")); ?>" />
+  <input type="hidden" name="base_url" id="base_url" value="<?php echo e(url("/")); ?>" />
   <!-- Layout Content -->
   <?php echo $__env->yieldContent('layoutContent'); ?>
   <!--/ Layout Content -->
 
-<?php echo $__env->make('_partials.modal', \Illuminate\Support\Arr::except(get_defined_vars(), ['__data', '__path']))->render(); ?>
-<?php echo $__env->make('_partials.offcanvas', \Illuminate\Support\Arr::except(get_defined_vars(), ['__data', '__path']))->render(); ?>
+  <?php echo $__env->make('_partials.modal', \Illuminate\Support\Arr::except(get_defined_vars(), ['__data', '__path']))->render(); ?>
+  <?php echo $__env->make('_partials.offcanvas', \Illuminate\Support\Arr::except(get_defined_vars(), ['__data', '__path']))->render(); ?>
   <!-- Include Scripts -->
   <!-- $isFront is used to append the front layout scripts only on the front layout otherwise the variable will be blank -->
   <?php echo $__env->make('layouts/sections/scripts' . $isFront, \Illuminate\Support\Arr::except(get_defined_vars(), ['__data', '__path']))->render(); ?>
 
 </body>
 
-</html>
-<?php /**PATH D:\xammp1\htdocs\erpbk\resources\views/layouts/commonMaster.blade.php ENDPATH**/ ?>
+</html><?php /**PATH D:\xammp1\htdocs\erpbk\resources\views/layouts/commonMaster.blade.php ENDPATH**/ ?>
