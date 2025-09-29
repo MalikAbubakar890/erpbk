@@ -8,6 +8,7 @@
         <h3>{{ $account->name }} | Visa Expense </h3>
       </div>
       <div class="col-sm-6">
+        @can('visaloan_view')
         @php
         $hasVisaExpenses = \App\Models\visa_expenses::where('rider_id', $account->id)->exists();
         @endphp
@@ -21,6 +22,7 @@
           Installment Plan (No Expenses)
         </span>
         @endif
+        @endcan
         @can('visaexpense_create')
         <a class="btn btn-primary action-btn show-modal"
           href="javascript:void(0);" data-action="{{ route('VisaExpense.create' , $account->id) }}" data-size="lg" data-title="New expense Ticket">
