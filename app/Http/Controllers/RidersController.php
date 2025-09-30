@@ -117,16 +117,27 @@ class RidersController extends AppBaseController
     if ($request->has('attendance') && !empty($request->attendance)) {
       $query->where('attendance', $request->attendance);
     }
-    // Filter by rider status (absconder, followup, llicense, active, inactive)
+    // New: explicit absconder[] filter (expects absconder[]=1)
+    $absconderParam = (array) $request->input('absconder', []);
+    if (!empty($absconderParam) && in_array('1', $absconderParam, true)) {
+      $query->where('absconder', 1);
+    }
+
+    // Filter by rider status (followup, llicense, active, inactive)
     if ($request->has('rider_status') && !empty($request->rider_status)) {
       $statusFilters = $request->rider_status;
+
+      // Backward compatibility: if absconder[] present, drop 'absconder' from rider_status[]
+      if (!empty($absconderParam)) {
+        $statusFilters = array_values(array_filter($statusFilters, function ($s) {
+          return $s !== 'absconder';
+        }));
+      }
 
       if (is_array($statusFilters)) {
         $query->where(function ($q) use ($statusFilters) {
           foreach ($statusFilters as $status) {
-            if ($status === 'absconder') {
-              $q->orWhere('absconder', 1);
-            } elseif ($status === 'followup') {
+            if ($status === 'followup') {
               $q->orWhere('flowup', 1);
             } elseif ($status === 'llicense') {
               $q->orWhere('l_license', 1);
@@ -152,9 +163,7 @@ class RidersController extends AppBaseController
         });
       } else {
         // Handle single selection for backward compatibility
-        if ($statusFilters === 'absconder') {
-          $query->where('absconder', 1);
-        } elseif ($statusFilters === 'followup') {
+        if ($statusFilters === 'followup') {
           $query->where('flowup', 1);
         } elseif ($statusFilters === 'llicense') {
           $query->where('l_license', 1);
@@ -293,16 +302,14 @@ class RidersController extends AppBaseController
       $query->where('attendance', $request->attendance);
     }
 
-    // Filter by rider status (absconder, followup, llicense, active, inactive)
+    // Filter by rider status (followup, llicense, active, inactive)
     if ($request->has('rider_status') && !empty($request->rider_status)) {
       $statusFilters = $request->rider_status;
 
       if (is_array($statusFilters)) {
         $query->where(function ($q) use ($statusFilters) {
           foreach ($statusFilters as $status) {
-            if ($status === 'absconder') {
-              $q->orWhere('absconder', 1);
-            } elseif ($status === 'followup') {
+            if ($status === 'followup') {
               $q->orWhere('flowup', 1);
             } elseif ($status === 'llicense') {
               $q->orWhere('l_license', 1);

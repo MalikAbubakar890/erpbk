@@ -1305,7 +1305,7 @@ $account = App\Models\Accounts::where('ref_id', $result['id'])->where('account_t
         border: 1px solid var(--bs-border-color);
         background: white;
         color: var(--bs-body-color);
-        display: none; /* Initially hidden */
+        // display: none; /* Initially hidden */
         align-items: center;
         justify-content: center;
       }

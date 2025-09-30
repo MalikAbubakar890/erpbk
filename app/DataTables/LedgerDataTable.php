@@ -15,6 +15,10 @@ class LedgerDataTable extends DataTable
    */
   public function dataTable($query)
   {
+    if (request()->has('action')) {
+      @ini_set('memory_limit', '1024M');
+      @set_time_limit(0);
+    }
     $transactions = $query->get();
     $openingBalance = $this->getOpeningBalance();
 

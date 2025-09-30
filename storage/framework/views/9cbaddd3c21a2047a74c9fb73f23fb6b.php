@@ -19,14 +19,56 @@
                         <i class="ti ti-users"></i>
                     </div>
                     <div>
-                        <h1 class="fleet-supervisor-title">Fleet Supervisors</h1>
-                        <p class="fleet-supervisor-subtitle">Manage and monitor fleet supervisor performance</p>
+                        <h1 class="fleet-supervisor-title">Manage and monitor</h1>
                     </div>
                 </div>
-                <button class="fleet-supervisor-toggle  collapsed" id="fleetSupervisorToggle">
-                    <span>Toggle View</span>
-                    <i class="ti ti-chevron-down"></i>
-                </button>
+                <div class="fleet-supervisor-header-right d-flex align-items-center">
+                    <button class="fleet-supervisor-toggle  mx-2  collapsed" id="fleetSupervisorToggle">
+                        <span>Toggle View</span>
+                        <i class="ti ti-chevron-down"></i>
+                    </button>
+                    <div class="action-buttons">
+                        <div class="action-dropdown-container">
+                            <button class="action-dropdown-btn" id="addRiderDropdownBtn">
+                                <i class="ti ti-plus"></i>
+                                <span>Add Rider</span>
+                                <i class="ti ti-chevron-down"></i>
+                            </button>
+                            <div class="action-dropdown-menu" id="addRiderDropdown">
+                                <?php if (app(\Illuminate\Contracts\Auth\Access\Gate::class)->check('rider_create')): ?>
+                                <a class="action-dropdown-item" href="<?php echo e(route('riders.create')); ?>">
+                                    <i class="ti ti-user-plus"></i>
+                                    <div>
+                                        <div class="action-dropdown-item-text">Create New Rider</div>
+                                        <div class="action-dropdown-item-desc">Add a new rider to the system</div>
+                                    </div>
+                                </a>
+                                <?php endif; ?>
+                                <a class="action-dropdown-item show-modal" href="javascript:void(0);" data-size="sm" data-title="Import Today Attendance" data-action="<?php echo e(route('rider.attendance_import')); ?>">
+                                    <i class="ti ti-calendar-check"></i>
+                                    <div>
+                                        <div class="action-dropdown-item-text">Import Today Attendance</div>
+                                        <div class="action-dropdown-item-desc">Import attendance data for today</div>
+                                    </div>
+                                </a>
+                                <a class="action-dropdown-item show-modal" href="javascript:void(0);" data-size="sm" data-title="Import Rider Activities" data-action="<?php echo e(route('rider.activities_import')); ?>">
+                                    <i class="ti ti-activity"></i>
+                                    <div>
+                                        <div class="action-dropdown-item-text">Import Activities</div>
+                                        <div class="action-dropdown-item-desc">Import rider activity data</div>
+                                    </div>
+                                </a>
+                                <a class="action-dropdown-item" href="<?php echo e(route('rider.exportRiders')); ?>">
+                                    <i class="ti ti-file-export"></i>
+                                    <div>
+                                        <div class="action-dropdown-item-text">Export Riders</div>
+                                        <div class="action-dropdown-item-desc">Export rider data to Excel</div>
+                                    </div>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
             <div class="fleet-supervisor-accordion collapsed" id="fleetSupervisorAccordion">
                 <div class="fleet-supervisor-slider-container">
@@ -62,6 +104,133 @@
                             </div>
                         </div>
                         <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+
+                        <?php
+                        // Absconder Counts
+                        $absActiveCountSlider = \App\Models\Riders::where('absconder', 1)
+                        ->where('status', 1)
+                        ->whereHas('bikes', function($q) { $q->where('warehouse', 'Active'); })
+                        ->count();
+                        $absInactiveCountSlider = \App\Models\Riders::where('absconder', 1)
+                        ->where(function($q){
+                        $q->where('status', 3)
+                        ->orWhereDoesntHave('bikes', function($b){ $b->where('warehouse','Active'); });
+                        })
+                        ->count();
+                        $absFilterActive = !empty(request('absconder')) && in_array('1', (array) request('absconder'), true);
+                        $absActiveSelectedSlider = $absFilterActive && in_array('active', request('rider_status', []));
+                        $absInactiveSelectedSlider = $absFilterActive && in_array('inactive', request('rider_status', []));
+
+                        // Learning License Counts
+                        $llActiveCountSlider = \App\Models\Riders::where('l_license', 1)
+                        ->where('status', 1)
+                        ->whereHas('bikes', function($q) { $q->where('warehouse', 'Active'); })
+                        ->count();
+                        $llInactiveCountSlider = \App\Models\Riders::where('l_license', 1)
+                        ->where(function($q){
+                        $q->where('status', 3)
+                        ->orWhereDoesntHave('bikes', function($b){ $b->where('warehouse','Active'); });
+                        })
+                        ->count();
+                        $llActiveSelectedSlider = in_array('llicense', request('rider_status', [])) && in_array('active', request('rider_status', []));
+                        $llInactiveSelectedSlider = in_array('llicense', request('rider_status', [])) && in_array('inactive', request('rider_status', []));
+
+                        // Follow Up Counts
+                        $fuActiveCountSlider = \App\Models\Riders::where('flowup', 1)
+                        ->where('status', 1)
+                        ->whereHas('bikes', function($q) { $q->where('warehouse', 'Active'); })
+                        ->count();
+                        $fuInactiveCountSlider = \App\Models\Riders::where('flowup', 1)
+                        ->where(function($q){
+                        $q->where('status', 3)
+                        ->orWhereDoesntHave('bikes', function($b){ $b->where('warehouse','Active'); });
+                        })
+                        ->count();
+                        $fuActiveSelectedSlider = in_array('followup', request('rider_status', [])) && in_array('active', request('rider_status', []));
+                        $fuInactiveSelectedSlider = in_array('followup', request('rider_status', [])) && in_array('inactive', request('rider_status', []));
+
+                        // Recovery Counts (balance > 0)
+                        $recoveryActiveCountSlider = \App\Models\Riders::whereHas('account', function($q) {
+                        $q->whereRaw('(SELECT COALESCE(SUM(debit), 0) - COALESCE(SUM(credit), 0) FROM transactions WHERE account_id = accounts.id) > 0');
+                        })
+                        ->where('status', 1)
+                        ->whereHas('bikes', function($q) { $q->where('warehouse', 'Active'); })
+                        ->count();
+                        $recoveryInactiveCountSlider = \App\Models\Riders::whereHas('account', function($q) {
+                        $q->whereRaw('(SELECT COALESCE(SUM(debit), 0) - COALESCE(SUM(credit), 0) FROM transactions WHERE account_id = accounts.id) > 0');
+                        })
+                        ->where(function($q){
+                        $q->where('status', 3)
+                        ->orWhereDoesntHave('bikes', function($b){ $b->where('warehouse','Active'); });
+                        })
+                        ->count();
+                        $recoveryActiveSelectedSlider = request('balance_filter') === 'greater_than_zero' && in_array('active', request('rider_status', []));
+                        $recoveryInactiveSelectedSlider = request('balance_filter') === 'greater_than_zero' && in_array('inactive', request('rider_status', []));
+                        ?>
+
+                        <div class="fleet-supervisor-card <?php echo e((!empty(request('absconder')) && in_array('1', (array) request('absconder'), true)) ? 'active filtered' : ''); ?>" onclick="filterAbsconderBoth()">
+                            <h3 class="fleet-supervisor-name"><i class="ti ti-user-x"></i> Absconder</h3>
+                            <div class="fleet-supervisor-stats">
+                                <div class="fleet-stat active <?php echo e($absActiveSelectedSlider ? 'active-selected' : ''); ?>" onclick="event.stopPropagation(); filterAbsconderStatus('active')">
+                                    <i class="fleet-stat-icon ti ti-user-check"></i>
+                                    <span class="fleet-stat-label">Active</span>
+                                    <span class="fleet-stat-value"><?php echo e($absActiveCountSlider); ?></span>
+                                </div>
+                                <div class="fleet-stat inactive <?php echo e($absInactiveSelectedSlider ? 'active-selected' : ''); ?>" onclick="event.stopPropagation(); filterAbsconderStatus('inactive')">
+                                    <i class="fleet-stat-icon ti ti-user-x"></i>
+                                    <span class="fleet-stat-label">Inactive</span>
+                                    <span class="fleet-stat-value"><?php echo e($absInactiveCountSlider); ?></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="fleet-supervisor-card <?php echo e((!empty(request('llicense')) && in_array('1', (array) request('llicense'), true)) ? 'active filtered' : (in_array('llicense', request('rider_status', [])) ? 'active filtered' : '')); ?>" onclick="filterLLicenseBoth()">
+                            <h3 class="fleet-supervisor-name"><i class="ti ti-license"></i> Learning License</h3>
+                            <div class="fleet-supervisor-stats">
+                                <div class="fleet-stat active <?php echo e($llActiveSelectedSlider ? 'active-selected' : ''); ?>" onclick="event.stopPropagation(); filterLLicenseStatus('active')">
+                                    <i class="fleet-stat-icon ti ti-user-check"></i>
+                                    <span class="fleet-stat-label">Active</span>
+                                    <span class="fleet-stat-value"><?php echo e($llActiveCountSlider); ?></span>
+                                </div>
+                                <div class="fleet-stat inactive <?php echo e($llInactiveSelectedSlider ? 'active-selected' : ''); ?>" onclick="event.stopPropagation(); filterLLicenseStatus('inactive')">
+                                    <i class="fleet-stat-icon ti ti-user-x"></i>
+                                    <span class="fleet-stat-label">Inactive</span>
+                                    <span class="fleet-stat-value"><?php echo e($llInactiveCountSlider); ?></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="fleet-supervisor-card <?php echo e((!empty(request('followup')) && in_array('1', (array) request('followup'), true)) ? 'active filtered' : (in_array('followup', request('rider_status', [])) ? 'active filtered' : '')); ?>" onclick="filterFollowUpBoth()">
+                            <h3 class="fleet-supervisor-name"><i class="ti ti-phone-call"></i> Follow Up</h3>
+                            <div class="fleet-supervisor-stats">
+                                <div class="fleet-stat active <?php echo e($fuActiveSelectedSlider ? 'active-selected' : ''); ?>" onclick="event.stopPropagation(); filterFollowUpStatus('active')">
+                                    <i class="fleet-stat-icon ti ti-user-check"></i>
+                                    <span class="fleet-stat-label">Active</span>
+                                    <span class="fleet-stat-value"><?php echo e($fuActiveCountSlider); ?></span>
+                                </div>
+                                <div class="fleet-stat inactive <?php echo e($fuInactiveSelectedSlider ? 'active-selected' : ''); ?>" onclick="event.stopPropagation(); filterFollowUpStatus('inactive')">
+                                    <i class="fleet-stat-icon ti ti-user-x"></i>
+                                    <span class="fleet-stat-label">Inactive</span>
+                                    <span class="fleet-stat-value"><?php echo e($fuInactiveCountSlider); ?></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="fleet-supervisor-card <?php echo e(request('balance_filter') === 'greater_than_zero' ? 'active filtered' : ''); ?>" onclick="filterRecoveryBoth()">
+                            <h3 class="fleet-supervisor-name"><i class="ti ti-cash"></i> Recovery</h3>
+                            <div class="fleet-supervisor-stats">
+                                <div class="fleet-stat active <?php echo e($recoveryActiveSelectedSlider ? 'active-selected' : ''); ?>" onclick="event.stopPropagation(); filterRecoveryStatus('active')">
+                                    <i class="fleet-stat-icon ti ti-user-check"></i>
+                                    <span class="fleet-stat-label">Active</span>
+                                    <span class="fleet-stat-value"><?php echo e($recoveryActiveCountSlider); ?></span>
+                                </div>
+                                <div class="fleet-stat inactive <?php echo e($recoveryInactiveSelectedSlider ? 'active-selected' : ''); ?>" onclick="event.stopPropagation(); filterRecoveryStatus('inactive')">
+                                    <i class="fleet-stat-icon ti ti-user-x"></i>
+                                    <span class="fleet-stat-label">Inactive</span>
+                                    <span class="fleet-stat-value"><?php echo e($recoveryInactiveCountSlider); ?></span>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -232,64 +401,6 @@
                         <i class="ti ti-users"></i>
                         All Riders
                     </a>
-                    <a href="<?php echo e(toggleRiderStatus('absconder')); ?>" class="filter-tab <?php echo e(in_array('absconder', request('rider_status', [])) ? 'active' : ''); ?>">
-                        <i class="ti ti-user-x"></i>
-                        Absconder
-                    </a>
-                    <a href="<?php echo e(toggleRiderStatus('llicense')); ?>" class="filter-tab <?php echo e(in_array('llicense', request('rider_status', [])) ? 'active' : ''); ?>">
-                        <i class="ti ti-license"></i>
-                        Learning License
-                    </a>
-                    <a href="<?php echo e(toggleRiderStatus('followup')); ?>" class="filter-tab <?php echo e(in_array('followup', request('rider_status', [])) ? 'active' : ''); ?>">
-                        <i class="ti ti-phone-call"></i>
-                        Follow Up
-                    </a>
-                    <a href="<?php echo e(toggleBalanceFilter()); ?>" class="filter-tab <?php echo e(request('balance_filter') == 'greater_than_zero' ? 'active' : ''); ?>">
-                        <i class="ti ti-cash"></i>
-                        Recovery (<?php echo e(\App\Models\Riders::whereHas('account', function($q) { $q->whereRaw('(SELECT COALESCE(SUM(debit), 0) - COALESCE(SUM(credit), 0) FROM transactions WHERE account_id = accounts.id) > 0'); })->count()); ?>)
-                    </a>
-                </div>
-                <div class="action-buttons">
-                    <div class="action-dropdown-container">
-                        <button class="action-dropdown-btn" id="addRiderDropdownBtn">
-                            <i class="ti ti-plus"></i>
-                            <span>Add Rider</span>
-                            <i class="ti ti-chevron-down"></i>
-                        </button>
-                        <div class="action-dropdown-menu" id="addRiderDropdown">
-
-                            <?php if (app(\Illuminate\Contracts\Auth\Access\Gate::class)->check('rider_create')): ?>
-                            <a class="action-dropdown-item" href="<?php echo e(route('riders.create')); ?>">
-                                <i class="ti ti-user-plus"></i>
-                                <div>
-                                    <div class="action-dropdown-item-text">Create New Rider</div>
-                                    <div class="action-dropdown-item-desc">Add a new rider to the system</div>
-                                </div>
-                            </a>
-                            <?php endif; ?>
-                            <a class="action-dropdown-item show-modal" href="javascript:void(0);" data-size="sm" data-title="Import Today Attendance" data-action="<?php echo e(route('rider.attendance_import')); ?>">
-                                <i class="ti ti-calendar-check"></i>
-                                <div>
-                                    <div class="action-dropdown-item-text">Import Today Attendance</div>
-                                    <div class="action-dropdown-item-desc">Import attendance data for today</div>
-                                </div>
-                            </a>
-                            <a class="action-dropdown-item show-modal" href="javascript:void(0);" data-size="sm" data-title="Import Rider Activities" data-action="<?php echo e(route('rider.activities_import')); ?>">
-                                <i class="ti ti-activity"></i>
-                                <div>
-                                    <div class="action-dropdown-item-text">Import Activities</div>
-                                    <div class="action-dropdown-item-desc">Import rider activity data</div>
-                                </div>
-                            </a>
-                            <a class="action-dropdown-item" href="<?php echo e(route('rider.exportRiders')); ?>">
-                                <i class="ti ti-file-export"></i>
-                                <div>
-                                    <div class="action-dropdown-item-text">Export Riders</div>
-                                    <div class="action-dropdown-item-desc">Export rider data to Excel</div>
-                                </div>
-                            </a>
-                        </div>
-                    </div>
                 </div>
             </div>
         </div>
@@ -433,7 +544,7 @@ use Illuminate\Support\Facades\Schema;
 $filteredColumns = Schema::getColumnListing('riders');
 
 // Columns to exclude
-$exclude = ['email', 'NFDID', 'cdm_deposit_id', 'DEPT', 'job_status', 'attach_documents', 'other_details', 'TAID'];
+$exclude = ['email', 'NFDID', 'cdm_deposit_id', 'DEPT', 'job_status', 'attach_documents', 'other_details', 'TAID', 'dob', 'mashreq_id', 'PID', 'branded_plate_no', 'vaccine_status', 'created_at', 'updated_at', 'VID', 'noon_no', 'contract', 'image_name', 'rider_reference', 'vat', 'attendance_date', 'l_license'];
 
 // Final filtered columns
 $dbColumns = array_diff($filteredColumns, $exclude);
@@ -455,6 +566,11 @@ $added = [];
 $makeTitle = function ($key) {
 return ucwords(str_replace('_', ' ', $key));
 };
+
+// If Absconder filter is active, make sure 'absconder' column is prioritized
+if (in_array('absconder', (array) request('rider_status', []))) {
+array_unshift($preferredOrder, 'absconder');
+}
 
 // Add preferred DB columns first
 foreach ($preferredOrder as $key) {
@@ -630,6 +746,14 @@ $tableColumns = $columns;
             if (dropdown.hasClass('show')) {
                 dropdown.removeClass('show');
                 btn.removeClass('open');
+                // Reset inline styles when closing
+                dropdown.css({
+                    position: '',
+                    top: '',
+                    left: '',
+                    right: '',
+                    width: ''
+                });
             } else {
                 // Close other dropdowns
                 $('.action-dropdown-menu').removeClass('show');
@@ -637,6 +761,23 @@ $tableColumns = $columns;
                 // Show this dropdown
                 dropdown.addClass('show');
                 btn.addClass('open');
+
+                // Reposition menu to be outside containers (viewport-level)
+                const rect = btn[0].getBoundingClientRect();
+                const menuWidth = Math.max(260, dropdown.outerWidth());
+                const viewportWidth = window.innerWidth;
+                const left = Math.min(rect.right - menuWidth, viewportWidth - menuWidth - 12);
+                const top = rect.bottom + 8;
+
+                // Use fixed positioning to escape any overflow:hidden ancestors
+                dropdown.css({
+                    position: 'fixed',
+                    top: `${top}px`,
+                    left: `${Math.max(12, left)}px`,
+                    right: '',
+                    width: `${menuWidth}px`,
+                    'z-index': 3000
+                });
             }
         });
 
@@ -645,6 +786,21 @@ $tableColumns = $columns;
             if (!$(e.target).closest('.action-dropdown-container').length) {
                 $('.action-dropdown-menu').removeClass('show');
                 $('.action-dropdown-btn').removeClass('open');
+            }
+        });
+
+        // Close on scroll/resize to avoid misaligned fixed menu
+        $(window).on('scroll resize', function() {
+            const dropdown = $('#addRiderDropdown');
+            if (dropdown.hasClass('show')) {
+                dropdown.removeClass('show').css({
+                    position: '',
+                    top: '',
+                    left: '',
+                    right: '',
+                    width: ''
+                });
+                $('#addRiderDropdownBtn').removeClass('open');
             }
         });
 
@@ -658,13 +814,15 @@ $tableColumns = $columns;
         // Clear existing filters
         url.searchParams.delete('fleet_supervisor');
         url.searchParams.delete('rider_status');
+        url.searchParams.delete('rider_status[]');
+        url.searchParams.delete('absconder[]');
 
         // Set fleet supervisor filter
         url.searchParams.set('fleet_supervisor', fleetSupervisor);
 
         // Set both active and inactive status
-        url.searchParams.set('rider_status[]', 'active');
-        url.searchParams.set('rider_status[]', 'inactive');
+        url.searchParams.append('rider_status[]', 'active');
+        url.searchParams.append('rider_status[]', 'inactive');
 
         // Redirect to filtered URL
         window.location.href = url.toString();
@@ -695,6 +853,162 @@ $tableColumns = $columns;
         }
 
         // Redirect to filtered URL
+        window.location.href = url.toString();
+    }
+
+    // Absconder filtering: clicking the card sets absconder + both statuses
+    function filterAbsconderBoth() {
+        const url = new URL(window.location);
+        // Clear existing status params
+        url.searchParams.delete('rider_status');
+        url.searchParams.delete('rider_status[]');
+
+        // Set absconder + both active/inactive using explicit param
+        url.searchParams.append('absconder[]', '1');
+        url.searchParams.append('rider_status[]', 'active');
+        url.searchParams.append('rider_status[]', 'inactive');
+
+        // Remove fleet supervisor filter to avoid conflict
+        url.searchParams.delete('fleet_supervisor');
+
+        window.location.href = url.toString();
+    }
+
+    // Toggle specific status under Absconder (enforce AND semantics with absconder)
+    function filterAbsconderStatus(status) {
+        const url = new URL(window.location);
+        const currentStatuses = url.searchParams.getAll('rider_status[]');
+
+        // Ensure absconder explicit param is present
+        if (!url.searchParams.getAll('absconder[]').includes('1')) {
+            // Reset to only absconder + clicked status
+            url.searchParams.delete('rider_status');
+            url.searchParams.delete('rider_status[]');
+            url.searchParams.append('absconder[]', '1');
+            url.searchParams.append('rider_status[]', status);
+        } else {
+            // Toggle the clicked status while keeping absconder
+            const hasStatus = currentStatuses.includes(status);
+            url.searchParams.delete('rider_status[]');
+            // Always ensure absconder[] stays
+            url.searchParams.append('absconder[]', '1');
+            // Add the other status if present
+            const other = status === 'active' ? 'inactive' : 'active';
+            if (hasStatus) {
+                // If toggling off and no other status present, leave only absconder
+                if (currentStatuses.includes(other)) {
+                    url.searchParams.append('rider_status[]', other);
+                }
+            } else {
+                // Add clicked status
+                url.searchParams.append('rider_status[]', status);
+                // Preserve other if it existed
+                if (currentStatuses.includes(other)) {
+                    url.searchParams.append('rider_status[]', other);
+                }
+            }
+        }
+
+        // Remove fleet supervisor filter to avoid mixing contexts
+        url.searchParams.delete('fleet_supervisor');
+
+        window.location.href = url.toString();
+    }
+
+    // Learning License filtering
+    function filterLLicenseBoth() {
+        const url = new URL(window.location);
+        url.searchParams.delete('rider_status');
+        url.searchParams.delete('rider_status[]');
+        url.searchParams.delete('absconder[]');
+        url.searchParams.delete('followup[]');
+        url.searchParams.append('llicense[]', '1');
+        url.searchParams.append('rider_status[]', 'active');
+        url.searchParams.append('rider_status[]', 'inactive');
+        url.searchParams.delete('fleet_supervisor');
+        window.location.href = url.toString();
+    }
+
+    function filterLLicenseStatus(status) {
+        const url = new URL(window.location);
+        const currentStatuses = url.searchParams.getAll('rider_status[]');
+        if (!url.searchParams.getAll('llicense[]').includes('1')) {
+            url.searchParams.delete('rider_status');
+            url.searchParams.delete('rider_status[]');
+            url.searchParams.delete('absconder[]');
+            url.searchParams.delete('followup[]');
+            url.searchParams.append('llicense[]', '1');
+            url.searchParams.append('rider_status[]', status);
+        } else {
+            const hasStatus = currentStatuses.includes(status);
+            const other = status === 'active' ? 'inactive' : 'active';
+            url.searchParams.delete('rider_status[]');
+            url.searchParams.append('llicense[]', '1');
+            if (!hasStatus) url.searchParams.append('rider_status[]', status);
+            if (currentStatuses.includes(other)) url.searchParams.append('rider_status[]', other);
+        }
+        url.searchParams.delete('fleet_supervisor');
+        window.location.href = url.toString();
+    }
+
+    // Follow Up filtering
+    function filterFollowUpBoth() {
+        const url = new URL(window.location);
+        url.searchParams.delete('rider_status');
+        url.searchParams.delete('rider_status[]');
+        url.searchParams.delete('absconder[]');
+        url.searchParams.delete('llicense[]');
+        url.searchParams.append('followup[]', '1');
+        url.searchParams.append('rider_status[]', 'active');
+        url.searchParams.append('rider_status[]', 'inactive');
+        url.searchParams.delete('fleet_supervisor');
+        window.location.href = url.toString();
+    }
+
+    function filterFollowUpStatus(status) {
+        const url = new URL(window.location);
+        const currentStatuses = url.searchParams.getAll('rider_status[]');
+        if (!url.searchParams.getAll('followup[]').includes('1')) {
+            url.searchParams.delete('rider_status');
+            url.searchParams.delete('rider_status[]');
+            url.searchParams.delete('absconder[]');
+            url.searchParams.delete('llicense[]');
+            url.searchParams.append('followup[]', '1');
+            url.searchParams.append('rider_status[]', status);
+        } else {
+            const hasStatus = currentStatuses.includes(status);
+            const other = status === 'active' ? 'inactive' : 'active';
+            url.searchParams.delete('rider_status[]');
+            url.searchParams.append('followup[]', '1');
+            if (!hasStatus) url.searchParams.append('rider_status[]', status);
+            if (currentStatuses.includes(other)) url.searchParams.append('rider_status[]', other);
+        }
+        url.searchParams.delete('fleet_supervisor');
+        window.location.href = url.toString();
+    }
+
+    // Recovery filtering (balance_filter + active/inactive)
+    function filterRecoveryBoth() {
+        const url = new URL(window.location);
+        url.searchParams.set('balance_filter', 'greater_than_zero');
+        url.searchParams.delete('rider_status');
+        url.searchParams.delete('rider_status[]');
+        url.searchParams.append('rider_status[]', 'active');
+        url.searchParams.append('rider_status[]', 'inactive');
+        url.searchParams.delete('fleet_supervisor');
+        window.location.href = url.toString();
+    }
+
+    function filterRecoveryStatus(status) {
+        const url = new URL(window.location);
+        url.searchParams.set('balance_filter', 'greater_than_zero');
+        const currentStatuses = url.searchParams.getAll('rider_status[]');
+        const hasStatus = currentStatuses.includes(status);
+        const other = status === 'active' ? 'inactive' : 'active';
+        url.searchParams.delete('rider_status[]');
+        if (!hasStatus) url.searchParams.append('rider_status[]', status);
+        if (currentStatuses.includes(other)) url.searchParams.append('rider_status[]', other);
+        url.searchParams.delete('fleet_supervisor');
         window.location.href = url.toString();
     }
 </script>
@@ -916,6 +1230,28 @@ $tableColumns = $columns;
                 background: rgba(255, 255, 255, 0.8);
                 border-radius: 6px;
             }
+
+            /* Fix Add Rider dropdown positioning in header */
+            .fleet-supervisor-header-right { position: relative; overflow: visible; }
+            .action-dropdown-container { position: static; }
+            .action-dropdown-btn { display: inline-flex; align-items: center; gap: 8px; }
+            .action-dropdown-menu {
+                position: fixed; /* switched to fixed in JS when opened */
+                min-width: 260px;
+                background: #ffffff;
+                border: 1px solid #e5e7eb;
+                border-radius: 8px;
+                box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+                padding: 8px 0;
+                z-index: 3000;
+                display: none;
+            }
+            .action-dropdown-menu.show { display: block; }
+            .action-dropdown-item { display: flex; align-items: flex-start; gap: 12px; padding: 10px 14px; color: #111827; text-decoration: none; }
+            .action-dropdown-item:hover { background: #f3f4f6; }
+            .action-dropdown-item i { color: #2563eb; margin-top: 2px; }
+            .action-dropdown-item-text { font-weight: 600; }
+            .action-dropdown-item-desc { font-size: 12px; color: #6b7280; }
         `)
         .appendTo('head');
 
