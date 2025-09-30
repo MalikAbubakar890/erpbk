@@ -12,41 +12,6 @@ class Authenticate extends Middleware
      */
     protected function redirectTo(Request $request): ?string
     {
-        if ($request->expectsJson()) {
-            return null;
-        }
-
-        // Store the intended URL for redirect after login
-        if ($request->isMethod('get')) {
-            session()->put('url.intended', $request->fullUrl());
-        }
-
-        return route('login');
-    }
-
-    /**
-     * Handle an unauthenticated user.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  array  $guards
-     * @return void
-     *
-     * @throws \Illuminate\Auth\AuthenticationException
-     */
-    protected function unauthenticated($request, array $guards)
-    {
-        if ($request->expectsJson()) {
-            throw new \Illuminate\Auth\AuthenticationException(
-                'Unauthenticated.',
-                $guards,
-                $this->redirectTo($request)
-            );
-        }
-
-        throw new \Illuminate\Auth\AuthenticationException(
-            'Unauthenticated.',
-            $guards,
-            $this->redirectTo($request)
-        );
+        return $request->expectsJson() ? null : route('login');
     }
 }

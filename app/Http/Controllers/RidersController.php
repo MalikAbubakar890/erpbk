@@ -425,7 +425,6 @@ class RidersController extends AppBaseController
   {
     return view('riders.create');
   }
-
   /**
    * Store a newly created Riders in storage.
    */

@@ -4,7 +4,7 @@
             <form id="upload-excel" method="post" enctype="multipart/form-data">
                 <div class="modal-header">
                     <h5 class="modal-title" id="exampleModalLongTitle">Import Voucher
-                        </h5>
+                    </h5>
                     <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                         <span aria-hidden="true">&times;</span>
                     </button>
@@ -16,17 +16,17 @@
                             {!! Form::select('voucher_type',App\Helpers\General::ImportVoucherType(),null ,['class' => 'form-control form-control-sm select2 ','id'=>'payment_type']) !!}
                             <b>Note: </b>Select voucher type carefully.
                         </div>
-                            <div class="form-group col-md-8">
-                                <label>Upload File</label>
-                                <input name="file" class="form-control form-control-sm" type="file">
-                            </div>
+                        <div class="form-group col-md-8">
+                            <label>Upload File</label>
+                            <input name="file" class="form-control form-control-sm" type="file">
+                        </div>
 
                         <!--col-->
                     </div>
                     <!--row-->
                 </div>
                 <div class="form-group col-md-12">
-                    <b>Download Voucher Samples</b><br/>
+                    <b>Download Voucher Samples</b><br />
                     <a style="font-size: 12px;" href="{{ URL::asset('public/excel_samples/sample-vendor-voucher.xlsx') }}" download>Vendor Sample</a>,&nbsp;
                     <a style="font-size: 12px;" href="{{ URL::asset('public/excel_samples/sample-rta-voucher.xlsx') }}" download>RTA Sample</a>,&nbsp;
                     <a style="font-size: 12px;" href="{{ URL::asset('public/excel_samples/sample-fuel-voucher.xlsx') }}" download>Fuel Sample</a>,&nbsp;
@@ -38,7 +38,7 @@
                         <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
                         Uploading...
                     </button>
-                    <button type="submit"  class="btn btn-secondary" data-dismiss="modal">Close</button>
+                    <button type="submit" class="btn btn-secondary" data-dismiss="modal">Close</button>
                 </div>
             </form>
         </div>

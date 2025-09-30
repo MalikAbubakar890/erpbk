@@ -38,9 +38,6 @@ $contentLayout = (isset($container) ? (($container === 'container-xxl') ? "layou
 
   @vite('resources/sass/app.scss')
   @vite('resources/js/app.js')
-
-  <!-- Session Fix Script -->
-  <script src="{{ asset('js/session-fix.js') }}"></script>
 </head>
 
 <body>

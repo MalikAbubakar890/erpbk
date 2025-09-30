@@ -1,7 +1,6 @@
-@extends('layouts.app')
-@section('title', 'Rider Profile')
+<?php $__env->startSection('title', 'Rider Profile'); ?>
 
-@section('content')
+<?php $__env->startSection('content'); ?>
 <style>
   .myform .required:after {
     content: " *";
@@ -227,7 +226,7 @@
     }
   }
 </style>
-@php
+<?php
 if((request()->segment(2)) == 'generatentries' || request()->segment(2) == 'installmentPlan'){
 $account_id = DB::table('accounts')->where('id', request()->segment(3))->first();
 if(is_numeric(request()->segment(3))){
@@ -247,24 +246,24 @@ if(isset($result)){
 $account = App\Models\Accounts::where('ref_id', $result['id'])->where('account_type', 'expense')->first();
 }
 
-@endphp
+?>
 <div class="row" style="">
   <div class="col-xl-3 col-md-3 col-lg-5 order-1 order-md-0">
     <!-- User Card -->
     <div class="card mb-6" style="border-radius: 25px 25px 0px 0px;">
       <div class="card-header p-0" style="border-radius: 25px 25px 0px 0px;height: 291px;position: relative;background-image: url(http://127.0.0.1:8000/assets/img/user_back.jpg);background-size: cover;">
-        @isset($result)
+        <?php if(isset($result)): ?>
         <div class="profile-img">
-          @php
+          <?php
           if(@$result['image_name']){
           $image_name = url('storage2/profile/'.$result['image_name']);//Storage::url('app/profile/'.$result['image_name']);
           }else{
           $image_name = asset('uploads/default.png');
           }
-          @endphp
-          <img src="{{ $image_name}}" id="output" width="270" class="profile-user-img img-fluid" />
+          ?>
+          <img src="<?php echo e($image_name); ?>" id="output" width="270" class="profile-user-img img-fluid" />
         </div>
-        @endisset
+        <?php endif; ?>
       </div>
       <div class="card-body pt-12">
         <div class="user-avatar-section">
@@ -274,15 +273,16 @@ $account = App\Models\Accounts::where('ref_id', $result['id'])->where('account_t
                 <div class="user-info" style="width: 100%;">
                   <h6>
                     <b>
-                      @isset($result)
-                      {{ \Illuminate\Support\Str::limit($result['rider_id'] ?? 'not-set', 25) }} - {{ \Illuminate\Support\Str::limit($result['name'] ?? 'not-set', 25) }}
-                      @endisset
+                      <?php if(isset($result)): ?>
+                      <?php echo e(\Illuminate\Support\Str::limit($result['rider_id'] ?? 'not-set', 25)); ?> - <?php echo e(\Illuminate\Support\Str::limit($result['name'] ?? 'not-set', 25)); ?>
+
+                      <?php endif; ?>
                     </b>
 
                   </h6>
                   <div class="mt-2" style="width: 100%;display: flex;gap: 10px;">
-                    <span class="badge bg-label-primary">@isset($result){{$result['designation']??'not-set'}}@endisset</span>
-                    <span class="badge @isset($result) @if($result['status'] == 1) bg-label-success @else bg-label-danger @endif @endisset">@isset($result){{App\Helpers\General::RiderStatus($result['status'])??'not-set'}}@endisset</span>
+                    <span class="badge bg-label-primary"><?php if(isset($result)): ?><?php echo e($result['designation']??'not-set'); ?><?php endif; ?></span>
+                    <span class="badge <?php if(isset($result)): ?> <?php if($result['status'] == 1): ?> bg-label-success <?php else: ?> bg-label-danger <?php endif; ?> <?php endif; ?>"><?php if(isset($result)): ?><?php echo e(App\Helpers\General::RiderStatus($result['status'])??'not-set'); ?><?php endif; ?></span>
                   </div>
                 </div>
                 <div class="text-end" style="width: 14%;">
@@ -294,11 +294,11 @@ $account = App\Models\Accounts::where('ref_id', $result['id'])->where('account_t
               </div>
             </div>
             <div id="photo-upload-form" class="mt-4" style="display: none;">
-              @isset($result)
-              <form action="{{url('riders/picture_upload/'.$result['id'])}}" method="POST" enctype="multipart/form-data" id="formajax2">
-                @endisset
-                @csrf
-                @isset($result)
+              <?php if(isset($result)): ?>
+              <form action="<?php echo e(url('riders/picture_upload/'.$result['id'])); ?>" method="POST" enctype="multipart/form-data" id="formajax2">
+                <?php endif; ?>
+                <?php echo csrf_field(); ?>
+                <?php if(isset($result)): ?>
                 <div class="button-wrapper">
                   <label for="upload" class="btn btn-default me-2 mb-3 mt-3" tabindex="0">
                     <span class="d-none d-sm-block">Change Photo</span>
@@ -307,7 +307,7 @@ $account = App\Models\Accounts::where('ref_id', $result['id'])->where('account_t
                   </label>
                   <button type="submit" class="btn btn-primary">Upload</button>
                 </div>
-                @endisset
+                <?php endif; ?>
               </form>
             </div>
           </div>
@@ -321,9 +321,7 @@ $account = App\Models\Accounts::where('ref_id', $result['id'])->where('account_t
                 image.src = URL.createObjectURL(event.target.files[0]);
               };
             </script>
-            {{-- <div class="text-center">
-                         <img class="profile-user-img img-fluid" src="https://placehold.co/400X400" alt="User profile picture">
-                      </div> --}}
+            
 
 
             <ul class="p-0 mb-3">
@@ -332,7 +330,7 @@ $account = App\Models\Accounts::where('ref_id', $result['id'])->where('account_t
                   <i class="ti ti-mail ti-sm me-1_5"></i>
                 </div>
                 <div class="user_list_content">
-                  <span>Email:</span><br> <b class="float-right">@isset($result){{$result['personal_email']??'not-set'}}@endisset</b>
+                  <span>Email:</span><br> <b class="float-right"><?php if(isset($result)): ?><?php echo e($result['personal_email']??'not-set'); ?><?php endif; ?></b>
                 </div>
               </li>
               <li class="list-group-item pb-1 mt-3 user_list d-flex align-items-center">
@@ -343,19 +341,20 @@ $account = App\Models\Accounts::where('ref_id', $result['id'])->where('account_t
                   <span>WhatsApp:</span><br>
                   <b class="float-right">
 
-                    @isset($result['company_contact'])
-                    @php
+                    <?php if(isset($result['company_contact'])): ?>
+                    <?php
                     $phone = preg_replace('/[^0-9]/', '', $result['company_contact']);
                     $whatsappNumber = '+971' . ltrim($phone, '0');
-                    @endphp
-                    <a href="https://wa.me/{{ $whatsappNumber }}"
+                    ?>
+                    <a href="https://wa.me/<?php echo e($whatsappNumber); ?>"
                       target="_blank"
                       class="text-success">
-                      {{ $result['company_contact'] }}
+                      <?php echo e($result['company_contact']); ?>
+
                     </a>
-                    @else
+                    <?php else: ?>
                     N/A
-                    @endisset
+                    <?php endif; ?>
 
                   </b>
                 </div>
@@ -365,7 +364,7 @@ $account = App\Models\Accounts::where('ref_id', $result['id'])->where('account_t
                   <i class="ti ti-flag ti-sm me-1_5"></i>
                 </div>
                 <div class="user_list_content">
-                  <span>Nationality:</span><br> <b class="float-right">@isset($result){{DB::Table('countries')->where('id' , $result['nationality'])->first()->name ??'not-set'}}@endisset</b>
+                  <span>Nationality:</span><br> <b class="float-right"><?php if(isset($result)): ?><?php echo e(DB::Table('countries')->where('id' , $result['nationality'])->first()->name ??'not-set'); ?><?php endif; ?></b>
                 </div>
               </li>
               <li class="list-group-item pb-1 mt-3 user_list d-flex align-items-center">
@@ -375,11 +374,12 @@ $account = App\Models\Accounts::where('ref_id', $result['id'])->where('account_t
                 <div class="user_list_content">
                   <span>Age:</span><br>
                   <b class="float-right">
-                    @isset($result['dob'])
-                    {{ \Carbon\Carbon::parse($result['dob'])->age }}
-                    @else
+                    <?php if(isset($result['dob'])): ?>
+                    <?php echo e(\Carbon\Carbon::parse($result['dob'])->age); ?>
+
+                    <?php else: ?>
                     not-set
-                    @endisset
+                    <?php endif; ?>
                   </b>
                 </div>
               </li>
@@ -388,7 +388,7 @@ $account = App\Models\Accounts::where('ref_id', $result['id'])->where('account_t
                   <i class="ti ti-user-check ti-sm me-1_5"></i>
                 </div>
                 <div class="user_list_content">
-                  <span>Status:</span><br> <b class="float-right">@isset($result){{App\Helpers\General::RiderStatus($result['status'])??'not-set'}}@endisset</b>
+                  <span>Status:</span><br> <b class="float-right"><?php if(isset($result)): ?><?php echo e(App\Helpers\General::RiderStatus($result['status'])??'not-set'); ?><?php endif; ?></b>
                 </div>
               </li> -->
               <li class="list-group-item pb-1 mt-3 user_list d-flex align-items-center">
@@ -396,7 +396,7 @@ $account = App\Models\Accounts::where('ref_id', $result['id'])->where('account_t
                   <i class="ti ti-calendar-due ti-sm me-1_5"></i>
                 </div>
                 <div class="user_list_content">
-                  <span>Date Of Joining:</span><br> <b class="float-right">@isset($result){{App\Helpers\General::DateFormat($result['doj'])??'not-set'}}@endisset</b>
+                  <span>Date Of Joining:</span><br> <b class="float-right"><?php if(isset($result)): ?><?php echo e(App\Helpers\General::DateFormat($result['doj'])??'not-set'); ?><?php endif; ?></b>
                 </div>
               </li>
               <!-- <li class="list-group-item pb-1 mt-3 user_list d-flex align-items-center">
@@ -404,7 +404,7 @@ $account = App\Models\Accounts::where('ref_id', $result['id'])->where('account_t
                   <i class="ti ti-user-check ti-sm me-1_5"></i>
                 </div>
                 <div class="user_list_content">
-                  <span>Shift:</span><br> <b class="float-right">@isset($result){{$result['shift']??'not-set'}}@endisset</b>
+                  <span>Shift:</span><br> <b class="float-right"><?php if(isset($result)): ?><?php echo e($result['shift']??'not-set'); ?><?php endif; ?></b>
                 </div>
               </li>
               <li class="list-group-item pb-1 mt-3 user_list d-flex align-items-center">
@@ -412,7 +412,7 @@ $account = App\Models\Accounts::where('ref_id', $result['id'])->where('account_t
                   <i class="ti ti-file-invoice ti-sm me-1_5"></i>
                 </div>
                 <div class="user_list_content">
-                  <span>Attendance:</span><br> <b class="float-right">@isset($result){{$result['attendance']??'not-set'}}@endisset</b>
+                  <span>Attendance:</span><br> <b class="float-right"><?php if(isset($result)): ?><?php echo e($result['attendance']??'not-set'); ?><?php endif; ?></b>
                 </div>
               </li> -->
               <li class="list-group-item pb-1 mt-3 user_list d-flex align-items-center">
@@ -420,32 +420,31 @@ $account = App\Models\Accounts::where('ref_id', $result['id'])->where('account_t
                   <i class="ti ti-cash-banknote ti-sm me-1_5"></i>
                 </div>
                 <div class="user_list_content">
-                  <span>Balance:</span><br> <b class="float-right">@isset($result){{App\Helpers\Accounts::getBalance($result['account_id'])}}@endisset</b>
+                  <span>Balance:</span><br> <b class="float-right"><?php if(isset($result)): ?><?php echo e(App\Helpers\Accounts::getBalance($result['account_id'])); ?><?php endif; ?></b>
                 </div>
               </li>
             </ul>
           </ul>
           <div class="d-flex justify-content-start mb-3">
-            @isset($result)
-            @can('rider_edit')
-            <a href="{{route('riders.edit', $result['id'])}}" class="btn btn-outline-primary btn-sm waves-effect waves-light btn-block me-1"><i class="fa fa-edit"></i>&nbsp;Edit</a>
-            @endcan
-            @can('email_create')
-            <a href="javascript:void();" data-action="{{route('rider.sendemail', $result['id'])}}" data-size="md"
-              data-title="{{$result['name'] . ' (' . $result['rider_id'] }}')" class="btn btn-outline-warning btn-sm show-modal text-nowrap"><i class="fas fa-envelope"></i>&nbsp;Send Email</a>
-            @endcan
-            @can('timeline_create')
-            <a href="javascript:void(0);" data-action="{{url('riders/job_status/' . $result['id']) }}" data-size="md" data-title="Add Timeline" class="btn btn-outline-success btn-sm text-nowrap show-modal mx-1"><i class="fas fa-chart-bar"></i>&nbsp;Add Timeline</a>
-            @endcan
-            @endisset
-            {{-- <a href="javascript:void(0);" class="btn btn-default btn-block no-print" onclick="window.print();"><i class="fa fa-print"></i>&nbsp;<b>Print</b></a>
- --}}
+            <?php if(isset($result)): ?>
+            <?php if (app(\Illuminate\Contracts\Auth\Access\Gate::class)->check('rider_edit')): ?>
+            <a href="<?php echo e(route('riders.edit', $result['id'])); ?>" class="btn btn-outline-primary btn-sm waves-effect waves-light btn-block me-1"><i class="fa fa-edit"></i>&nbsp;Edit</a>
+            <?php endif; ?>
+            <?php if (app(\Illuminate\Contracts\Auth\Access\Gate::class)->check('email_create')): ?>
+            <a href="javascript:void();" data-action="<?php echo e(route('rider.sendemail', $result['id'])); ?>" data-size="md"
+              data-title="<?php echo e($result['name'] . ' (' . $result['rider_id']); ?>')" class="btn btn-outline-warning btn-sm show-modal text-nowrap"><i class="fas fa-envelope"></i>&nbsp;Send Email</a>
+            <?php endif; ?>
+            <?php if (app(\Illuminate\Contracts\Auth\Access\Gate::class)->check('timeline_create')): ?>
+            <a href="javascript:void(0);" data-action="<?php echo e(url('riders/job_status/' . $result['id'])); ?>" data-size="md" data-title="Add Timeline" class="btn btn-outline-success btn-sm text-nowrap show-modal mx-1"><i class="fas fa-chart-bar"></i>&nbsp;Add Timeline</a>
+            <?php endif; ?>
+            <?php endif; ?>
+            
           </div>
-          @isset($result)
+          <?php if(isset($result)): ?>
           <div class="d-flex flex-wrap justify-content-start gap-2 gap-md-3">
             <!-- Absconder Status Card -->
-            <div class="status-card absconder-card {{ ($result['absconder'] ?? 0) == 1 ? 'active' : '' }}"
-              data-rider-id="{{ $result['id'] ?? '' }}"
+            <div class="status-card absconder-card <?php echo e(($result['absconder'] ?? 0) == 1 ? 'active' : ''); ?>"
+              data-rider-id="<?php echo e($result['id'] ?? ''); ?>"
               data-type="absconder">
               <div class="d-flex justify-content-between">
                 <div class="status-icon">
@@ -453,23 +452,23 @@ $account = App\Models\Accounts::where('ref_id', $result['id'])->where('account_t
                 </div>
                 <div class="status-content">
                   <div class="status-title">Absconder</div>
-                  <div class="status-subtitle">{{ ($result['absconder'] ?? 0) == 1 ? 'Marked as Absconder' : 'Not Absconder' }}</div>
+                  <div class="status-subtitle"><?php echo e(($result['absconder'] ?? 0) == 1 ? 'Marked as Absconder' : 'Not Absconder'); ?></div>
                 </div>
               </div>
               <div class="status-toggle">
                 <input type="checkbox"
                   class="status-checkbox absconder-checkbox"
-                  id="absconder-{{ $result['id'] ?? '' }}"
-                  data-rider-id="{{ $result['id'] ?? '' }}"
-                  {{ ($result['absconder'] ?? 0) == 1 ? 'checked' : '' }}>
-                <label for="absconder-{{ $result['id'] ?? '' }}" class="toggle-switch">
+                  id="absconder-<?php echo e($result['id'] ?? ''); ?>"
+                  data-rider-id="<?php echo e($result['id'] ?? ''); ?>"
+                  <?php echo e(($result['absconder'] ?? 0) == 1 ? 'checked' : ''); ?>>
+                <label for="absconder-<?php echo e($result['id'] ?? ''); ?>" class="toggle-switch">
                   <span class="toggle-slider"></span>
                 </label>
               </div>
             </div>
             <!-- Follow Up Status Card -->
-            <div class="status-card flowup-card {{ ($result['flowup'] ?? 0) == 1 ? 'active' : '' }}"
-              data-rider-id="{{ $result['id'] ?? '' }}"
+            <div class="status-card flowup-card <?php echo e(($result['flowup'] ?? 0) == 1 ? 'active' : ''); ?>"
+              data-rider-id="<?php echo e($result['id'] ?? ''); ?>"
               data-type="flowup">
               <div class="d-flex justify-content-between">
                 <div class="status-icon">
@@ -477,23 +476,23 @@ $account = App\Models\Accounts::where('ref_id', $result['id'])->where('account_t
                 </div>
                 <div class="status-content">
                   <div class="status-title">Follow Up</div>
-                  <div class="status-subtitle">{{ ($result['flowup'] ?? 0) == 1 ? 'Follow Up Required' : 'No Follow Up' }}</div>
+                  <div class="status-subtitle"><?php echo e(($result['flowup'] ?? 0) == 1 ? 'Follow Up Required' : 'No Follow Up'); ?></div>
                 </div>
               </div>
               <div class="status-toggle">
                 <input type="checkbox"
                   class="status-checkbox flowup-checkbox"
-                  id="flowup-{{ $result['id'] ?? '' }}"
-                  data-rider-id="{{ $result['id'] ?? '' }}"
-                  {{ ($result['flowup'] ?? 0) == 1 ? 'checked' : '' }}>
-                <label for="flowup-{{ $result['id'] ?? '' }}" class="toggle-switch">
+                  id="flowup-<?php echo e($result['id'] ?? ''); ?>"
+                  data-rider-id="<?php echo e($result['id'] ?? ''); ?>"
+                  <?php echo e(($result['flowup'] ?? 0) == 1 ? 'checked' : ''); ?>>
+                <label for="flowup-<?php echo e($result['id'] ?? ''); ?>" class="toggle-switch">
                   <span class="toggle-slider"></span>
                 </label>
               </div>
             </div>
             <!-- Learning License Status Card -->
-            <div class="status-card llicense-card {{ ($result['l_license'] ?? 0) == 1 ? 'active' : '' }}"
-              data-rider-id="{{ $result['id'] ?? '' }}"
+            <div class="status-card llicense-card <?php echo e(($result['l_license'] ?? 0) == 1 ? 'active' : ''); ?>"
+              data-rider-id="<?php echo e($result['id'] ?? ''); ?>"
               data-type="llicense">
               <div class="d-flex justify-content-between">
                 <div class="status-icon">
@@ -501,22 +500,22 @@ $account = App\Models\Accounts::where('ref_id', $result['id'])->where('account_t
                 </div>
                 <div class="status-content">
                   <div class="status-title">Learning License</div>
-                  <div class="status-subtitle">{{ ($result['l_license'] ?? 0) == 1 ? 'Learning License Required' : 'No Learning License' }}</div>
+                  <div class="status-subtitle"><?php echo e(($result['l_license'] ?? 0) == 1 ? 'Learning License Required' : 'No Learning License'); ?></div>
                 </div>
               </div>
               <div class="status-toggle">
                 <input type="checkbox"
                   class="status-checkbox llicense-checkbox"
-                  id="llicense-{{ $result['id'] ?? '' }}"
-                  data-rider-id="{{ $result['id'] ?? '' }}"
-                  {{ ($result['l_license'] ?? 0) == 1 ? 'checked' : '' }}>
-                <label for="llicense-{{ $result['id'] ?? '' }}" class="toggle-switch">
+                  id="llicense-<?php echo e($result['id'] ?? ''); ?>"
+                  data-rider-id="<?php echo e($result['id'] ?? ''); ?>"
+                  <?php echo e(($result['l_license'] ?? 0) == 1 ? 'checked' : ''); ?>>
+                <label for="llicense-<?php echo e($result['id'] ?? ''); ?>" class="toggle-switch">
                   <span class="toggle-slider"></span>
                 </label>
               </div>
             </div>
           </div>
-          @endisset
+          <?php endif; ?>
         </div>
       </div>
     </div>
@@ -530,154 +529,154 @@ $account = App\Models\Accounts::where('ref_id', $result['id'])->where('account_t
               <ul class="nav nav-pills flex-nowrap mb-0 overflow-hidden" id="mainNavigation" style="gap: 0.25rem;">
                 <!-- Priority navigation items (always visible when possible) -->
                 <li class="nav-item nav-priority-1">
-                  <a class="nav-link @if(is_numeric(request()->segment(2)) || request()->segment(2) == 'create') active @endif"
-                    href="@isset($result['id']){{route('riders.show',$result['id'])}}@else#@endif">
+                  <a class="nav-link <?php if(is_numeric(request()->segment(2)) || request()->segment(2) == 'create'): ?> active <?php endif; ?>"
+                    href="<?php if(isset($result['id'])): ?><?php echo e(route('riders.show',$result['id'])); ?><?php else: ?>#<?php endif; ?>">
                     <i class="ti ti-user-check ti-sm me-1_5"></i>Information
                   </a>
                 </li>
 
-                @isset($result)
-                @can('timeline_view')
+                <?php if(isset($result)): ?>
+                <?php if (app(\Illuminate\Contracts\Auth\Access\Gate::class)->check('timeline_view')): ?>
                 <li class="nav-item nav-priority-2">
-                  <a class="nav-link @if(request()->segment(2) == 'timeline') active @endif"
-                    href="{{route('rider.timeline',$result['id'])}}">
+                  <a class="nav-link <?php if(request()->segment(2) == 'timeline'): ?> active <?php endif; ?>"
+                    href="<?php echo e(route('rider.timeline',$result['id'])); ?>">
                     <i class="ti ti-timeline ti-sm me-1_5"></i>Timeline
                   </a>
                 </li>
-                @endcan
+                <?php endif; ?>
 
-                @can('rider_document')
+                <?php if (app(\Illuminate\Contracts\Auth\Access\Gate::class)->check('rider_document')): ?>
                 <li class="nav-item nav-priority-3">
-                  <a class="nav-link @if(request()->segment(2) == 'files') active @endif"
-                    href="{{route('rider.files',$result['id'])}}">
+                  <a class="nav-link <?php if(request()->segment(2) == 'files'): ?> active <?php endif; ?>"
+                    href="<?php echo e(route('rider.files',$result['id'])); ?>">
                     <i class="ti ti-file-upload ti-sm me-1_5"></i>Files
                   </a>
                 </li>
-                @endcan
+                <?php endif; ?>
 
-                @can('riderinvoice_view')
+                <?php if (app(\Illuminate\Contracts\Auth\Access\Gate::class)->check('riderinvoice_view')): ?>
                 <li class="nav-item nav-priority-4">
-                  <a class="nav-link @if(request()->segment(2) == 'invoices') active @endif"
-                    href="{{route('rider.invoices',$result['id'])}}">
+                  <a class="nav-link <?php if(request()->segment(2) == 'invoices'): ?> active <?php endif; ?>"
+                    href="<?php echo e(route('rider.invoices',$result['id'])); ?>">
                     <i class="ti ti-file-invoice ti-sm me-1_5"></i>Invoices
                   </a>
                 </li>
-                @endcan
+                <?php endif; ?>
 
-                @can('visaexpense_view')
-                @if($account)
+                <?php if (app(\Illuminate\Contracts\Auth\Access\Gate::class)->check('visaexpense_view')): ?>
+                <?php if($account): ?>
                 <li class="nav-item nav-priority-5">
-                  <a class="nav-link @if(request()->segment(2) == 'generatentries' || request()->segment(2) == 'installmentPlan') active @endif"
-                    href="{{ route('VisaExpense.generatentries', $account->id) }}">
+                  <a class="nav-link <?php if(request()->segment(2) == 'generatentries' || request()->segment(2) == 'installmentPlan'): ?> active <?php endif; ?>"
+                    href="<?php echo e(route('VisaExpense.generatentries', $account->id)); ?>">
                     <i class="ti ti-file-invoice ti-sm me-1_5"></i>Visa Expense
                   </a>
                 </li>
-                @endif
-                @endcan
+                <?php endif; ?>
+                <?php endif; ?>
 
-                @can('item_view')
+                <?php if (app(\Illuminate\Contracts\Auth\Access\Gate::class)->check('item_view')): ?>
                 <li class="nav-item nav-priority-6">
-                  <a class="nav-link @if(request()->segment(2) == 'items') active @endif"
-                    href="{{route('rider.items',$result['id'])}}">
+                  <a class="nav-link <?php if(request()->segment(2) == 'items'): ?> active <?php endif; ?>"
+                    href="<?php echo e(route('rider.items',$result['id'])); ?>">
                     <i class="ti ti-cash-banknote ti-sm me-1"></i>Salary
                   </a>
                 </li>
-                @endcan
+                <?php endif; ?>
 
-                @can('gn_ledger')
+                <?php if (app(\Illuminate\Contracts\Auth\Access\Gate::class)->check('gn_ledger')): ?>
                 <li class="nav-item nav-priority-7">
-                  <a class="nav-link @if(request()->segment(2) == 'ledger') active @endif"
-                    href="{{route('rider.ledger',$result['id'])}}">
+                  <a class="nav-link <?php if(request()->segment(2) == 'ledger'): ?> active <?php endif; ?>"
+                    href="<?php echo e(route('rider.ledger',$result['id'])); ?>">
                     <i class="ti ti-file ti-sm me-1_5"></i>Ledger
                   </a>
                 </li>
-                @endcan
+                <?php endif; ?>
 
-                @can('activity_view')
+                <?php if (app(\Illuminate\Contracts\Auth\Access\Gate::class)->check('activity_view')): ?>
                 <li class="nav-item nav-priority-8">
-                  <a class="nav-link @if(request()->segment(2) == 'activities') active @endif"
-                    href="{{route('rider.activities',$result['id'])}}">
+                  <a class="nav-link <?php if(request()->segment(2) == 'activities'): ?> active <?php endif; ?>"
+                    href="<?php echo e(route('rider.activities',$result['id'])); ?>">
                     <i class="ti ti-motorbike ti-sm me-1_5"></i>Activities
                   </a>
                 </li>
-                @endcan
+                <?php endif; ?>
 
-                @can('email_view')
+                <?php if (app(\Illuminate\Contracts\Auth\Access\Gate::class)->check('email_view')): ?>
                 <li class="nav-item nav-priority-9">
-                  <a class="nav-link @if(request()->segment(2) == 'emails') active @endif"
-                    href="{{route('rider.emails',$result['id'])}}">
+                  <a class="nav-link <?php if(request()->segment(2) == 'emails'): ?> active <?php endif; ?>"
+                    href="<?php echo e(route('rider.emails',$result['id'])); ?>">
                     <i class="ti ti-mail ti-sm me-1_5"></i>Emails
                   </a>
                 </li>
-                @endcan
+                <?php endif; ?>
 
                 <!-- Action items with lower priority -->
-                @can('advanceloan_create')
+                <?php if (app(\Illuminate\Contracts\Auth\Access\Gate::class)->check('advanceloan_create')): ?>
                 <li class="nav-item nav-priority-10">
                   <a href="javascript:void(0);"
-                    data-action="{{ route('riders.advanceloan', ['id' => $result['id'], 'vt' => 'AL']) }}"
+                    data-action="<?php echo e(route('riders.advanceloan', ['id' => $result['id'], 'vt' => 'AL'])); ?>"
                     data-size="xl" data-title="Advance Loan"
                     class='nav-link show-modal'>
                     <i class="ti ti-credit-card ti-sm me-1_5"></i>Advance Loan
                   </a>
                 </li>
-                @endcan
+                <?php endif; ?>
 
-                @can('cod_create')
+                <?php if (app(\Illuminate\Contracts\Auth\Access\Gate::class)->check('cod_create')): ?>
                 <li class="nav-item nav-priority-11">
                   <a href="javascript:void(0);"
-                    data-action="{{ route('riders.cod' , $result['id']) }}"
+                    data-action="<?php echo e(route('riders.cod' , $result['id'])); ?>"
                     data-size="xl" data-title="COD"
                     class='nav-link show-modal'>
                     <i class="ti ti-cash ti-sm me-1_5"></i>COD
                   </a>
                 </li>
-                @endcan
+                <?php endif; ?>
 
-                @can('penality_create')
+                <?php if (app(\Illuminate\Contracts\Auth\Access\Gate::class)->check('penality_create')): ?>
                 <li class="nav-item nav-priority-12">
                   <a href="javascript:void(0);"
-                    data-action="{{ route('riders.penalty' , $result['id']) }}"
+                    data-action="<?php echo e(route('riders.penalty' , $result['id'])); ?>"
                     class='nav-link show-modal'
                     data-size="xl" data-title="Penality">
                     <i class="ti ti-alert-triangle ti-sm me-1_5"></i>Penalty
                   </a>
                 </li>
-                @endcan
+                <?php endif; ?>
 
-                @can('incentives_create')
+                <?php if (app(\Illuminate\Contracts\Auth\Access\Gate::class)->check('incentives_create')): ?>
                 <li class="nav-item nav-priority-13">
                   <a href="javascript:void(0);"
-                    data-action="{{ route('riders.incentive' , $result['id']) }}"
+                    data-action="<?php echo e(route('riders.incentive' , $result['id'])); ?>"
                     class='nav-link show-modal'
                     data-size="xl" data-title="Incentive">
                     <i class="ti ti-award ti-sm me-1_5"></i>Incentive
                   </a>
                 </li>
-                @endcan
+                <?php endif; ?>
 
-                @can('payment_create')
+                <?php if (app(\Illuminate\Contracts\Auth\Access\Gate::class)->check('payment_create')): ?>
                 <li class="nav-item nav-priority-14">
                   <a href="javascript:void(0);"
-                    data-action="{{ route('riders.payment' , $result['id']) }}"
+                    data-action="<?php echo e(route('riders.payment' , $result['id'])); ?>"
                     class='nav-link show-modal'
                     data-size="xl" data-title="Payment">
                     <i class="ti ti-wallet ti-sm me-1_5"></i>Payment
                   </a>
                 </li>
-                @endcan
+                <?php endif; ?>
 
-                @can('vendorcharges_create')
+                <?php if (app(\Illuminate\Contracts\Auth\Access\Gate::class)->check('vendorcharges_create')): ?>
                 <li class="nav-item nav-priority-15">
                   <a href="javascript:void(0);"
-                    data-action="{{ route('riders.vendorcharges' , $result['id']) }}"
+                    data-action="<?php echo e(route('riders.vendorcharges' , $result['id'])); ?>"
                     class='nav-link show-modal'
                     data-size="xl" data-title="Vendor Charges">
                     <i class="ti ti-receipt ti-sm me-1_5"></i>Vendor Charges
                   </a>
                 </li>
-                @endcan
-                @endisset
+                <?php endif; ?>
+                <?php endif; ?>
               </ul>
             </div>
 
@@ -698,7 +697,7 @@ $account = App\Models\Accounts::where('ref_id', $result['id'])->where('account_t
       </div>
     </div>
     <div class="card mb-5" id="cardBody" style="margin-top: 20px; height:1300px !important;overflow: auto;">
-      @yield('page_content')
+      <?php echo $__env->yieldContent('page_content'); ?>
     </div>
   </div>
 </div>
@@ -1306,7 +1305,7 @@ $account = App\Models\Accounts::where('ref_id', $result['id'])->where('account_t
         border: 1px solid var(--bs-border-color);
         background: white;
         color: var(--bs-body-color);
-        // display: none; /* Initially hidden */
+        display: none; /* Initially hidden */
         align-items: center;
         justify-content: center;
       }
@@ -1458,4 +1457,5 @@ $account = App\Models\Accounts::where('ref_id', $result['id'])->where('account_t
   });
 </script>
 
-@endsection
+<?php $__env->stopSection(); ?>
+<?php echo $__env->make('layouts.app', \Illuminate\Support\Arr::except(get_defined_vars(), ['__data', '__path']))->render(); ?><?php /**PATH D:\xammp1\htdocs\erpbk\resources\views/riders/view.blade.php ENDPATH**/ ?>

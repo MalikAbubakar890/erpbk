@@ -332,17 +332,6 @@ Route::get('/artisan-storage-unlink', function () {
   return 'storage unlink';
 });
 
-// Session health check route
-Route::get('/session-health', function () {
-  return response()->json([
-    'status' => 'healthy',
-    'session_id' => session()->getId(),
-    'user_id' => auth()->id(),
-    'csrf_token' => csrf_token(),
-    'timestamp' => now()->toISOString()
-  ]);
-})->middleware('auth');
-
 /* Route::resource('calculations', App\Http\Controllers\CalculationsController::class)
     ->names([
         'index' => 'calculations.index',

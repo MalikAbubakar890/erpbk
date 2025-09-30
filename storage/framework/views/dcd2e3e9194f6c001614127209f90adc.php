@@ -39,9 +39,6 @@ $contentLayout = (isset($container) ? (($container === 'container-xxl') ? "layou
 
   <?php echo app('Illuminate\Foundation\Vite')('resources/sass/app.scss'); ?>
   <?php echo app('Illuminate\Foundation\Vite')('resources/js/app.js'); ?>
-
-  <!-- Session Fix Script -->
-  <script src="<?php echo e(asset('js/session-fix.js')); ?>"></script>
 </head>
 
 <body>

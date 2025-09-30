@@ -214,13 +214,13 @@ class RiderActivitiesController extends AppBaseController
   public function import(Request $request)
   {
     if ($request->isMethod('post')) {
-      $rules = [
-        'file' => 'required|max:50000|mimes:xlsx,csv'
-      ];
+      // $rules = [
+      //   'file' => 'required|max:50000|mimes:xlsx,csv'
+      // ];
       $message = [
         'file.required' => 'Excel File Required'
       ];
-      $this->validate($request, $rules, $message);
+      $this->validate($request, $message);
       Excel::import(new ImportRiderActivities(), $request->file('file'));
     }
 

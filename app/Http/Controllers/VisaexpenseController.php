@@ -279,8 +279,22 @@ class VisaexpenseController extends AppBaseController
     }
     public function installmentPlan(Request $request, $id)
     {
+        // Debug session information
+        \Log::info('InstallmentPlan Access Debug', [
+            'user_authenticated' => auth()->check(),
+            'user_id' => auth()->id(),
+            'session_id' => session()->getId(),
+            'session_data' => session()->all(),
+            'request_url' => $request->fullUrl(),
+            'request_method' => $request->method(),
+        ]);
+
         // Check if user is authenticated first
         if (!auth()->check()) {
+            \Log::warning('User not authenticated when accessing installment plan', [
+                'session_id' => session()->getId(),
+                'request_url' => $request->fullUrl(),
+            ]);
             return redirect()->route('login')->with('error', 'Please log in to access this page.');
         }
 

@@ -1,5 +1,5 @@
-@push('third_party_stylesheets')
-@endpush
+<?php $__env->startPush('third_party_stylesheets'); ?>
+<?php $__env->stopPush(); ?>
 <table class="table table-striped dataTable no-footer" id="dataTableBuilder">
    <thead class="text-center">
       <tr role="row">
@@ -15,20 +15,20 @@
       </tr>
    </thead>
    <tbody>
-      @foreach($data as $r)
+      <?php $__currentLoopData = $data; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $r): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
       <tr class="text-center">
-         <td>{{ \Carbon\Carbon::parse($r->billing_month)->format('M Y') }}</td>
-         <td>{{ \Carbon\Carbon::parse($r->date)->format('d M Y') }}</td>
-         <td>{{ number_format($r->amount, 2) }}</td>
+         <td><?php echo e(\Carbon\Carbon::parse($r->billing_month)->format('M Y')); ?></td>
+         <td><?php echo e(\Carbon\Carbon::parse($r->date)->format('d M Y')); ?></td>
+         <td><?php echo e(number_format($r->amount, 2)); ?></td>
          <td>
-            <span class="badge bg-primary">{{ $r->visa_status }}</span>
+            <span class="badge bg-primary"><?php echo e($r->visa_status); ?></span>
          </td>
          <td>
-            @if($r->payment_status == 'paid')
+            <?php if($r->payment_status == 'paid'): ?>
             <span class="badge bg-success">Paid</span>
-            @else
+            <?php else: ?>
             <span class="badge bg-danger">Unpaid</span>
-            @endif
+            <?php endif; ?>
          </td>
          <td>
             <div class="dropdown">
@@ -36,13 +36,13 @@
                   <i class="icon-base ti ti-dots icon-md text-body-secondary"></i>
                </button>
                <div class="dropdown-menu dropdown-menu-end" aria-labelledby="actiondropdown" style="">
-                  <a href="{{ route('VisaExpense.viewvoucher', $r->id) }}" class='dropdown-item waves-effect'>
+                  <a href="<?php echo e(route('VisaExpense.viewvoucher', $r->id)); ?>" class='dropdown-item waves-effect'>
                      View Expense Detail
                   </a>
-                  <a href="javascript:void(0);" data-action="{{ route('VisaExpense.edit' , $r->id) }}" data-size="lg" data-title="New Fine" class='dropdown-item waves-effect show-modal'>
+                  <a href="javascript:void(0);" data-action="<?php echo e(route('VisaExpense.edit' , $r->id)); ?>" data-size="lg" data-title="New Fine" class='dropdown-item waves-effect show-modal'>
                      Edit
                   </a>
-                  <a href="javascript:void(0);" onclick='confirmDelete("{{route('VisaExpense.delete', $r->id) }}")' class='dropdown-item confirm-modal' data-size="lg" data-title="Delete Sim">
+                  <a href="javascript:void(0);" onclick='confirmDelete("<?php echo e(route('VisaExpense.delete', $r->id)); ?>")' class='dropdown-item confirm-modal' data-size="lg" data-title="Delete Sim">
                      delete
                   </a>
                </div>
@@ -50,12 +50,13 @@
          </td>
          <td></td>
       </tr>
-      @endforeach
+      <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
    </tbody>
 </table>
-@if(method_exists($data, 'links'))
-{!! $data->links('components.global-pagination') !!}
-@endif
+<?php if(method_exists($data, 'links')): ?>
+<?php echo $data->links('components.global-pagination'); ?>
+
+<?php endif; ?>
 <div class="modal modal-default filtetmodal fade" id="customoizecolmn" tabindex="-1" data-bs-backdrop="static" role="dialog" aria-hidden="true">
    <div class="modal-dialog modal-lg modal-slide-top modal-full-top">
       <div class="modal-content">
@@ -67,7 +68,7 @@
             <div style="display: none;" class="loading-overlay" id="loading-overlay">
                <div class="spinner-border text-primary" role="status"></div>
             </div>
-            <form id="filterForm" action="{{ route('banks.index') }}" method="GET">
+            <form id="filterForm" action="<?php echo e(route('banks.index')); ?>" method="GET">
                <div class="row">
                   <div class="form-group col-md-12">
                      <input type="number" name="search" class="form-control" placeholder="Search">
@@ -80,4 +81,4 @@
          </div>
       </div>
    </div>
-</div>
+</div><?php /**PATH D:\xammp1\htdocs\erpbk\resources\views/visa_expenses/table.blade.php ENDPATH**/ ?>

@@ -13,8 +13,8 @@ return [
     */
 
     'session_fixes' => [
-        'use_database_sessions' => env('CLOUDWAYS_USE_DATABASE_SESSIONS', true),
-        'force_secure_cookies' => env('CLOUDWAYS_FORCE_SECURE_COOKIES', false),
+        'use_database_sessions' => env('CLOUDWAYS_USE_DATABASE_SESSIONS', false),
+        'force_secure_cookies' => env('CLOUDWAYS_FORCE_SECURE_COOKIES', true),
         'extend_session_lifetime' => env('CLOUDWAYS_EXTEND_SESSION', true),
     ],
 
