@@ -7,14 +7,14 @@
     <style>
         body {
             font-family: Calibri, Arial, sans-serif;
-            font-size: 12px;
+            font-size: 11px;
             color: #000;
             margin: 0;
             padding: 0;
         }
 
         .invoice-box {
-            width: 850px;
+            width: 740px;
             margin: auto;
             padding: 10px;
             border: 1px solid #000;
@@ -31,13 +31,16 @@
             width: 100%;
             border-collapse: collapse;
             margin-bottom: 8px;
+            table-layout: fixed;
         }
 
         th,
         td {
             border: 1px solid #000;
             padding: 4px 6px;
-            font-size: 12px;
+            font-size: 11px;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
         }
 
         th {
@@ -138,6 +141,11 @@
         }
 
         /* Print styles to ensure background colors print without changing design */
+        @page {
+            size: A4 portrait;
+            margin: 6mm;
+        }
+
         @media print {
 
             body,
