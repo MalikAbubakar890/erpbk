@@ -207,7 +207,6 @@ Route::middleware(['auth', 'web'])->group(function () {
 
 
   Route::resource('riderInvoices', App\Http\Controllers\RiderInvoicesController::class);
-  Route::get('riderInvoices/{id}/download', [\App\Http\Controllers\RiderInvoicesController::class, 'download'])->name('riderInvoices.download');
   Route::any('rider/invoice-import', [\App\Http\Controllers\RiderInvoicesController::class, 'import'])->name('rider.invoice_import');
   Route::any('rider/invoice-import-paid', [\App\Http\Controllers\RiderInvoicesController::class, 'importPaid'])->name('riderInvoices.importPaid');
   Route::any('rider/invoice-mark-paid/{id}', [\App\Http\Controllers\RiderInvoicesController::class, 'markAsPaid'])->name('riderInvoices.markAsPaid');

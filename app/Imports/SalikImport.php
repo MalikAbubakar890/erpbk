@@ -50,7 +50,6 @@ class SalikImport implements ToCollection
 
                 try {
 
-
                     // --- Safe mapping (index based) ---
                     $transactionId       = $row[0] ?? null;
                     $tripDate            = $row[1] ?? null;
@@ -66,7 +65,6 @@ class SalikImport implements ToCollection
                     $adminCharge         = $row[11] ?? null;
                     $details             = $row[12] ?? null;
                     $debit               = $row[13] ?? null;
-
                     // Use amount field for the actual transaction amount
                     $transactionAmount = $amount ?: $debit;
 
@@ -139,12 +137,12 @@ class SalikImport implements ToCollection
                         'admin_charges'    => $this->adminChargePerSalik,
                         'total_amount'     => $transactionAmount + $this->adminChargePerSalik,
                         'status'           => 'paid',
-                        'billing_month'    => date('Y-m-01', strtotime($tripDate)),
+                        'billing_month'    =>  $billingMonth,
                         'trans_date'       => Carbon::today(),
                         'trans_code'       => Account::trans_code(),
                         'created_by'       => Auth::user()->id,
                     ];
-
+                    dd($salikData);
                     // Determine if we're using current rider or last rider from history
                     $isCurrentRider = ($bike->rider_id == $rider->id);
                     $riderSource = $isCurrentRider ? 'current rider' : 'last rider from history';

@@ -7,14 +7,14 @@
     <style>
         body {
             font-family: Calibri, Arial, sans-serif;
-            font-size: 11px;
+            font-size: 12px;
             color: #000;
             margin: 0;
             padding: 0;
         }
 
         .invoice-box {
-            width: 740px;
+            width: 850px;
             margin: auto;
             padding: 10px;
             border: 1px solid #000;
@@ -31,16 +31,13 @@
             width: 100%;
             border-collapse: collapse;
             margin-bottom: 8px;
-            table-layout: fixed;
         }
 
         th,
         td {
             border: 1px solid #000;
             padding: 4px 6px;
-            font-size: 11px;
-            word-wrap: break-word;
-            overflow-wrap: break-word;
+            font-size: 12px;
         }
 
         th {
@@ -140,12 +137,25 @@
             margin-top: 8px;
         }
 
-        /* Print styles to ensure background colors print without changing design */
-        @page {
-            size: A4 portrait;
-            margin: 6mm;
+        .print-btn {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            background: #004aad;
+            color: #fff;
+            border: none;
+            padding: 8px 12px;
+            font-size: 12px;
+            cursor: pointer;
+            border-radius: 3px;
+            z-index: 9999;
         }
 
+        .print-btn:hover {
+            background: #2A62FF;
+        }
+
+        /* Print styles to ensure background colors print without changing design */
         @media print {
 
             body,
@@ -161,8 +171,11 @@
             .yellow,
             .red {
                 -webkit-print-color-adjust: exact;
-                color-adjust: exact;
                 print-color-adjust: exact;
+            }
+
+            .print-btn {
+                display: none !important;
             }
         }
     </style>
@@ -170,10 +183,9 @@
 
 <body>
 
+    <button type="button" class="print-btn" onclick="window.print()">Print</button>
+
     <div class="invoice-box">
-        <div style="text-align:right; margin-bottom:8px;">
-            <a href="{{ route('riderInvoices.download', $riderInvoice->id) }}" style="display:inline-block; padding:6px 10px; border:1px solid #000; background:#f0f0f0; color:#000; text-decoration:none; font-weight:bold;" class="no-print">Download PDF</a>
-        </div>
         <!-- Header Table -->
         @php
         $settings = DB::table('settings')->pluck('value', 'name')->toArray();
@@ -537,7 +549,7 @@
         <div class="sign-box">
             For Rider Name <br>
             <span class="yellow">{{$riderInvoice->rider->name}}</span>
-            <span>_____________</span>
+            <span>### Sign</span>
         </div>
     </div>
 

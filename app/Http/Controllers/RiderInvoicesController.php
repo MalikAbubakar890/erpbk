@@ -21,9 +21,6 @@ use App\Traits\GlobalPagination;
 use Flash;
 use Illuminate\Support\Facades\Mail;
 use Maatwebsite\Excel\Facades\Excel;
-use PDF;
-use Dompdf\Dompdf;
-use Dompdf\Options;
 
 class RiderInvoicesController extends AppBaseController
 {
@@ -152,46 +149,6 @@ class RiderInvoicesController extends AppBaseController
     }
 
     return view('rider_invoices.show')->with('riderInvoice', $riderInvoice);
-  }
-
-  /**
-   * Download the specified RiderInvoice as PDF.
-   */
-  public function download($id)
-  {
-    $riderInvoice = $this->riderInvoicesRepository->find($id);
-
-    if (empty($riderInvoice)) {
-      Flash::error('Rider Invoices not found');
-      return redirect(route('riderInvoices.index'));
-    }
-
-    // Render the same view into PDF
-    $fileName = 'RiderInvoice-' . $riderInvoice->id . '.pdf';
-
-    // Prefer Snappy if available and proc_open is enabled
-    if (function_exists('proc_open')) {
-      $pdf = PDF::loadView('rider_invoices.show', compact('riderInvoice'))
-        ->setOption('enable-local-file-access', true)
-        ->setPaper('a4');
-
-      return $pdf->download($fileName);
-    }
-
-    // Fallback to Dompdf when proc_open is disabled (e.g., Cloudways)
-    $html = view('rider_invoices.show', compact('riderInvoice'))->render();
-    $options = new Options();
-    $options->set('isRemoteEnabled', true);
-    $options->set('isHtml5ParserEnabled', true);
-    $options->set('defaultPaperSize', 'a4');
-    $dompdf = new Dompdf($options);
-    $dompdf->loadHtml($html);
-    $dompdf->setPaper('a4');
-    $dompdf->render();
-
-    return response($dompdf->output(), 200)
-      ->header('Content-Type', 'application/pdf')
-      ->header('Content-Disposition', 'attachment; filename="' . $fileName . '"');
   }
 
   /**
