@@ -142,7 +142,6 @@ class SalikImport implements ToCollection
                         'trans_code'       => Account::trans_code(),
                         'created_by'       => Auth::user()->id,
                     ];
-                    dd($salikData);
                     // Determine if we're using current rider or last rider from history
                     $isCurrentRider = ($bike->rider_id == $rider->id);
                     $riderSource = $isCurrentRider ? 'current rider' : 'last rider from history';
