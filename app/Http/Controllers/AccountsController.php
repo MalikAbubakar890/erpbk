@@ -20,7 +20,7 @@ use Flash;
 
 class AccountsController extends AppBaseController
 {
-    use GlobalPagination;
+  use GlobalPagination;
   /** @var AccountsRepository $accountsRepository*/
   private $accountsRepository;
 

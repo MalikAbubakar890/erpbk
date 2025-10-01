@@ -101,9 +101,9 @@
         }
 
         .amount-highlight {
-            background: #fbbf24;
+            background: #2A62FF;
             font-weight: bold;
-            color: #211c1d;
+            color: #FFFFFF;
         }
 
         .success-highlight {
@@ -163,6 +163,9 @@
 <body>
 
     <div class="invoice-box">
+        <div style="text-align:right; margin-bottom:8px;">
+            <a href="<?php echo e(route('riderInvoices.download', $riderInvoice->id)); ?>" style="display:inline-block; padding:6px 10px; border:1px solid #000; background:#f0f0f0; color:#000; text-decoration:none; font-weight:bold;" class="no-print">Download PDF</a>
+        </div>
         <!-- Header Table -->
         <?php
         $settings = DB::table('settings')->pluck('value', 'name')->toArray();
@@ -286,6 +289,7 @@
             $total_qty = 0;
             $running_total = 0;
             $vat_percentage = Common::getSetting('vat_percentage');
+
             ?>
             <?php $__currentLoopData = $riderInvoice->items; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $key=>$val): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
             <?php
@@ -463,7 +467,9 @@
             </tr>
             <?php endif; ?>
             <tr class="accent-total">
-                <td colspan="8" style="text-align:right; padding: 8px;">INVOICE TOTAL</td>
+                <td colspan="3" style="text-align:right; padding: 8px;">Total Orders</td>
+                <td class="num"><?php echo e($total_qty); ?></td>
+                <td colspan="4" style="text-align:right; padding: 8px;">INVOICE TOTAL</td>
                 <td class="num" style="padding: 8px; font-size: 14px;"><?php echo e(number_format($running_total, 2)); ?></td>
             </tr>
         </table>
@@ -524,7 +530,7 @@
         <div class="sign-box">
             For Rider Name <br>
             <span class="yellow"><?php echo e($riderInvoice->rider->name); ?></span>
-            <span>### Sign</span>
+            <span>_____________</span>
         </div>
     </div>
 

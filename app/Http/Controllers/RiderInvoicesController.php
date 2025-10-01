@@ -21,6 +21,7 @@ use App\Traits\GlobalPagination;
 use Flash;
 use Illuminate\Support\Facades\Mail;
 use Maatwebsite\Excel\Facades\Excel;
+use PDF;
 
 class RiderInvoicesController extends AppBaseController
 {
@@ -149,6 +150,27 @@ class RiderInvoicesController extends AppBaseController
     }
 
     return view('rider_invoices.show')->with('riderInvoice', $riderInvoice);
+  }
+
+  /**
+   * Download the specified RiderInvoice as PDF.
+   */
+  public function download($id)
+  {
+    $riderInvoice = $this->riderInvoicesRepository->find($id);
+
+    if (empty($riderInvoice)) {
+      Flash::error('Rider Invoices not found');
+      return redirect(route('riderInvoices.index'));
+    }
+
+    // Render the same view into PDF
+    $fileName = 'RiderInvoice-' . $riderInvoice->id . '.pdf';
+    $pdf = PDF::loadView('rider_invoices.show', compact('riderInvoice'))
+      ->setOption('enable-local-file-access', true)
+      ->setPaper('a4');
+
+    return $pdf->download($fileName);
   }
 
   /**
