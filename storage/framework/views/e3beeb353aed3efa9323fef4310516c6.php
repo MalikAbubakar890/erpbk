@@ -350,148 +350,144 @@
             $running_total_temp = $running_total + $total_deductions - $total_incentives;
             ?>
             <?php
-            // Calculate rider balance from account transactions
+            // Calculate opening balance for the billing month
             $rider_balance = 0;
             if($riderInvoice->rider && $riderInvoice->rider->account_id) {
-            $balance_data = \App\Models\Transactions::where('account_id', $riderInvoice->rider->account_id)
-            ->select(
-            \DB::raw('SUM(debit) as total_debit'),
-            \DB::raw('SUM(credit) as total_credit')
-            )
-            ->first();
-            $rider_balance = ($balance_data->total_debit ?? 0) - ($balance_data->total_credit ?? 0);
-            }
-            ?>
+            $rider_balance = \App\Models\Transactions::where('account_id', $riderInvoice->rider->account_id)
+            ->whereDate('billing_month', '<', $riderInvoice->billing_month)
+                ->sum(DB::raw("debit - credit"));
+                }
+                ?>
 
-            <?php if($rider_balance != 0): ?>
-            <?php
-            $additional_row_count++;
-            if($rider_balance > 0) {
-            // Positive balance means rider owes money (deduction)
-            $running_total -= $rider_balance;
-            } else {
-            // Negative balance means company owes rider money (addition)
-            $running_total += abs($rider_balance);
-            }
-            ?>
-            <tr>
-                <td><?php echo e(count($riderInvoice->items) + $additional_row_count); ?></td>
-                <td colspan="4"><?php echo e($rider_balance > 0 ? 'Previous Balance (Deduction)' : 'Previous Balance (Addition)'); ?></td>
-                <td class="num"><?php echo e(number_format(abs($rider_balance), 2)); ?></td>
-                <td>0%</td>
-                <td class="num">0.00</td>
-                <td class="num"><?php echo e(number_format($running_total, 2)); ?></td>
-            </tr>
-            <?php endif; ?>
-            <?php if($fines > 0): ?>
-            <?php
-            $additional_row_count++;
-            $running_total -= $fines;
-            ?>
-            <tr>
-                <td><?php echo e(count($riderInvoice->items) + $additional_row_count); ?></td>
-                <td colspan="4">RTA Fine Charges</td>
-                <td class="num">-<?php echo e(number_format($fines, 2)); ?></td>
-                <td>0%</td>
-                <td class="num">0.00</td>
-                <td class="num"><?php echo e(number_format($running_total, 2)); ?></td>
-            </tr>
-            <?php endif; ?>
+                <?php if($rider_balance != 0): ?>
+                <?php
+                $additional_row_count++;
+                if($rider_balance > 0) {
+                // Positive balance means rider owes money (deduction)
+                $running_total -= $rider_balance;
+                } else {
+                // Negative balance means company owes rider money (addition)
+                $running_total += abs($rider_balance);
+                }
+                ?>
+                <tr>
+                    <td><?php echo e(count($riderInvoice->items) + $additional_row_count); ?></td>
+                    <td colspan="4"><?php echo e($rider_balance > 0 ? 'Previous Balance (Deduction)' : 'Previous Balance (Addition)'); ?></td>
+                    <td class="num"><?php echo e(number_format(abs($rider_balance), 2)); ?></td>
+                    <td>0%</td>
+                    <td class="num">0.00</td>
+                    <td class="num"><?php echo e(number_format($running_total, 2)); ?></td>
+                </tr>
+                <?php endif; ?>
+                <?php if($fines > 0): ?>
+                <?php
+                $additional_row_count++;
+                $running_total -= $fines;
+                ?>
+                <tr>
+                    <td><?php echo e(count($riderInvoice->items) + $additional_row_count); ?></td>
+                    <td colspan="4">RTA Fine Charges</td>
+                    <td class="num">-<?php echo e(number_format($fines, 2)); ?></td>
+                    <td>0%</td>
+                    <td class="num">0.00</td>
+                    <td class="num"><?php echo e(number_format($running_total, 2)); ?></td>
+                </tr>
+                <?php endif; ?>
 
-            <?php if($salik > 0): ?>
-            <?php
-            $additional_row_count++;
-            $running_total -= $salik;
-            ?>
-            <tr>
-                <td><?php echo e(count($riderInvoice->items) + $additional_row_count); ?></td>
-                <td colspan="4">Salik Charges</td>
-                <td class="num">-<?php echo e(number_format($salik, 2)); ?></td>
-                <td>0%</td>
-                <td class="num">0.00</td>
-                <td class="num"><?php echo e(number_format($running_total, 2)); ?></td>
-            </tr>
-            <?php endif; ?>
-            <?php if($cod > 0): ?>
-            <?php
-            $additional_row_count++;
-            $running_total -= $cod;
-            ?>
-            <tr>
-                <td><?php echo e(count($riderInvoice->items) + $additional_row_count); ?></td>
-                <td colspan="4">COD Amount</td>
-                <td class="num">-<?php echo e(number_format($cod, 2)); ?></td>
-                <td>0%</td>
-                <td class="num">0.00</td>
-                <td class="num"><?php echo e(number_format($running_total, 2)); ?></td>
-            </tr>
-            <?php endif; ?>
+                <?php if($salik > 0): ?>
+                <?php
+                $additional_row_count++;
+                $running_total -= $salik;
+                ?>
+                <tr>
+                    <td><?php echo e(count($riderInvoice->items) + $additional_row_count); ?></td>
+                    <td colspan="4">Salik Charges</td>
+                    <td class="num">-<?php echo e(number_format($salik, 2)); ?></td>
+                    <td>0%</td>
+                    <td class="num">0.00</td>
+                    <td class="num"><?php echo e(number_format($running_total, 2)); ?></td>
+                </tr>
+                <?php endif; ?>
+                <?php if($cod > 0): ?>
+                <?php
+                $additional_row_count++;
+                $running_total -= $cod;
+                ?>
+                <tr>
+                    <td><?php echo e(count($riderInvoice->items) + $additional_row_count); ?></td>
+                    <td colspan="4">COD Amount</td>
+                    <td class="num">-<?php echo e(number_format($cod, 2)); ?></td>
+                    <td>0%</td>
+                    <td class="num">0.00</td>
+                    <td class="num"><?php echo e(number_format($running_total, 2)); ?></td>
+                </tr>
+                <?php endif; ?>
 
-            <?php if($penalty > 0): ?>
-            <?php
-            $additional_row_count++;
-            $running_total -= $penalty;
-            ?>
-            <tr>
-                <td><?php echo e(count($riderInvoice->items) + $additional_row_count); ?></td>
-                <td colspan="4">Penalty Amount</td>
-                <td class="num">-<?php echo e(number_format($penalty, 2)); ?></td>
-                <td>0%</td>
-                <td class="num">0.00</td>
-                <td class="num"><?php echo e(number_format($running_total, 2)); ?></td>
-            </tr>
-            <?php endif; ?>
+                <?php if($penalty > 0): ?>
+                <?php
+                $additional_row_count++;
+                $running_total -= $penalty;
+                ?>
+                <tr>
+                    <td><?php echo e(count($riderInvoice->items) + $additional_row_count); ?></td>
+                    <td colspan="4">Penalty Amount</td>
+                    <td class="num">-<?php echo e(number_format($penalty, 2)); ?></td>
+                    <td>0%</td>
+                    <td class="num">0.00</td>
+                    <td class="num"><?php echo e(number_format($running_total, 2)); ?></td>
+                </tr>
+                <?php endif; ?>
 
-            <?php if($advance_salary > 0): ?>
-            <?php
-            $additional_row_count++;
-            $running_total -= $advance_salary;
-            ?>
-            <tr>
-                <td><?php echo e(count($riderInvoice->items) + $additional_row_count); ?></td>
-                <td colspan="4">Advance Loan</td>
-                <td class="num">-<?php echo e(number_format($advance_salary, 2)); ?></td>
-                <td>0%</td>
-                <td class="num">0.00</td>
-                <td class="num"><?php echo e(number_format($running_total, 2)); ?></td>
-            </tr>
-            <?php endif; ?>
+                <?php if($advance_salary > 0): ?>
+                <?php
+                $additional_row_count++;
+                $running_total -= $advance_salary;
+                ?>
+                <tr>
+                    <td><?php echo e(count($riderInvoice->items) + $additional_row_count); ?></td>
+                    <td colspan="4">Advance Loan</td>
+                    <td class="num">-<?php echo e(number_format($advance_salary, 2)); ?></td>
+                    <td>0%</td>
+                    <td class="num">0.00</td>
+                    <td class="num"><?php echo e(number_format($running_total, 2)); ?></td>
+                </tr>
+                <?php endif; ?>
 
-            <?php if($incentive > 0): ?>
-            <?php
-            $additional_row_count++;
-            $running_total += $incentive;
-            ?>
-            <tr>
-                <td><?php echo e(count($riderInvoice->items) + $additional_row_count); ?></td>
-                <td colspan="4">Incentive Amount</td>
-                <td class="num">+<?php echo e(number_format($incentive, 2)); ?></td>
-                <td>0%</td>
-                <td class="num">0.00</td>
-                <td class="num"><?php echo e(number_format($running_total, 2)); ?></td>
-            </tr>
-            <?php endif; ?>
+                <?php if($incentive > 0): ?>
+                <?php
+                $additional_row_count++;
+                $running_total += $incentive;
+                ?>
+                <tr>
+                    <td><?php echo e(count($riderInvoice->items) + $additional_row_count); ?></td>
+                    <td colspan="4">Incentive Amount</td>
+                    <td class="num">+<?php echo e(number_format($incentive, 2)); ?></td>
+                    <td>0%</td>
+                    <td class="num">0.00</td>
+                    <td class="num"><?php echo e(number_format($running_total, 2)); ?></td>
+                </tr>
+                <?php endif; ?>
 
-            <?php if($vendor_charges > 0): ?>
-            <?php
-            $additional_row_count++;
-            $running_total -= $vendor_charges;
-            ?>
-            <tr>
-                <td><?php echo e(count($riderInvoice->items) + $additional_row_count); ?></td>
-                <td colspan="4">Vendor Charges</td>
-                <td class="num">-<?php echo e(number_format($vendor_charges, 2)); ?></td>
-                <td>0%</td>
-                <td class="num">0.00</td>
-                <td class="num"><?php echo e(number_format($running_total, 2)); ?></td>
-            </tr>
-            <?php endif; ?>
-            <tr class="accent-total">
-                <td colspan="3" style="text-align:right; padding: 8px;">Total Orders</td>
-                <td class="num"><?php echo e($total_qty); ?></td>
-                <td colspan="4" style="text-align:right; padding: 8px;">INVOICE TOTAL</td>
-                <td class="num" style="padding: 8px; font-size: 14px;"><?php echo e(number_format($running_total, 2)); ?></td>
-            </tr>
+                <?php if($vendor_charges > 0): ?>
+                <?php
+                $additional_row_count++;
+                $running_total -= $vendor_charges;
+                ?>
+                <tr>
+                    <td><?php echo e(count($riderInvoice->items) + $additional_row_count); ?></td>
+                    <td colspan="4">Vendor Charges</td>
+                    <td class="num">-<?php echo e(number_format($vendor_charges, 2)); ?></td>
+                    <td>0%</td>
+                    <td class="num">0.00</td>
+                    <td class="num"><?php echo e(number_format($running_total, 2)); ?></td>
+                </tr>
+                <?php endif; ?>
+                <tr class="accent-total">
+                    <td colspan="3" style="text-align:right; padding: 8px;">Total Orders</td>
+                    <td class="num"><?php echo e($total_qty); ?></td>
+                    <td colspan="4" style="text-align:right; padding: 8px;">INVOICE TOTAL</td>
+                    <td class="num" style="padding: 8px; font-size: 14px;"><?php echo e(number_format($running_total, 2)); ?></td>
+                </tr>
         </table>
 
         <!-- Amount in Words -->

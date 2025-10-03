@@ -173,6 +173,11 @@ Route::middleware(['auth', 'web'])->group(function () {
   Route::post('riders/storepenalty', [\App\Http\Controllers\RidersController::class, 'storepenalty'])->name('riders.storepenalty');
   Route::post('riders/storeincentive', [\App\Http\Controllers\RidersController::class, 'storeincentive'])->name('riders.storeincentive');
   Route::post('riders/storepayment', [\App\Http\Controllers\RidersController::class, 'storepayment'])->name('riders.storepayment');
+  // Riders vouchers import (modal - existing)
+  Route::any('rider/voucher-import', [\App\Http\Controllers\RidersController::class, 'importVouchers'])->name('riders.voucher_import');
+  // Standalone Import Rider Vouchers page
+  Route::match(['get', 'post'], 'rider/import-rider-vouchers', [\App\Http\Controllers\RidersController::class, 'importRiderVouchers'])
+    ->name('riders.import_rider_vouchers');
   Route::post('riders/storeadvanceloan', [\App\Http\Controllers\RidersController::class, 'storeadvanceloan'])->name('riders.storeadvanceloan');
   Route::post('riders/update-section/{id}', [\App\Http\Controllers\RidersController::class, 'updateSection'])->name('riders.updateSection');
   Route::post('riders/toggle-absconder/{id}', [\App\Http\Controllers\RidersController::class, 'toggleAbsconder'])->name('riders.toggleAbsconder');

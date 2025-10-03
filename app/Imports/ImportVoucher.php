@@ -134,10 +134,7 @@ class ImportVoucher implements ToCollection
               'billing_month' => $billing_month ?? date('Y-m-01'),
             ];
             $TransactionService->recordTransaction($transactionData);
-
           }
-
-
         }
 
         DB::commit();
@@ -147,5 +144,4 @@ class ImportVoucher implements ToCollection
       }
     }
   }
-
 }

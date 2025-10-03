@@ -24,6 +24,7 @@
                     </div>
                 </div>
                 <div class="fleet-supervisor-header-right d-flex align-items-center">
+
                     <button class="fleet-supervisor-toggle  mx-2  collapsed" id="fleetSupervisorToggle">
                         <span>Toggle View</span>
                         <i class="ti ti-chevron-down"></i>
@@ -64,6 +65,13 @@
                                     <div>
                                         <div class="action-dropdown-item-text">Export Riders</div>
                                         <div class="action-dropdown-item-desc">Export rider data to Excel</div>
+                                    </div>
+                                </a>
+                                <a class="action-dropdown-item show-modal" href="javascript:void(0);" data-size="sm" data-title="Import Rider Vouchers" data-action="{{ route('riders.import_rider_vouchers', ['modal' => 1]) }}">
+                                    <i class="ti ti-file-spreadsheet"></i>
+                                    <div>
+                                        <div class="action-dropdown-item-text">Import Rider Vouchers (Page)</div>
+                                        <div class="action-dropdown-item-desc">Open import modal</div>
                                     </div>
                                 </a>
                             </div>

@@ -984,6 +984,62 @@ class RidersController extends AppBaseController
     return $riderEmailsDataTable->with(['rider_id' => $rider_id])->render('riders.emails');
   }
 
+  /**
+   * Import rider vouchers from Excel
+   * Expected columns: Rider ID, Billing Month, Date, Amount, Voucher Type, Account_id
+   */
+  public function importVouchers(Request $request)
+  {
+    if ($request->isMethod('post')) {
+      $request->validate([
+        'file' => 'required|mimes:xlsx|max:50000',
+        'payment_from' => 'required|integer',
+      ], [
+        'file.required' => 'Excel file is required',
+        'payment_from.required' => 'Select the account to credit',
+      ]);
+
+      try {
+        \Maatwebsite\Excel\Facades\Excel::import(new \App\Imports\ImportVoucher(), $request->file('file'));
+        Flash::success('Vouchers imported successfully.');
+      } catch (\Throwable $e) {
+        Flash::error('Error importing vouchers: ' . $e->getMessage());
+      }
+    }
+
+    return view('riders.import_vouchers', compact('bank_accounts'));
+  }
+
+  /**
+   * Standalone page to import rider vouchers (save only into vouchers table).
+   * Expected headers: Rider ID, Billing Month, Date, Amount, Voucher Type, Account_id
+   */
+  public function importRiderVouchers(Request $request)
+  {
+    if ($request->isMethod('post')) {
+      $request->validate([
+        'file' => 'required|mimes:xlsx|max:50000',
+      ], [
+        'file.required' => 'Excel file is required',
+      ]);
+
+      try {
+        \Maatwebsite\Excel\Facades\Excel::import(new \App\Imports\ImportRiderVoucherOnly(), $request->file('file'));
+        Flash::success('Rider vouchers imported successfully.');
+      } catch (\Throwable $e) {
+        Flash::error('Error importing rider vouchers: ' . $e->getMessage());
+      }
+
+      return redirect()->back();
+    }
+
+    // On GET: return modal or full page depending on query
+    if ($request->query('modal')) {
+      return view('riders.import_rider_voucher_modal');
+    }
+    return view('riders.import_rider_voucher');
+  }
+
   public function visaloan($rider_id)
   {
     $rider = Riders::find($rider_id);
