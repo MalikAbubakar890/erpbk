@@ -689,7 +689,7 @@ class RtaFinesController extends AppBaseController
                     'trans_date'     => $rtaFines->trans_date,
                     'narration'      => $request->detail ?? 'RTA Fine Received',
                     'debit'          => 0,
-                    'credit'         => $rtaFines->total_amount,
+                    'credit'         => $rtaFines->amount,
                     'billing_month'  => $billingMonth,
                 ],
                 $rta_account->rta_account_id
@@ -713,7 +713,7 @@ class RtaFinesController extends AppBaseController
                     'billing_month' => $billingMonth,
                     'payment_type'  => 1,
                     'remarks'       => 'RTA Fine Voucher',
-                    'amount'        => $request->total_amount,
+                    'amount'        => $rtaFines->total_amount,
                     'attach_file'   => $path,
                     'pay_account'   => $rider_account->id,
                     'Updated_By'    => auth()->id(),
