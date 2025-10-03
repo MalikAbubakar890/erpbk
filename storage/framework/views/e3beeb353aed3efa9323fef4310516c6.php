@@ -334,220 +334,181 @@
             <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
 
             <?php
-            $fines = DB::Table('rta_fines')->where('billing_month' , $riderInvoice->billing_month)->where('rider_id' , $riderInvoice->rider->id)->sum('total_amount');
-            $salik = DB::Table('saliks')->where('billing_month' , $riderInvoice->billing_month)->where('rider_id' , $riderInvoice->rider->id)->sum('total_amount');
-            $cod = DB::table('vouchers')->where('ref_id' , $riderInvoice->rider->id)->where('voucher_type' , 'COD')->where('billing_month' , $riderInvoice->billing_month)->sum('amount');
-            $penalty = DB::table('vouchers')->where('ref_id' , $riderInvoice->rider->id)->where('voucher_type' , 'PN')->where('billing_month' , $riderInvoice->billing_month)->sum('amount');
-            $incentive = DB::table('vouchers')->where('ref_id' , $riderInvoice->rider->id)->where('voucher_type' , 'INC')->where('billing_month' , $riderInvoice->billing_month)->sum('amount');
-            $advance_salary = DB::table('vouchers')->where('ref_id' , $riderInvoice->rider->id)->where('voucher_type' , 'AL')->where('billing_month' , $riderInvoice->billing_month)->sum('amount');
-            $vendor_charges = DB::table('vouchers')->where('ref_id' , $riderInvoice->rider->id)->where('voucher_type' , 'VC')->where('billing_month' , $riderInvoice->billing_month)->sum('amount');
-            $additional_row_count = 0;
+            // Preserve items-only total (includes VAT per row if applied)
+            $items_total = $running_total;
             ?>
-            <?php
-            $total_deductions = $fines + $salik + $cod + $penalty + $advance_salary + $vendor_charges;
-            $total_incentives = $incentive;
-            // Simple logic: add all amounts except incentives (which are subtracted)
-            $running_total_temp = $running_total + $total_deductions - $total_incentives;
-            ?>
-            <?php
-            // Calculate opening balance for the billing month
-            $rider_balance = 0;
-            if($riderInvoice->rider && $riderInvoice->rider->account_id) {
-            $rider_balance = \App\Models\Transactions::where('account_id', $riderInvoice->rider->account_id)
-            ->whereDate('billing_month', '<', $riderInvoice->billing_month)
-                ->sum(DB::raw("debit - credit"));
-                }
+            <tr class="accent-total">
+                <td colspan="3" style="text-align:right; padding: 8px;">Total Orders</td>
+                <td class="num"><?php echo e($total_qty); ?></td>
+                <td colspan="4" style="text-align:right; padding: 8px;">ITEMS TOTAL</td>
+                <td class="num" style="padding: 8px; font-size: 14px;"><?php echo e(number_format($items_total, 2)); ?></td>
+            </tr>
+        </table>
+
+        <?php
+        // Fetch selected adjustments
+        $fines = DB::Table('rta_fines')->where('billing_month' , $riderInvoice->billing_month)->where('rider_id' , $riderInvoice->rider->id)->sum('total_amount');
+        $salik = DB::Table('saliks')->where('billing_month' , $riderInvoice->billing_month)->where('rider_id' , $riderInvoice->rider->id)->sum('total_amount');
+        $cod = DB::table('vouchers')->where('ref_id' , $riderInvoice->rider->id)->where('voucher_type' , 'COD')->where('billing_month' , $riderInvoice->billing_month)->sum('amount');
+        $penalty = DB::table('vouchers')->where('ref_id' , $riderInvoice->rider->id)->where('voucher_type' , 'PN')->where('billing_month' , $riderInvoice->billing_month)->sum('amount');
+        $incentive = DB::table('vouchers')->where('ref_id' , $riderInvoice->rider->id)->where('voucher_type' , 'INC')->where('billing_month' , $riderInvoice->billing_month)->sum('amount');
+        $advance_salary = DB::table('vouchers')->where('ref_id' , $riderInvoice->rider->id)->where('voucher_type' , 'AL')->where('billing_month' , $riderInvoice->billing_month)->sum('amount');
+        $vendor_charges = DB::table('vouchers')->where('ref_id' , $riderInvoice->rider->id)->where('voucher_type' , 'VC')->where('billing_month' , $riderInvoice->billing_month)->sum('amount');
+
+        // Previous balance from account transactions (sum of debit - credit before invoice month)
+        $rider_balance = 0;
+        if($riderInvoice->rider && $riderInvoice->rider->account_id) {
+        $monthStart = date('Y-m-01', strtotime($riderInvoice->billing_month));
+        $rider_balance = \App\Models\Transactions::where('account_id', $riderInvoice->rider->account_id)
+        ->whereDate('billing_month', '<', $monthStart)
+            ->sum(\DB::raw('debit - credit'));
+            }
+
+            // Build totals
+            $total_deductions = ($fines > 0 ? $fines : 0)
+            + ($salik > 0 ? $salik : 0)
+            + ($cod > 0 ? $cod : 0)
+            + ($penalty > 0 ? $penalty : 0)
+            + ($advance_salary > 0 ? $advance_salary : 0)
+            + ($vendor_charges > 0 ? $vendor_charges : 0)
+            + ($rider_balance > 0 ? $rider_balance : 0); // positive balance is deduction
+
+            $total_additions = ($incentive > 0 ? $incentive : 0)
+            + ($rider_balance < 0 ? abs($rider_balance) : 0); // negative balance is addition
+
+                $finalAmount=$items_total - $total_deductions + $total_additions;
                 ?>
 
-                <?php if($rider_balance != 0): ?>
-                <?php
-                $additional_row_count++;
-                if($rider_balance > 0) {
-                // Positive balance means rider owes money (deduction)
-                $running_total -= $rider_balance;
-                } else {
-                // Negative balance means company owes rider money (addition)
-                $running_total += abs($rider_balance);
-                }
-                ?>
-                <tr>
-                    <td><?php echo e(count($riderInvoice->items) + $additional_row_count); ?></td>
-                    <td colspan="4"><?php echo e($rider_balance > 0 ? 'Previous Balance (Deduction)' : 'Previous Balance (Addition)'); ?></td>
-                    <td class="num"><?php echo e(number_format(abs($rider_balance), 2)); ?></td>
-                    <td>0%</td>
-                    <td class="num">0.00</td>
-                    <td class="num"><?php echo e(number_format($running_total, 2)); ?></td>
-                </tr>
-                <?php endif; ?>
-                <?php if($fines > 0): ?>
-                <?php
-                $additional_row_count++;
-                $running_total -= $fines;
-                ?>
-                <tr>
-                    <td><?php echo e(count($riderInvoice->items) + $additional_row_count); ?></td>
-                    <td colspan="4">RTA Fine Charges</td>
-                    <td class="num">-<?php echo e(number_format($fines, 2)); ?></td>
-                    <td>0%</td>
-                    <td class="num">0.00</td>
-                    <td class="num"><?php echo e(number_format($running_total, 2)); ?></td>
-                </tr>
-                <?php endif; ?>
+                <!-- Deductions Section -->
+                <table>
+                    <tr>
+                        <th colspan="5" class="secondary-header">Deductions</th>
+                    </tr>
+                    <?php if($rider_balance > 0): ?>
+                    <tr>
+                        <td colspan="4">Previous Balance (Deduction)</td>
+                        <td class="num">-<?php echo e(number_format(abs($rider_balance), 2)); ?></td>
+                    </tr>
+                    <?php endif; ?>
+                    <?php if($fines > 0): ?>
+                    <tr>
+                        <td colspan="4">RTA Fine Charges</td>
+                        <td class="num">-<?php echo e(number_format($fines, 2)); ?></td>
+                    </tr>
+                    <?php endif; ?>
+                    <?php if($salik > 0): ?>
+                    <tr>
+                        <td colspan="4">Salik Charges</td>
+                        <td class="num">-<?php echo e(number_format($salik, 2)); ?></td>
+                    </tr>
+                    <?php endif; ?>
+                    <?php if($cod > 0): ?>
+                    <tr>
+                        <td colspan="4">COD Amount</td>
+                        <td class="num">-<?php echo e(number_format($cod, 2)); ?></td>
+                    </tr>
+                    <?php endif; ?>
+                    <?php if($penalty > 0): ?>
+                    <tr>
+                        <td colspan="4">Penalty Amount</td>
+                        <td class="num">-<?php echo e(number_format($penalty, 2)); ?></td>
+                    </tr>
+                    <?php endif; ?>
+                    <?php if($advance_salary > 0): ?>
+                    <tr>
+                        <td colspan="4">Advance Loan</td>
+                        <td class="num">-<?php echo e(number_format($advance_salary, 2)); ?></td>
+                    </tr>
+                    <?php endif; ?>
+                    <?php if($vendor_charges > 0): ?>
+                    <tr>
+                        <td colspan="4">Vendor Charges</td>
+                        <td class="num">-<?php echo e(number_format($vendor_charges, 2)); ?></td>
+                    </tr>
+                    <?php endif; ?>
+                    <tr class="accent-total">
+                        <td colspan="4" style="text-align:right; padding: 8px;">Total Deductions</td>
+                        <td class="num" style="padding: 8px; font-size: 14px;">-<?php echo e(number_format($total_deductions, 2)); ?></td>
+                    </tr>
+                </table>
 
-                <?php if($salik > 0): ?>
-                <?php
-                $additional_row_count++;
-                $running_total -= $salik;
-                ?>
-                <tr>
-                    <td><?php echo e(count($riderInvoice->items) + $additional_row_count); ?></td>
-                    <td colspan="4">Salik Charges</td>
-                    <td class="num">-<?php echo e(number_format($salik, 2)); ?></td>
-                    <td>0%</td>
-                    <td class="num">0.00</td>
-                    <td class="num"><?php echo e(number_format($running_total, 2)); ?></td>
-                </tr>
-                <?php endif; ?>
-                <?php if($cod > 0): ?>
-                <?php
-                $additional_row_count++;
-                $running_total -= $cod;
-                ?>
-                <tr>
-                    <td><?php echo e(count($riderInvoice->items) + $additional_row_count); ?></td>
-                    <td colspan="4">COD Amount</td>
-                    <td class="num">-<?php echo e(number_format($cod, 2)); ?></td>
-                    <td>0%</td>
-                    <td class="num">0.00</td>
-                    <td class="num"><?php echo e(number_format($running_total, 2)); ?></td>
-                </tr>
-                <?php endif; ?>
-
-                <?php if($penalty > 0): ?>
-                <?php
-                $additional_row_count++;
-                $running_total -= $penalty;
-                ?>
-                <tr>
-                    <td><?php echo e(count($riderInvoice->items) + $additional_row_count); ?></td>
-                    <td colspan="4">Penalty Amount</td>
-                    <td class="num">-<?php echo e(number_format($penalty, 2)); ?></td>
-                    <td>0%</td>
-                    <td class="num">0.00</td>
-                    <td class="num"><?php echo e(number_format($running_total, 2)); ?></td>
-                </tr>
-                <?php endif; ?>
-
-                <?php if($advance_salary > 0): ?>
-                <?php
-                $additional_row_count++;
-                $running_total -= $advance_salary;
-                ?>
-                <tr>
-                    <td><?php echo e(count($riderInvoice->items) + $additional_row_count); ?></td>
-                    <td colspan="4">Advance Loan</td>
-                    <td class="num">-<?php echo e(number_format($advance_salary, 2)); ?></td>
-                    <td>0%</td>
-                    <td class="num">0.00</td>
-                    <td class="num"><?php echo e(number_format($running_total, 2)); ?></td>
-                </tr>
-                <?php endif; ?>
-
+                <!-- Additions Section -->
                 <?php if($incentive > 0): ?>
-                <?php
-                $additional_row_count++;
-                $running_total += $incentive;
-                ?>
-                <tr>
-                    <td><?php echo e(count($riderInvoice->items) + $additional_row_count); ?></td>
-                    <td colspan="4">Incentive Amount</td>
-                    <td class="num">+<?php echo e(number_format($incentive, 2)); ?></td>
-                    <td>0%</td>
-                    <td class="num">0.00</td>
-                    <td class="num"><?php echo e(number_format($running_total, 2)); ?></td>
-                </tr>
+                <table>
+                    <tr>
+                        <th colspan="5" class="secondary-header">Additions</th>
+                    </tr>
+                    <?php if($rider_balance < 0): ?>
+                        <tr>
+                        <td colspan="4">Previous Balance (Addition)</td>
+                        <td class="num">+<?php echo e(number_format(abs($rider_balance), 2)); ?></td>
+                        </tr>
+                        <?php endif; ?>
+                        <tr>
+                            <td colspan="4">Incentive Amount</td>
+                            <td class="num">+<?php echo e(number_format($incentive, 2)); ?></td>
+                        </tr>
+                        <tr class="accent-total">
+                            <td colspan="4" style="text-align:right; padding: 8px;">Total Additions</td>
+                            <td class="num" style="padding: 8px; font-size: 14px;">+<?php echo e(number_format($total_additions, 2)); ?></td>
+                        </tr>
+                </table>
                 <?php endif; ?>
 
-                <?php if($vendor_charges > 0): ?>
+                <!-- Amount in Words -->
+                <table class="no-border">
+                    <tr>
+                        <td class="amount-highlight" style="padding: 8px; font-size: 13px;"><b>Total Invoice Amount in Words:</b> <?php echo e($finalAmount); ?> AED</td>
+                    </tr>
+                </table>
+
+                <!-- Summary -->
                 <?php
-                $additional_row_count++;
-                $running_total -= $vendor_charges;
+                $totalBeforeTax = $total;
+                $vatAmount = $riderInvoice->vat > 0 ? $total * $vat_percentage / 100 : 0;
+                $totalAfterTax = $totalBeforeTax + $vatAmount;
                 ?>
-                <tr>
-                    <td><?php echo e(count($riderInvoice->items) + $additional_row_count); ?></td>
-                    <td colspan="4">Vendor Charges</td>
-                    <td class="num">-<?php echo e(number_format($vendor_charges, 2)); ?></td>
-                    <td>0%</td>
-                    <td class="num">0.00</td>
-                    <td class="num"><?php echo e(number_format($running_total, 2)); ?></td>
-                </tr>
-                <?php endif; ?>
-                <tr class="accent-total">
-                    <td colspan="3" style="text-align:right; padding: 8px;">Total Orders</td>
-                    <td class="num"><?php echo e($total_qty); ?></td>
-                    <td colspan="4" style="text-align:right; padding: 8px;">INVOICE TOTAL</td>
-                    <td class="num" style="padding: 8px; font-size: 14px;"><?php echo e(number_format($running_total, 2)); ?></td>
-                </tr>
-        </table>
+                <table>
+                    <tr class="light-header">
+                        <td style="padding: 6px;">Total Amount before charges:</td>
+                        <td class="num" style="padding: 6px;"><?php echo e(number_format($totalBeforeTax, 2)); ?></td>
+                    </tr>
+                    <?php if($vatAmount > 0): ?>
+                    <tr class="light-header">
+                        <td style="padding: 6px;">Add: VAT - <?php echo e($vat_percentage); ?>%</td>
+                        <td class="num" style="padding: 6px;"><?php echo e(number_format($vatAmount, 2)); ?></td>
+                    </tr>
+                    <?php endif; ?>
+                    <tr class="success-highlight">
+                        <td style="padding: 8px; font-size: 14px;">TOTAL AMOUNT AFTER CHARGES:</td>
+                        <td class="num" style="padding: 8px; font-size: 14px;"><?php echo e(number_format($finalAmount, 2)); ?></td>
+                    </tr>
+                    <?php
+                    $paid_amount = DB::table('vouchers')->where('ref_id', $riderInvoice->rider->id)->where('voucher_type', 'PAY')->where('billing_month', $riderInvoice->billing_month)->sum('amount');
+                    $rider_balance = $paid_amount - $finalAmount;
+                    ?>
+                    <tr class="amount-highlight">
+                        <td style="padding: 6px;">Paid Amount to Rider:</td>
+                        <td class="num" style="padding: 6px;"><?php echo e(number_format($paid_amount, 2)); ?></td>
+                    </tr>
+                    <tr class="amount-highlight">
+                        <td style="padding: 6px;">Rider Balance:</td>
+                        <td class="num" style="padding: 6px;"><?php echo e(number_format($rider_balance, 2)); ?></td>
+                    </tr>
+                </table>
 
-        <!-- Amount in Words -->
-        <?php
-        $finalAmount = $running_total;
-        // You can add a number to words helper function here if available
-        ?>
-        <table class="no-border">
-            <tr>
-                <td class="amount-highlight" style="padding: 8px; font-size: 13px;"><b>Total Invoice Amount in Words:</b> <?php echo e($finalAmount); ?> AED</td>
-            </tr>
-        </table>
+                <!-- Footer -->
+                <div class="footer-note">
+                    <?php echo e($riderInvoice->notes ?? 'Note : If a rider\'s monthly orders are less than 400 or if they have attendance for less than 26 days or less than 10 hours of login time in a day, we will charge them half of their bike rent and mobile bill, and they will not be eligible for minimum guarantee fees.'); ?>
 
-        <!-- Summary -->
-        <?php
-        $totalBeforeTax = $total;
-        $vatAmount = $riderInvoice->vat > 0 ? $total * $vat_percentage / 100 : 0;
-        $totalAfterTax = $totalBeforeTax + $vatAmount;
-        ?>
-        <table>
-            <tr class="light-header">
-                <td style="padding: 6px;">Total Amount before charges:</td>
-                <td class="num" style="padding: 6px;"><?php echo e(number_format($totalBeforeTax, 2)); ?></td>
-            </tr>
-            <?php if($vatAmount > 0): ?>
-            <tr class="light-header">
-                <td style="padding: 6px;">Add: VAT - <?php echo e($vat_percentage); ?>%</td>
-                <td class="num" style="padding: 6px;"><?php echo e(number_format($vatAmount, 2)); ?></td>
-            </tr>
-            <?php endif; ?>
-            <tr class="success-highlight">
-                <td style="padding: 8px; font-size: 14px;">TOTAL AMOUNT AFTER CHARGES:</td>
-                <td class="num" style="padding: 8px; font-size: 14px;"><?php echo e(number_format($finalAmount, 2)); ?></td>
-            </tr>
-            <?php
-            $paid_amount = DB::table('vouchers')->where('ref_id', $riderInvoice->rider->id)->where('voucher_type', 'PAY')->where('billing_month', $riderInvoice->billing_month)->sum('amount');
-            $rider_balance = $paid_amount - $finalAmount;
-            ?>
-            <tr class="amount-highlight">
-                <td style="padding: 6px;">Paid Amount to Rider:</td>
-                <td class="num" style="padding: 6px;"><?php echo e(number_format($paid_amount, 2)); ?></td>
-            </tr>
-            <tr class="amount-highlight">
-                <td style="padding: 6px;">Rider Balance:</td>
-                <td class="num" style="padding: 6px;"><?php echo e(number_format($rider_balance, 2)); ?></td>
-            </tr>
-        </table>
+                </div>
 
-        <!-- Footer -->
-        <div class="footer-note">
-            <?php echo e($riderInvoice->notes ?? 'Note : If a rider\'s monthly orders are less than 400 or if they have attendance for less than 26 days or less than 10 hours of login time in a day, we will charge them half of their bike rent and mobile bill, and they will not be eligible for minimum guarantee fees.'); ?>
-
-        </div>
-
-        <!-- Signature -->
-        <div class="sign-box">
-            For Rider Name <br>
-            <span class="yellow"><?php echo e($riderInvoice->rider->name); ?></span>
-            <span>### Sign</span>
-        </div>
+                <!-- Signature -->
+                <div class="sign-box">
+                    For Rider Name <br>
+                    <span class="yellow"><?php echo e($riderInvoice->rider->name); ?></span>
+                    <span>### Sign</span>
+                </div>
     </div>
 
 </body>
