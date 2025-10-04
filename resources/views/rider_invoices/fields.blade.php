@@ -1,21 +1,20 @@
 <script src="{{ asset('js/modal_custom.js') }}"></script>
 
+@endphp
 <div class="row">
     <div class="col-md-2 form-group">
         <label>Invoice Date</label>
-        <input type="date" class="form-control form-control" value="{{ date('Y-m-d') }}" name="inv_date" placeholder="Invoice Date">
+        <input type="date" class="form-control form-control" value="{{ \Carbon\Carbon::parse($invoice->inv_date)->format('Y-m-d') ?? date('Y-m-d') }}" name="inv_date" placeholder="Invoice Date">
     </div>
     <!--col-->
     <div class="col-md-4 form-group">
         <label>Rider</label>
         {!! Form::select('rider_id', $riders, null, ['class' => 'form-select form-select-sm select2','id'=>'rider_id']) !!}
-
     </div>
     <!--col-->
     <div class="col-md-2 form-group">
         <label>Zone</label>
         {!! Form::text('zone', null, ['class' => 'form-control','placeholder'=>'Zone']) !!}
-
     </div>
     <!--col-->
     <div class="col-md-2 form-group">

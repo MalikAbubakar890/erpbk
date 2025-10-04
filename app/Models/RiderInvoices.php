@@ -31,7 +31,7 @@ class RiderInvoices extends Model
   ];
 
   protected $casts = [
-    //'inv_date' => 'date',
+    'inv_date' => 'date',
     'zone' => 'string',
     'perfect_attendance' => 'float',
     'performance' => 'string',
