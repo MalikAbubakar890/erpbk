@@ -126,6 +126,7 @@ class VisaexpenseController extends AppBaseController
         $newdata->status = 1;
         $newdata->save();
         $newdata->account_code = 'ACCT-' . str_pad($newdata->id, 5, '0', STR_PAD_LEFT);
+        $newdata->created_by = auth()->user()->id;
         $newdata->save();
         Flash::success('Account added successfully.');
         return redirect()->back();
@@ -143,6 +144,7 @@ class VisaexpenseController extends AppBaseController
         $newdata->status = 1;
         $newdata->save();
         $newdata->account_code = 'ACCT-' . str_pad($newdata->id, 5, '0', STR_PAD_LEFT);
+        $newdata->updated_by = auth()->user()->id;
         $newdata->save();
         Flash::success('Account Updated successfully.');
         return redirect()->back();

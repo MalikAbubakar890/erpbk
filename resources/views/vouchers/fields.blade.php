@@ -49,18 +49,47 @@ $voucherType = request("vt");
 <div class="scrollbar">
 
     <h5>{{\App\Helpers\General::voucherType($voucherType)}}</h5>
+
     @if($voucherType == 'JV' || $voucherType == 'RFV')
     @php($accounts = \App\Models\Accounts::dropdown(null))
     @include("vouchers.default_fields")
     @endif
+
     @if($voucherType == 'LV')
     @php($accounts = \App\Models\Accounts::dropdown(null))
     @include("vouchers.loan_fields")
     @endif
+
     @if($voucherType == 'VL')
     @php($accounts = \App\Models\Accounts::dropdown(null))
     @include("vouchers.visaloan_fields")
     @endif
+
+    @if($voucherType == 'AL')
+    @php($accounts = \App\Models\Accounts::dropdown(null))
+    @include("vouchers.loan_fields", ['bank_accounts' => $bank_accounts ?? \App\Models\Accounts::bankAccountsDropdown()])
+    @endif
+
+    @if($voucherType == 'COD')
+    @php($accounts = \App\Models\Accounts::dropdown(null))
+    @include("vouchers.cod_fields", ['bank_accounts' => $bank_accounts ?? \App\Models\Accounts::bankAccountsDropdown()])
+    @endif
+
+    @if($voucherType == 'PN')
+    @php($accounts = \App\Models\Accounts::dropdown(null))
+    @include("vouchers.penalty_fields", ['bank_accounts' => $bank_accounts ?? \App\Models\Accounts::bankAccountsDropdown()])
+    @endif
+
+    @if($voucherType == 'PAY')
+    @php($accounts = \App\Models\Accounts::dropdown(null))
+    @include("vouchers.payment_fields", ['bank_accounts' => $bank_accounts ?? \App\Models\Accounts::bankAccountsDropdown()])
+    @endif
+
+    @if($voucherType == 'VC')
+    @php($accounts = \App\Models\Accounts::dropdown(null))
+    @include("vouchers.vendorcharges_fields", ['bank_accounts' => $bank_accounts ?? \App\Models\Accounts::bankAccountsDropdown()])
+    @endif
+
 
     {{-- @if($voucherType == 5)
             <h5>Invoice Voucher</h5>

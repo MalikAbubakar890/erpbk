@@ -38,18 +38,47 @@ $voucherType = request("vt");
 <div class="scrollbar">
 
     <h5><?php echo e(\App\Helpers\General::voucherType($voucherType)); ?></h5>
+
     <?php if($voucherType == 'JV' || $voucherType == 'RFV'): ?>
     <?php ($accounts = \App\Models\Accounts::dropdown(null)); ?>
     <?php echo $__env->make("vouchers.default_fields", \Illuminate\Support\Arr::except(get_defined_vars(), ['__data', '__path']))->render(); ?>
     <?php endif; ?>
+
     <?php if($voucherType == 'LV'): ?>
     <?php ($accounts = \App\Models\Accounts::dropdown(null)); ?>
     <?php echo $__env->make("vouchers.loan_fields", \Illuminate\Support\Arr::except(get_defined_vars(), ['__data', '__path']))->render(); ?>
     <?php endif; ?>
+
     <?php if($voucherType == 'VL'): ?>
     <?php ($accounts = \App\Models\Accounts::dropdown(null)); ?>
     <?php echo $__env->make("vouchers.visaloan_fields", \Illuminate\Support\Arr::except(get_defined_vars(), ['__data', '__path']))->render(); ?>
     <?php endif; ?>
+
+    <?php if($voucherType == 'AL'): ?>
+    <?php ($accounts = \App\Models\Accounts::dropdown(null)); ?>
+    <?php echo $__env->make("vouchers.loan_fields", ['bank_accounts' => $bank_accounts ?? \App\Models\Accounts::bankAccountsDropdown()], \Illuminate\Support\Arr::except(get_defined_vars(), ['__data', '__path']))->render(); ?>
+    <?php endif; ?>
+
+    <?php if($voucherType == 'COD'): ?>
+    <?php ($accounts = \App\Models\Accounts::dropdown(null)); ?>
+    <?php echo $__env->make("vouchers.cod_fields", ['bank_accounts' => $bank_accounts ?? \App\Models\Accounts::bankAccountsDropdown()], \Illuminate\Support\Arr::except(get_defined_vars(), ['__data', '__path']))->render(); ?>
+    <?php endif; ?>
+
+    <?php if($voucherType == 'PN'): ?>
+    <?php ($accounts = \App\Models\Accounts::dropdown(null)); ?>
+    <?php echo $__env->make("vouchers.penalty_fields", ['bank_accounts' => $bank_accounts ?? \App\Models\Accounts::bankAccountsDropdown()], \Illuminate\Support\Arr::except(get_defined_vars(), ['__data', '__path']))->render(); ?>
+    <?php endif; ?>
+
+    <?php if($voucherType == 'PAY'): ?>
+    <?php ($accounts = \App\Models\Accounts::dropdown(null)); ?>
+    <?php echo $__env->make("vouchers.payment_fields", ['bank_accounts' => $bank_accounts ?? \App\Models\Accounts::bankAccountsDropdown()], \Illuminate\Support\Arr::except(get_defined_vars(), ['__data', '__path']))->render(); ?>
+    <?php endif; ?>
+
+    <?php if($voucherType == 'VC'): ?>
+    <?php ($accounts = \App\Models\Accounts::dropdown(null)); ?>
+    <?php echo $__env->make("vouchers.vendorcharges_fields", ['bank_accounts' => $bank_accounts ?? \App\Models\Accounts::bankAccountsDropdown()], \Illuminate\Support\Arr::except(get_defined_vars(), ['__data', '__path']))->render(); ?>
+    <?php endif; ?>
+
 
     
 </div>

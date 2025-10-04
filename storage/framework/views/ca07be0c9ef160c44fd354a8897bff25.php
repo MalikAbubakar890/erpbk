@@ -10,6 +10,8 @@
          <th title="Person Code" class="sorting" tabindex="0" aria-controls="dataTableBuilder" rowspan="1" colspan="1" aria-label="Ticket No: activate to sort column ascending" aria-sort="descending">Labour Card #</th>
          <th title="Person Code" class="sorting" tabindex="0" aria-controls="dataTableBuilder" rowspan="1" colspan="1" aria-label="Ticket No: activate to sort column ascending" aria-sort="descending">Policy Number</th>
          <th title="Rider" class="sorting" tabindex="0" aria-controls="dataTableBuilder" rowspan="1" colspan="1" aria-label="Rider: activate to sort column ascending">Balance</th>
+         <th title="Person Code" class="sorting" tabindex="0" aria-controls="dataTableBuilder" rowspan="1" colspan="1" aria-label="Ticket No: activate to sort column ascending" aria-sort="descending">Created By</th>
+         <th title="Rider" class="sorting" tabindex="0" aria-controls="dataTableBuilder" rowspan="1" colspan="1" aria-label="Rider: activate to sort column ascending">Updated By</th>
          <th title="Action" class="sorting_disabled" rowspan="1" colspan="1" aria-label="Action"><a data-bs-toggle="modal" data-bs-target="#searchModal" href="javascript:void(0);"> <i class="fa fa-search"></i></a></th>
          <th tabindex="0" rowspan="1" colspan="1" aria-sort="descending">
             <a data-bs-toggle="modal" data-bs-target="#customoizecolmn" href="javascript:void(0);"> <i class="fa fa-filter"></i></a>
@@ -48,6 +50,8 @@
          $balance = DB::table('visa_expenses')->where('rider_id' , $r->id)->sum('amount')
          ?>
          <td><?php if($balance == ''): ?> - <?php else: ?> AED <?php echo e($balance ?? '-'); ?> <?php endif; ?></td>
+         <td><?php echo e(\App\Helpers\Common::UserName($r->Created_By)); ?></td>
+         <td><?php echo e(\App\Helpers\Common::UserName($r->Updated_By)); ?></td>
          <td>
             <div class="dropdown">
                <button class="btn btn-text-secondary rounded-pill text-body-secondary border-0 p-2 me-n1 waves-effect" type="button" id="actiondropdown" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
