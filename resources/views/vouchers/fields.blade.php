@@ -33,12 +33,14 @@ $voucherType = request("vt");
             <input type="hidden" name="payment_from" value="811" /><!--Sim Bike and Vendor Charges Account ID-->
             @endif
            --}}
+@if ($voucherType == 'VC' || $voucherType == 'COD' || $voucherType == 'PN' || $voucherType == 'IN' || $voucherType == 'PAY')
+@else
 <div class="form-group col-md-2">
     <label for="exampleInputEmail1">Payment Type</label>
     {!! Form::select('payment_type',App\Helpers\Account::payment_type_list(),null ,['class' => 'form-select form-select-sm select2 ','id'=>'payment_type']) !!}
-
-
 </div>
+@endif
+
 <div class="form-group col-md-2">
     <label for="exampleInputEmail1">Billing Month</label>
     {{-- {!! Form::select('billing_month',App\Helpers\CommonHelper::BillingMonth(),null ,['class' => 'form-control  select2 ','id'=>'billing_month']) !!}
@@ -67,27 +69,27 @@ $voucherType = request("vt");
 
     @if($voucherType == 'AL')
     @php($accounts = \App\Models\Accounts::dropdown(null))
-    @include("vouchers.loan_fields", ['bank_accounts' => $bank_accounts ?? \App\Models\Accounts::bankAccountsDropdown()])
+    @include("vouchers.default_fields", ['bank_accounts' => $bank_accounts ?? \App\Models\Accounts::bankAccountsDropdown()])
     @endif
 
     @if($voucherType == 'COD')
     @php($accounts = \App\Models\Accounts::dropdown(null))
-    @include("vouchers.cod_fields", ['bank_accounts' => $bank_accounts ?? \App\Models\Accounts::bankAccountsDropdown()])
+    @include("vouchers.default_fields", ['bank_accounts' => $bank_accounts ?? \App\Models\Accounts::bankAccountsDropdown()])
     @endif
 
     @if($voucherType == 'PN')
     @php($accounts = \App\Models\Accounts::dropdown(null))
-    @include("vouchers.penalty_fields", ['bank_accounts' => $bank_accounts ?? \App\Models\Accounts::bankAccountsDropdown()])
+    @include("vouchers.default_fields", ['bank_accounts' => $bank_accounts ?? \App\Models\Accounts::bankAccountsDropdown()])
     @endif
 
     @if($voucherType == 'PAY')
     @php($accounts = \App\Models\Accounts::dropdown(null))
-    @include("vouchers.payment_fields", ['bank_accounts' => $bank_accounts ?? \App\Models\Accounts::bankAccountsDropdown()])
+    @include("vouchers.default_fields", ['bank_accounts' => $bank_accounts ?? \App\Models\Accounts::bankAccountsDropdown()])
     @endif
 
     @if($voucherType == 'VC')
     @php($accounts = \App\Models\Accounts::dropdown(null))
-    @include("vouchers.vendorcharges_fields", ['bank_accounts' => $bank_accounts ?? \App\Models\Accounts::bankAccountsDropdown()])
+    @include("vouchers.default_fields", ['bank_accounts' => $bank_accounts ?? \App\Models\Accounts::bankAccountsDropdown()])
     @endif
 
 

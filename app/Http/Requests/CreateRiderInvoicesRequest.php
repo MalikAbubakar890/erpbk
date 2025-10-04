@@ -27,7 +27,7 @@ class CreateRiderInvoicesRequest extends FormRequest
         $rules = RiderInvoices::$rules;
 
         // Add custom validation for duplicate invoices
-        $rules['rider_id'][] = function ($attribute, $value, $fail) {
+        $rules['rider_id'] = function ($attribute, $value, $fail) {
             if ($this->billing_month && $value) {
                 $billingMonth = $this->billing_month . '-01';
                 $existingInvoice = \App\Models\RiderInvoices::where('rider_id', $value)

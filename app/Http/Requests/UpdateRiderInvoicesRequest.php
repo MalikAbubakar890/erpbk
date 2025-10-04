@@ -27,7 +27,7 @@ class UpdateRiderInvoicesRequest extends FormRequest
         $rules = RiderInvoices::$rules;
 
         // Add custom validation for duplicate invoices (excluding current invoice)
-        $rules['rider_id'][] = function ($attribute, $value, $fail) {
+        $rules['rider_id'] = function ($attribute, $value, $fail) {
             if ($this->billing_month && $value) {
                 $billingMonth = $this->billing_month . '-01';
                 $currentInvoiceId = $this->route('riderInvoice'); // Get ID from route

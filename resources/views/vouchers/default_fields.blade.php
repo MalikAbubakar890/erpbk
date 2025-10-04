@@ -1,36 +1,40 @@
 <div id="rows-container" style="width: 98%;">
-  @isset($data)
-  @php
-   
-  @endphp
-      @foreach($data as $entry)
-      <div class="row">
-          <div class="form-group col-md-3">
-              <label for="exampleInputEmail1">Select Account</label>
-              {!! Form::select('account_id[]', $accounts, $entry->account_id??null, ['class' => 'form-control  form-select select2 ']) !!}
-          </div>
-          <div class="form-group col-md-4">
-              <label>Narration</label>
-              <textarea name="narration[]"  class="form-control " rows="10" placeholder="Narration" style="height: 40px !important;">{{$entry->narration}}</textarea>
-          </div>
-          <div class="form-group col-md-2">
-              <label>Dr Amount</label>
-              <input type="number" step="any" name="dr_amount[]" value="{{$entry->debit}}" class="form-control  dr_amount" onchange="getTotal();" placeholder="Paid Amount">
-          </div>
-          <div class="form-group col-md-2">
-              <label>Cr Amount</label>
-              <input type="number" step="any" name="cr_amount[]" value="{{$entry->credit}}" class="form-control  cr_amount" onchange="getTotal();" placeholder="Paid Amount">
-          </div>
-          <div class="form-group col-md-1 d-flex align-items-end">
+    @isset($data)
+    @php
+    @endphp
+    @foreach($data as $entry)
+    <div class="row">
+        <div class="form-group col-md-3">
+            <label for="exampleInputEmail1">Select Account</label>
+            @if ($voucherType == 'VC' || $voucherType == 'COD' || $voucherType == 'PN' || $voucherType == 'IN' || $voucherType == 'PAY')
+            <input type="hidden" name="account_id[]" value="{{ $entry->account_id ?? '' }}" />
+            {!! Form::select('account_id[]', $accounts, $entry->account_id??null, ['class' => 'form-control form-select select2', 'disabled' => true]) !!}
+            @else
+            {!! Form::select('account_id[]', $accounts, $entry->account_id??null, ['class' => 'form-control form-select select2 ']) !!}
+            @endif
+        </div>
+        <div class="form-group col-md-4">
+            <label>Narration</label>
+            <textarea name="narration[]" class="form-control " rows="10" placeholder="Narration" style="height: 40px !important;">{{$entry->narration}}</textarea>
+        </div>
+        <div class="form-group col-md-2">
+            <label>Dr Amount</label>
+            <input type="number" step="any" name="dr_amount[]" value="{{$entry->debit}}" class="form-control  dr_amount" onchange="getTotal();" placeholder="Paid Amount">
+        </div>
+        <div class="form-group col-md-2">
+            <label>Cr Amount</label>
+            <input type="number" step="any" name="cr_amount[]" value="{{$entry->credit}}" class="form-control  cr_amount" onchange="getTotal();" placeholder="Paid Amount">
+        </div>
+        <div class="form-group col-md-1 d-flex align-items-end">
             <a href="javascript:void(0);" class="text-danger btn-remove-row"><i class="fa fa-trash"></i></a>
         </div>
-         {{--  <div class="form-group col-md-1">
+        {{-- <div class="form-group col-md-1">
               <label style="visibility: hidden">plus</label>
               <button type="button" class="btn btn-primary btn-xs new_line"><i class="fa fa-plus"></i> </button>
           </div> --}}
-      </div>
-      @endforeach
-  @else
+    </div>
+    @endforeach
+    @else
 
     <div class="row">
         <div class="form-group col-md-3">
@@ -55,8 +59,8 @@
     </div>
 
 
-  @endisset
+    @endisset
 
-  </div>
+</div>
 
-  <button type="button" id="add-new-row" class="btn btn-success btn-sm mt-3 mb-3">Add New</button>
+<button type="button" id="add-new-row" class="btn btn-success btn-sm mt-3 mb-3">Add New</button>

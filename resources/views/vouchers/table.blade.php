@@ -78,23 +78,10 @@
                             </a></li>
                         @endcan
                         @can('voucher_edit')
-                        @if($voucher->voucher_type !='RFV' && $voucher->voucher_type !='SV' && $voucher->voucher_type !='VL' && $voucher->voucher_type !='AL')
+                        @if($voucher->voucher_type !='RFV' && $voucher->voucher_type !='SV' && $voucher->voucher_type !='VL')
                         <li><a href="javascript:void(0);" data-size="xl"
                                 data-title="Edit Voucher No. {{$voucher->voucher_type.'-'.str_pad($voucher->id,4,'0',STR_PAD_LEFT)}}"
-                                @if($voucher->voucher_type == 'JV')
                                 data-action="{{ route('vouchers.edit', $voucher->trans_code) }}"
-                                @elseif($voucher->voucher_type == 'PN')
-                                data-action="{{ route('riders.penalty' , $voucher->ref_id) }}"
-                                @elseif($voucher->voucher_type == 'COD')
-                                data-action="{{ route('riders.cod' , $voucher->ref_id) }}"
-                                @elseif($voucher->voucher_type == 'IN')
-                                data-action="{{ route('riders.incentive' , $voucher->ref_id) }}"
-                                @elseif($voucher->voucher_type == 'PAY')
-                                data-action="{{ route('riders.payment' , $voucher->ref_id) }}"
-                                @elseif($voucher->voucher_type == 'VC')
-                                data-action="{{ route('riders.vendorcharges' , $voucher->ref_id) }}"
-                                @endif
-
                                 class='dropdown-item waves-effect show-modal'>
                                 <i class="fa fa-edit my-1"></i> Edit
                             </a></li>

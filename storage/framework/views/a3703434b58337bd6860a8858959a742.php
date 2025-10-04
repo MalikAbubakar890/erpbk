@@ -78,23 +78,10 @@
                             </a></li>
                         <?php endif; ?>
                         <?php if (app(\Illuminate\Contracts\Auth\Access\Gate::class)->check('voucher_edit')): ?>
-                        <?php if($voucher->voucher_type !='RFV' && $voucher->voucher_type !='SV' && $voucher->voucher_type !='VL' && $voucher->voucher_type !='AL'): ?>
+                        <?php if($voucher->voucher_type !='RFV' && $voucher->voucher_type !='SV' && $voucher->voucher_type !='VL'): ?>
                         <li><a href="javascript:void(0);" data-size="xl"
                                 data-title="Edit Voucher No. <?php echo e($voucher->voucher_type.'-'.str_pad($voucher->id,4,'0',STR_PAD_LEFT)); ?>"
-                                <?php if($voucher->voucher_type == 'JV'): ?>
                                 data-action="<?php echo e(route('vouchers.edit', $voucher->trans_code)); ?>"
-                                <?php elseif($voucher->voucher_type == 'PN'): ?>
-                                data-action="<?php echo e(route('riders.penalty' , $voucher->ref_id)); ?>"
-                                <?php elseif($voucher->voucher_type == 'COD'): ?>
-                                data-action="<?php echo e(route('riders.cod' , $voucher->ref_id)); ?>"
-                                <?php elseif($voucher->voucher_type == 'IN'): ?>
-                                data-action="<?php echo e(route('riders.incentive' , $voucher->ref_id)); ?>"
-                                <?php elseif($voucher->voucher_type == 'PAY'): ?>
-                                data-action="<?php echo e(route('riders.payment' , $voucher->ref_id)); ?>"
-                                <?php elseif($voucher->voucher_type == 'VC'): ?>
-                                data-action="<?php echo e(route('riders.vendorcharges' , $voucher->ref_id)); ?>"
-                                <?php endif; ?>
-
                                 class='dropdown-item waves-effect show-modal'>
                                 <i class="fa fa-edit my-1"></i> Edit
                             </a></li>
