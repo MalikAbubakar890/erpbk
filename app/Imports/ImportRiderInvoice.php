@@ -10,7 +10,6 @@ use App\Models\Items;
 use App\Models\RiderInvoiceItem;
 use App\Models\RiderInvoices;
 use App\Models\Riders;
-use App\Models\Transactions;
 use App\Services\TransactionService;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Collection;
@@ -53,7 +52,6 @@ class ImportRiderInvoice implements ToCollection
       $rows[0][20]
     ];
     $i = 1;
-    $invoiceTransCodes = [];
     $importedInvoiceIds = [];
     foreach ($rows as $row) {
       $i++;
@@ -157,8 +155,6 @@ class ImportRiderInvoice implements ToCollection
               if ($status === 0) {
                 $rider_amount = RiderInvoiceItem::where('inv_id', $ret->id)->sum('amount');
                 $trans_code = Account::trans_code();
-                // Remember the trans_code used for this invoice to keep all entries grouped
-                $invoiceTransCodes[$ret->id] = $trans_code;
                 $transactionService = new TransactionService();
                 if ($rider->vat == 1) {
                   $transactionData = [
@@ -245,26 +241,20 @@ class ImportRiderInvoice implements ToCollection
         if (!$invoice || !$salary_account) {
           continue;
         }
-        // Reuse existing trans_code if transactions already exist for this invoice; otherwise use one we tracked during create, or generate new
-        $existingTransCode = Transactions::where('reference_type', 'Invoice')
-          ->where('reference_id', $invoice->id)
-          ->value('trans_code');
-        $trans_code = $existingTransCode ?? ($invoiceTransCodes[$invoice->id] ?? Account::trans_code());
-
-        // Idempotency: skip creating salary debit if one with same account/ref already exists
-        $alreadyExists = Transactions::where('reference_type', 'Invoice')
+        // Skip if a salary debit already exists for this invoice to avoid duplicates
+        $alreadyExists = DB::table('transactions')
+          ->where('reference_type', 'Invoice')
           ->where('reference_id', $invoice->id)
           ->where('account_id', $salary_account->id)
           ->exists();
         if ($alreadyExists) {
           continue;
         }
-
         $transactionDataDebit = [
           'account_id' => $salary_account->id,
           'reference_id' => $invoice->id,
           'reference_type' => 'Invoice',
-          'trans_code' => $trans_code,
+          'trans_code' => Account::trans_code(),
           'trans_date' => $invoice->inv_date,
           'narration' => 'Rider Invoice #' . $invoice->id . ' Salary Debit',
           'debit' => $invoice->total_amount,
