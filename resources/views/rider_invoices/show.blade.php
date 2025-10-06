@@ -347,12 +347,9 @@
 
         @php
         $billing_month = date('M-y', strtotime($riderInvoice->billing_month));
-        dd($billing_month);
         // Fetch selected adjustments
         $fines = DB::Table('rta_fines')->where('billing_month' , $billing_month)->where('rider_id' , $riderInvoice->rider->id)->sum('total_amount');
-
         $salik = DB::Table('saliks')->where('billing_month' , $billing_month)->where('rider_id' , $riderInvoice->rider->id)->sum('total_amount');
-
         $cod = DB::table('vouchers')->where('ref_id' , $riderInvoice->rider->id)->where('voucher_type' , 'COD')->where('billing_month' , $billing_month)->sum('amount');
         $penalty = DB::table('vouchers')->where('ref_id' , $riderInvoice->rider->id)->where('voucher_type' , 'PN')->where('billing_month' , $billing_month)->sum('amount');
         $incentive = DB::table('vouchers')->where('ref_id' , $riderInvoice->rider->id)->where('voucher_type' , 'INC')->where('billing_month' , $billing_month)->sum('amount');
