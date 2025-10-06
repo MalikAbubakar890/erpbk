@@ -34,7 +34,7 @@
       <?php $__currentLoopData = $data; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $r): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
       <tr class="text-center">
          <td><?php echo e($r->id); ?></td>
-         <td><?php echo e($r->inv_date); ?></td>
+         <td><?php echo e(\Carbon\Carbon::parse($r->inv_date)->format('d M Y')); ?></td>
          <td><?php echo e(\Carbon\Carbon::parse($r->billing_month)->format('M Y')); ?></td>
          <?php
          $rider = DB::Table('riders')->where('id' , $r->rider_id)->first();

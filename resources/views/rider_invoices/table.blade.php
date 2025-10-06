@@ -33,7 +33,7 @@
       @foreach($data as $r)
       <tr class="text-center">
          <td>{{ $r->id }}</td>
-         <td>{{ $r->inv_date }}</td>
+         <td>{{ \Carbon\Carbon::parse($r->inv_date)->format('d M Y') }}</td>
          <td>{{ \Carbon\Carbon::parse($r->billing_month)->format('M Y') }}</td>
          @php
          $rider = DB::Table('riders')->where('id' , $r->rider_id)->first();

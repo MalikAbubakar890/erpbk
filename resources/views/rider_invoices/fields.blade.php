@@ -1,6 +1,5 @@
 <script src="{{ asset('js/modal_custom.js') }}"></script>
 
-@endphp
 <div class="row">
     <div class="col-md-2 form-group">
         <label>Invoice Date</label>

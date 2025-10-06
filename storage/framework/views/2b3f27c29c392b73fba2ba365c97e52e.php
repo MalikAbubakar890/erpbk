@@ -1,6 +1,5 @@
 <script src="<?php echo e(asset('js/modal_custom.js')); ?>"></script>
 
-@endphp
 <div class="row">
     <div class="col-md-2 form-group">
         <label>Invoice Date</label>
@@ -11,13 +10,11 @@
         <label>Rider</label>
         <?php echo Form::select('rider_id', $riders, null, ['class' => 'form-select form-select-sm select2','id'=>'rider_id']); ?>
 
-
     </div>
     <!--col-->
     <div class="col-md-2 form-group">
         <label>Zone</label>
         <?php echo Form::text('zone', null, ['class' => 'form-control','placeholder'=>'Zone']); ?>
-
 
     </div>
     <!--col-->
