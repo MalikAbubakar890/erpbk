@@ -3,7 +3,11 @@
 <div class="row">
     <div class="col-md-2 form-group">
         <label>Invoice Date</label>
-        <input type="date" class="form-control form-control" value="{{ \Carbon\Carbon::parse($invoice->inv_date)->format('Y-m-d') ?? date('Y-m-d') }}" name="inv_date" placeholder="Invoice Date">
+        <input type="date"
+            class="form-control"
+            value="{{ isset($invoice) ? \Carbon\Carbon::parse($invoice->inv_date)->format('Y-m-d') : date('Y-m-d') }}"
+            name="inv_date"
+            placeholder="Invoice Date">
     </div>
     <!--col-->
     <div class="col-md-4 form-group">

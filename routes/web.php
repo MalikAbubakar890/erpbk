@@ -61,6 +61,10 @@ Route::middleware(['auth', 'web'])->group(function () {
   Route::get('bikes/contract/{id?}', [\App\Http\Controllers\BikesController::class, 'contract'])->name('bike.contract');
   Route::any('bikes/contract_upload/{id?}', [\App\Http\Controllers\BikesController::class, 'contract_upload'])->name('bike_contract_upload');
   Route::get('bikes/delete/{id}', [\App\Http\Controllers\BikesController::class, 'destroy'])->name('bikes.delete');
+  Route::get('bikes/export', [\App\Http\Controllers\BikesController::class, 'exportCustomizableBikes'])->name('bikes.export');
+  Route::get('bikes/import', [\App\Http\Controllers\BikesController::class, 'import'])->name('bikes.import');
+  Route::post('bikes/import', [\App\Http\Controllers\BikesController::class, 'import']);
+  Route::get('bikes/download-template', [\App\Http\Controllers\BikesController::class, 'downloadSampleTemplate'])->name('bikes.download-template');
 
   Route::resource('customers', App\Http\Controllers\CustomersController::class);
   Route::get('customer/ledger/{id}', [\App\Http\Controllers\CustomersController::class, 'ledger'])->name('customer.ledger');
@@ -168,6 +172,8 @@ Route::middleware(['auth', 'web'])->group(function () {
   Route::get('riders/penalty/{id}', [\App\Http\Controllers\RidersController::class, 'penalty'])->name('riders.penalty');
   Route::get('riders/incentive/{id}', [\App\Http\Controllers\RidersController::class, 'incentive'])->name('riders.incentive');
   Route::get('riders/payment/{id}', [\App\Http\Controllers\RidersController::class, 'payment'])->name('riders.payment');
+  // Unified voucher modal (Advance Loan, COD, Penalty, Payment, Vendor Charges)
+  Route::get('riders/voucher/{id}', [\App\Http\Controllers\RidersController::class, 'voucher'])->name('riders.voucher');
   Route::post('riders/storevisaloan', [\App\Http\Controllers\RidersController::class, 'storevisaloan'])->name('riders.storevisaloan');
   Route::post('riders/storecod', [\App\Http\Controllers\RidersController::class, 'storecod'])->name('riders.storecod');
   Route::post('riders/storepenalty', [\App\Http\Controllers\RidersController::class, 'storepenalty'])->name('riders.storepenalty');
@@ -183,6 +189,8 @@ Route::middleware(['auth', 'web'])->group(function () {
   Route::post('riders/toggle-absconder/{id}', [\App\Http\Controllers\RidersController::class, 'toggleAbsconder'])->name('riders.toggleAbsconder');
   Route::post('riders/toggle-flowup/{id}', [\App\Http\Controllers\RidersController::class, 'toggleFlowup'])->name('riders.toggleFlowup');
   Route::post('riders/toggle-llicense/{id}', [\App\Http\Controllers\RidersController::class, 'toggleLlicense'])->name('riders.toggleLlicense');
+  Route::post('riders/toggle-walker/{id}', [\App\Http\Controllers\RidersController::class, 'toggleWalker'])->name('riders.toggleWalker');
+  Route::post('riders/return-bike/{id}', [\App\Http\Controllers\RidersController::class, 'returnBike'])->name('riders.returnBike');
   Route::post('riders/add-recruiter', [\App\Http\Controllers\RidersController::class, 'addRecruiter'])->name('riders.addRecruiter');
   Route::get('riders/vendorcharges/{id}', [\App\Http\Controllers\RidersController::class, 'vendorcharges'])->name('riders.vendorcharges');
   Route::post('riders/storevendorcharges', [\App\Http\Controllers\RidersController::class, 'storevendorcharges'])->name('riders.storevendorcharges');
@@ -217,6 +225,7 @@ Route::middleware(['auth', 'web'])->group(function () {
   Route::any('rider/invoice-mark-paid/{id}', [\App\Http\Controllers\RiderInvoicesController::class, 'markAsPaid'])->name('riderInvoices.markAsPaid');
   Route::get('search_item_price/{RID}/{itemID}', [\App\Http\Controllers\ItemsController::class, 'search_item_price']);
   Route::get('riderInvoices/delete/{id}', [\App\Http\Controllers\RiderInvoicesController::class, 'destroy'])->name('riderInvoices.delete');
+  Route::post('riderInvoices/bulk-delete', [\App\Http\Controllers\RiderInvoicesController::class, 'bulkDelete'])->name('riderInvoices.bulkDelete');
 
   Route::resource('riderAttendances', App\Http\Controllers\RiderAttendanceController::class);
   Route::any('rider/attendance-import', [\App\Http\Controllers\RiderAttendanceController::class, 'import'])->name('rider.attendance_import');
@@ -289,6 +298,7 @@ Route::middleware(['auth', 'web'])->group(function () {
     Route::get('/ledgerreport', [LedgerController::class, 'ledger'])->name('accounts.ledgerreport');
     Route::get('/ledger', [LedgerController::class, 'index'])->name('accounts.ledger');
     Route::get('/ledger/data', [LedgerController::class, 'getLedgerData'])->name('ledger.data');
+    Route::get('/ledger/export', [LedgerController::class, 'export'])->name('ledger.export');
     Route::post('accounts/{id}/toggle-lock', [App\Http\Controllers\AccountsController::class, 'toggleLock'])->name('accounts.toggleLock');
   });
 
@@ -354,10 +364,10 @@ Route::get('/artisan-storage-unlink', function () {
 Route::prefix('settings')->group(function () {
 
   Route::any('/company', [HomeController::class, 'settings'])->name('settings');
-  Route::get('/settings', [SettingsController::class, 'index'])->name('settings.index');
-  Route::post('/settings/logo', [SettingsController::class, 'updateLogo'])->name('settings.updateLogo');
-  Route::post('/settings', [SettingsController::class, 'store'])->name('settings.store');
-  Route::post('settings/update-favicon', [SettingsController::class, 'updateFavicon'])->name('settings.updateFavicon');
+  Route::get('/settings', [HomeController::class, 'index'])->name('settings.index');
+  Route::post('/settings/logo', [HomeController::class, 'updateLogo'])->name('settings.updateLogo');
+  Route::post('/settings', [HomeController::class, 'store'])->name('settings.store');
+  Route::post('settings/update-favicon', [HomeController::class, 'updateFavicon'])->name('settings.updateFavicon');
   Route::resource('departments', App\Http\Controllers\DepartmentsController::class);
   Route::resource('dropdowns', App\Http\Controllers\DropdownsController::class);
 });

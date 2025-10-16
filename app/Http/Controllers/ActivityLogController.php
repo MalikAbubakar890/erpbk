@@ -10,6 +10,12 @@ use Illuminate\Support\Facades\DB;
 
 class ActivityLogController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('auth');
+        $this->middleware('permission:activity_logs_view')->only(['index', 'show']);
+        $this->middleware('permission:activity_logs_delete')->only(['destroy']);
+    }
     /**
      * Display a listing of the activity logs.
      */
@@ -47,7 +53,7 @@ class ActivityLogController extends Controller
             ->pluck('action');
 
         // Paginate results
-        $activityLogs = $query->orderBy('created_at', 'desc')->paginate(50);
+        $activityLogs = $query->orderBy('id', 'asc')->paginate(50);
 
         return view('activity_logs.index', compact(
             'activityLogs',
@@ -79,26 +85,39 @@ class ActivityLogController extends Controller
         }
 
         $stats = [
-            'total_activities' => $query->count(),
-            'activities_by_action' => $query->select('action', DB::raw('count(*) as count'))
+            'total_activities' => (clone $query)->count(),
+
+            'activities_by_action' => (clone $query)
+                ->select('action', DB::raw('COUNT(*) as count'))
                 ->groupBy('action')
-                ->orderBy('count', 'desc')
+                ->orderByDesc('count')
                 ->get(),
-            'activities_by_module' => $query->select('module_name', DB::raw('count(*) as count'))
+
+            'activities_by_module' => (clone $query)
+                ->select('module_name', DB::raw('COUNT(*) as count'))
                 ->groupBy('module_name')
-                ->orderBy('count', 'desc')
+                ->orderByDesc('count')
                 ->get(),
-            'activities_by_user' => $query->with('user')
-                ->select('user_id', DB::raw('count(*) as count'))
+
+            'activities_by_user' => (clone $query)
+                ->with('user')
+                ->select('user_id', DB::raw('COUNT(*) as count'), DB::raw('MAX(created_at) as last_activity'))
                 ->groupBy('user_id')
-                ->orderBy('count', 'desc')
+                ->orderByDesc('count')
                 ->limit(10)
                 ->get(),
-            'recent_activities' => $query->with('user')
-                ->orderBy('created_at', 'desc')
+
+            'recent_activities' => (clone $query)
+                ->with('user')
+                ->orderByDesc('created_at')
                 ->limit(10)
-                ->get(),
+                ->get()
+                ->map(function ($activity) {
+                    $activity->user_name = $activity->user?->name ?? 'System';
+                    return $activity;
+                }),
         ];
+
 
         return response()->json($stats);
     }

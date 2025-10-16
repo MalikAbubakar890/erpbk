@@ -233,160 +233,170 @@
 <!-- Include Sortable.js for column reordering -->
 <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
 <script type="text/javascript">
-    $(document).ready(function() {
-        console.log('Vouchers filter script loaded'); // Debug line
-
-        // Test jQuery is working
-        console.log('jQuery version:', $.fn.jquery);
-
-        // Function to initialize Bootstrap dropdowns
-        function initializeDropdowns() {
-            console.log('Initializing dropdowns'); // Debug line
-
-            // Wait for Bootstrap to be available
-            var attempts = 0;
-            var maxAttempts = 10;
-
-            function tryInitialize() {
-                attempts++;
-
-                if (typeof bootstrap !== 'undefined' && bootstrap.Dropdown) {
-                    // Initialize Bootstrap 5 dropdowns
-                    var dropdownElementList = [].slice.call(document.querySelectorAll('.dropdown-toggle'));
-                    var dropdownList = dropdownElementList.map(function(dropdownToggleEl) {
-                        try {
-                            return new bootstrap.Dropdown(dropdownToggleEl);
-                        } catch (e) {
-                            console.warn('Failed to initialize dropdown:', e);
-                            return null;
-                        }
-                    }).filter(Boolean);
-
-                    console.log('Dropdowns initialized:', dropdownList.length); // Debug line
-                } else if (attempts < maxAttempts) {
-                    console.log('Bootstrap not ready, retrying...', attempts);
-                    setTimeout(tryInitialize, 100);
-                } else {
-                    console.warn('Bootstrap dropdown initialization failed after', maxAttempts, 'attempts');
-                }
-            }
-
-            tryInitialize();
+    // Wait for jQuery to be available
+    (function checkJQuery() {
+        if (typeof jQuery === 'undefined') {
+            console.warn('jQuery not loaded yet, waiting...');
+            setTimeout(checkJQuery, 50);
+            return;
         }
 
-        // Initialize dropdowns on page load
-        initializeDropdowns();
+        $(document).ready(function() {
+            console.log('Vouchers filter script loaded'); // Debug line
 
-        // Initialize Select2 for filter dropdowns if available
-        if (typeof $.fn.select2 !== 'undefined') {
-            $('#voucher_type').select2({
-                dropdownParent: $('#searchTopbody'),
-                placeholder: "Filter By Voucher Type",
-                allowClear: true,
-            });
-            $('#created_by').select2({
-                dropdownParent: $('#searchTopbody'),
-                placeholder: "Filter By Created By",
-                allowClear: true,
-            });
-        }
+            // Test jQuery is working
+            console.log('jQuery version:', $.fn.jquery);
 
-        // Sidebar open/close with event delegation
-        $(document).on('click', '#openFilterSidebar, .openFilterSidebar', function(e) {
-            e.preventDefault();
-            console.log('Filter button clicked!'); // Debug line
-            $('#filterSidebar').addClass('open');
-            $('#filterOverlay').addClass('show');
-            return false;
-        });
+            // Function to initialize Bootstrap dropdowns
+            function initializeDropdowns() {
+                console.log('Initializing dropdowns'); // Debug line
 
-        $(document).on('click', '#closeSidebar, #filterOverlay', function(e) {
-            e.preventDefault();
-            console.log('Close button clicked!'); // Debug line
-            $('#filterSidebar').removeClass('open');
-            $('#filterOverlay').removeClass('show');
-            return false;
-        });
+                // Wait for Bootstrap to be available
+                var attempts = 0;
+                var maxAttempts = 10;
 
-        // Column control button with event delegation
-        $(document).on('click', '.openColumnControlSidebar', function(e) {
-            e.preventDefault();
-            console.log('Column control button clicked!'); // Debug line
-            $('#columnControlSidebar').addClass('open');
-            $('#filterOverlay').addClass('show');
-            return false;
-        });
+                function tryInitialize() {
+                    attempts++;
 
-        // Handle filter form submission
-        $('#filterForm').on('submit', function(e) {
-            e.preventDefault();
-            console.log('Filter form submitted'); // Debug line
+                    if (typeof bootstrap !== 'undefined' && bootstrap.Dropdown) {
+                        // Initialize Bootstrap 5 dropdowns
+                        var dropdownElementList = [].slice.call(document.querySelectorAll('.dropdown-toggle'));
+                        var dropdownList = dropdownElementList.map(function(dropdownToggleEl) {
+                            try {
+                                return new bootstrap.Dropdown(dropdownToggleEl);
+                            } catch (e) {
+                                console.warn('Failed to initialize dropdown:', e);
+                                return null;
+                            }
+                        }).filter(Boolean);
 
-            $('#loading-overlay').show();
-            $('#filterSidebar').removeClass('open');
-            $('#filterOverlay').removeClass('show');
-            const loaderStartTime = Date.now();
-            let filteredFields = $(this).serializeArray().filter(field => field.name !== '_token' && field.value.trim() !== '');
-            let formData = $.param(filteredFields);
-
-            $.ajax({
-                url: "{{ route('vouchers.index') }}",
-                type: "GET",
-                data: formData,
-                success: function(data) {
-                    console.log('Filter response received:', data); // Debug line
-                    $('#table-data').html(data.tableData);
-                    let newUrl = "{{ route('vouchers.index') }}" + (formData ? '?' + formData : '');
-                    history.pushState(null, '', newUrl);
-                    if (filteredFields.length > 0) {
-                        $('#clearFilterBtn').show();
+                        console.log('Dropdowns initialized:', dropdownList.length); // Debug line
+                    } else if (attempts < maxAttempts) {
+                        console.log('Bootstrap not ready, retrying...', attempts);
+                        setTimeout(tryInitialize, 100);
                     } else {
-                        $('#clearFilterBtn').hide();
+                        console.warn('Bootstrap dropdown initialization failed after', maxAttempts, 'attempts');
                     }
+                }
 
-                    // Reinitialize dropdowns after loading new content
-                    setTimeout(function() {
-                        initializeDropdowns();
-                    }, 100);
+                tryInitialize();
+            }
 
-                    // Reapply column control settings after table update
-                    if (window.ColumnController) {
-                        setTimeout(() => {
-                            window.ColumnController.reapplySettings();
-                            window.ColumnController.initializeDropdowns();
+            // Initialize dropdowns on page load
+            initializeDropdowns();
+
+            // Initialize Select2 for filter dropdowns if available
+            if (typeof $.fn.select2 !== 'undefined') {
+                $('#voucher_type').select2({
+                    dropdownParent: $('#searchTopbody'),
+                    placeholder: "Filter By Voucher Type",
+                    allowClear: true,
+                });
+                $('#created_by').select2({
+                    dropdownParent: $('#searchTopbody'),
+                    placeholder: "Filter By Created By",
+                    allowClear: true,
+                });
+            }
+
+            // Sidebar open/close with event delegation
+            $(document).on('click', '#openFilterSidebar, .openFilterSidebar', function(e) {
+                e.preventDefault();
+                console.log('Filter button clicked!'); // Debug line
+                $('#filterSidebar').addClass('open');
+                $('#filterOverlay').addClass('show');
+                return false;
+            });
+
+            $(document).on('click', '#closeSidebar, #filterOverlay', function(e) {
+                e.preventDefault();
+                console.log('Close button clicked!'); // Debug line
+                $('#filterSidebar').removeClass('open');
+                $('#filterOverlay').removeClass('show');
+                return false;
+            });
+
+            // Column control button with event delegation
+            $(document).on('click', '.openColumnControlSidebar', function(e) {
+                e.preventDefault();
+                console.log('Column control button clicked!'); // Debug line
+                $('#columnControlSidebar').addClass('open');
+                $('#filterOverlay').addClass('show');
+                return false;
+            });
+
+            // Handle filter form submission
+            $('#filterForm').on('submit', function(e) {
+                e.preventDefault();
+                console.log('Filter form submitted'); // Debug line
+
+                $('#loading-overlay').show();
+                $('#filterSidebar').removeClass('open');
+                $('#filterOverlay').removeClass('show');
+                const loaderStartTime = Date.now();
+                let filteredFields = $(this).serializeArray().filter(field => field.name !== '_token' && field.value.trim() !== '');
+                let formData = $.param(filteredFields);
+
+                $.ajax({
+                    url: "{{ route('vouchers.index') }}",
+                    type: "GET",
+                    data: formData,
+                    success: function(data) {
+                        console.log('Filter response received:', data); // Debug line
+                        $('#table-data').html(data.tableData);
+                        let newUrl = "{{ route('vouchers.index') }}" + (formData ? '?' + formData : '');
+                        history.pushState(null, '', newUrl);
+                        if (filteredFields.length > 0) {
+                            $('#clearFilterBtn').show();
+                        } else {
+                            $('#clearFilterBtn').hide();
+                        }
+
+                        // Reinitialize dropdowns after loading new content
+                        setTimeout(function() {
+                            initializeDropdowns();
                         }, 100);
-                    }
 
-                    const elapsed = Date.now() - loaderStartTime;
-                    const remaining = 1000 - elapsed;
-                    setTimeout(() => $('#loading-overlay').hide(), remaining > 0 ? remaining : 0);
-                },
-                error: function(xhr, status, error) {
-                    console.error('Filter error:', xhr, status, error); // Debug line
-                    const elapsed = Date.now() - loaderStartTime;
-                    const remaining = 1000 - elapsed;
-                    setTimeout(() => $('#loading-overlay').hide(), remaining > 0 ? remaining : 0);
+                        // Reapply column control settings after table update
+                        if (window.ColumnController) {
+                            setTimeout(() => {
+                                window.ColumnController.reapplySettings();
+                                window.ColumnController.initializeDropdowns();
+                            }, 100);
+                        }
+
+                        const elapsed = Date.now() - loaderStartTime;
+                        const remaining = 1000 - elapsed;
+                        setTimeout(() => $('#loading-overlay').hide(), remaining > 0 ? remaining : 0);
+                    },
+                    error: function(xhr, status, error) {
+                        console.error('Filter error:', xhr, status, error); // Debug line
+                        const elapsed = Date.now() - loaderStartTime;
+                        const remaining = 1000 - elapsed;
+                        setTimeout(() => $('#loading-overlay').hide(), remaining > 0 ? remaining : 0);
+                    }
+                });
+            });
+
+            // Quick search input (main)
+            $('#quickSearch').on('keyup', function(e) {
+                if (e.keyCode === 13 || $(this).val().length === 0) {
+                    // Set the sidebar quick search too
+                    $('#quickSearchSidebar').val($(this).val());
+                    $('#filterForm').submit();
                 }
             });
-        });
 
-        // Quick search input (main)
-        $('#quickSearch').on('keyup', function(e) {
-            if (e.keyCode === 13 || $(this).val().length === 0) {
-                // Set the sidebar quick search too
-                $('#quickSearchSidebar').val($(this).val());
-                $('#filterForm').submit();
-            }
-        });
+            // Quick search input (sidebar)
+            $('#quickSearchSidebar').on('keyup', function(e) {
+                if (e.keyCode === 13 || $(this).val().length === 0) {
+                    // Set the main quick search too
+                    $('#quickSearch').val($(this).val());
+                    $('#filterForm').submit();
+                }
+            });
+        }); // End $(document).ready
 
-        // Quick search input (sidebar)
-        $('#quickSearchSidebar').on('keyup', function(e) {
-            if (e.keyCode === 13 || $(this).val().length === 0) {
-                // Set the main quick search too
-                $('#quickSearch').val($(this).val());
-                $('#filterForm').submit();
-            }
-        });
-    });
+    })(); // End jQuery availability check
 </script>
 @endsection

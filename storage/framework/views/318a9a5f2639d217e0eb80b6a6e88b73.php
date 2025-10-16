@@ -162,6 +162,10 @@
     background: #17a2b8;
   }
 
+  .walker-card .status-checkbox:checked+.toggle-switch {
+    background: #ff9800;
+  }
+
   /* Loading state */
   .status-card.loading {
     opacity: 0.7;
@@ -514,6 +518,30 @@ $account = App\Models\Accounts::where('ref_id', $result['id'])->where('account_t
                 </label>
               </div>
             </div>
+            <!-- Walker Designation Status Card -->
+            <div class="status-card walker-card <?php echo e((isset($result['designation']) && $result['designation'] === 'Walker') ? 'active' : ''); ?>"
+              data-rider-id="<?php echo e($result['id'] ?? ''); ?>"
+              data-type="walker">
+              <div class="d-flex justify-content-between">
+                <div class="status-icon">
+                  <i class="ti ti-walk"></i>
+                </div>
+                <div class="status-content">
+                  <div class="status-title">Walker</div>
+                  <div class="status-subtitle"><?php echo e((isset($result['designation']) && $result['designation'] === 'Walker') ? 'Designation is Walker' : 'Not Walker'); ?></div>
+                </div>
+              </div>
+              <div class="status-toggle">
+                <input type="checkbox"
+                  class="status-checkbox walker-checkbox"
+                  id="walker-<?php echo e($result['id'] ?? ''); ?>"
+                  data-rider-id="<?php echo e($result['id'] ?? ''); ?>"
+                  <?php echo e((isset($result['designation']) && $result['designation'] === 'Walker') ? 'checked' : ''); ?>>
+                <label for="walker-<?php echo e($result['id'] ?? ''); ?>" class="toggle-switch">
+                  <span class="toggle-slider"></span>
+                </label>
+              </div>
+            </div>
           </div>
           <?php endif; ?>
         </div>
@@ -611,68 +639,24 @@ $account = App\Models\Accounts::where('ref_id', $result['id'])->where('account_t
                 <?php endif; ?>
 
                 <!-- Action items with lower priority -->
-                <?php if (app(\Illuminate\Contracts\Auth\Access\Gate::class)->check('advanceloan_create')): ?>
+                <?php if (app(\Illuminate\Contracts\Auth\Access\Gate::class)->any(['advanceloan_create','cod_create','penality_create','payment_create','vendorcharges_create'])): ?>
                 <li class="nav-item nav-priority-10">
                   <a href="javascript:void(0);"
-                    data-action="<?php echo e(route('riders.advanceloan', ['id' => $result['id'], 'vt' => 'AL'])); ?>"
-                    data-size="xl" data-title="Advance Loan"
+                    data-action="<?php echo e(route('riders.voucher', ['id' => $result['id']])); ?>"
+                    data-size="xl" data-title="Voucher"
                     class='nav-link show-modal'>
-                    <i class="ti ti-credit-card ti-sm me-1_5"></i>Advance Loan
-                  </a>
-                </li>
-                <?php endif; ?>
-
-                <?php if (app(\Illuminate\Contracts\Auth\Access\Gate::class)->check('cod_create')): ?>
-                <li class="nav-item nav-priority-11">
-                  <a href="javascript:void(0);"
-                    data-action="<?php echo e(route('riders.cod' , $result['id'])); ?>"
-                    data-size="xl" data-title="COD"
-                    class='nav-link show-modal'>
-                    <i class="ti ti-cash ti-sm me-1_5"></i>COD
-                  </a>
-                </li>
-                <?php endif; ?>
-
-                <?php if (app(\Illuminate\Contracts\Auth\Access\Gate::class)->check('penality_create')): ?>
-                <li class="nav-item nav-priority-12">
-                  <a href="javascript:void(0);"
-                    data-action="<?php echo e(route('riders.penalty' , $result['id'])); ?>"
-                    class='nav-link show-modal'
-                    data-size="xl" data-title="Penality">
-                    <i class="ti ti-alert-triangle ti-sm me-1_5"></i>Penalty
+                    <i class="ti ti-file-invoice ti-sm me-1_5"></i>Voucher
                   </a>
                 </li>
                 <?php endif; ?>
 
                 <?php if (app(\Illuminate\Contracts\Auth\Access\Gate::class)->check('incentives_create')): ?>
-                <li class="nav-item nav-priority-13">
+                <li class="nav-item nav-priority-11">
                   <a href="javascript:void(0);"
                     data-action="<?php echo e(route('riders.incentive' , $result['id'])); ?>"
                     class='nav-link show-modal'
                     data-size="xl" data-title="Incentive">
                     <i class="ti ti-award ti-sm me-1_5"></i>Incentive
-                  </a>
-                </li>
-                <?php endif; ?>
-
-                <?php if (app(\Illuminate\Contracts\Auth\Access\Gate::class)->check('payment_create')): ?>
-                <li class="nav-item nav-priority-14">
-                  <a href="javascript:void(0);"
-                    data-action="<?php echo e(route('riders.payment' , $result['id'])); ?>"
-                    class='nav-link show-modal'
-                    data-size="xl" data-title="Payment">
-                    <i class="ti ti-wallet ti-sm me-1_5"></i>Payment
-                  </a>
-                </li>
-                <?php endif; ?>
-
-                <?php if (app(\Illuminate\Contracts\Auth\Access\Gate::class)->check('vendorcharges_create')): ?>
-                <li class="nav-item nav-priority-15">
-                  <a href="javascript:void(0);"
-                    data-action="<?php echo e(route('riders.vendorcharges' , $result['id'])); ?>"
-                    class='nav-link show-modal'
-                    data-size="xl" data-title="Vendor Charges">
-                    <i class="ti ti-receipt ti-sm me-1_5"></i>Vendor Charges
                   </a>
                 </li>
                 <?php endif; ?>
@@ -1112,6 +1096,60 @@ $account = App\Models\Accounts::where('ref_id', $result['id'])->where('account_t
         });
     });
 
+    // Add change event listener to walker checkbox
+    const walkerCheckbox = document.querySelector('.walker-checkbox');
+    if (walkerCheckbox) {
+      walkerCheckbox.addEventListener('change', function() {
+        const riderId = this.getAttribute('data-rider-id');
+        const isChecked = this.checked;
+        const card = this.closest('.status-card');
+        const subtitle = card.querySelector('.status-subtitle');
+
+        if (!riderId) {
+          showNotification('Rider ID not found', 'error');
+          return;
+        }
+
+        // Add loading state
+        card.classList.add('loading');
+        subtitle.textContent = 'Updating...';
+
+        fetch(`/riders/toggle-walker/${riderId}`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+            },
+            body: JSON.stringify({})
+          })
+          .then(response => response.json())
+          .then(data => {
+            if (data.success) {
+              updateCardStatus(card, 'walker', isChecked);
+              // Update header badge if present
+              const designationBadge = document.querySelector('.badge.bg-label-primary');
+              if (designationBadge) {
+                designationBadge.textContent = data.designation ?? (isChecked ? 'Walker' : designationBadge.textContent);
+              }
+              showNotification(data.message, 'success');
+            } else {
+              showNotification('Error: ' + data.message, 'error');
+              this.checked = !isChecked;
+              updateCardStatus(card, 'walker', !isChecked);
+            }
+          })
+          .catch(error => {
+            console.error('Error:', error);
+            showNotification('An error occurred while updating designation', 'error');
+            this.checked = !isChecked;
+            updateCardStatus(card, 'walker', !isChecked);
+          })
+          .finally(() => {
+            card.classList.remove('loading');
+          });
+      });
+    }
+
     // Function to update card status
     function updateCardStatus(card, type, isActive) {
       const subtitle = card.querySelector('.status-subtitle');
@@ -1139,6 +1177,14 @@ $account = App\Models\Accounts::where('ref_id', $result['id'])->where('account_t
         } else {
           card.classList.remove('active');
           subtitle.textContent = 'No Learning License';
+        }
+      } else if (type === 'walker') {
+        if (isActive) {
+          card.classList.add('active');
+          subtitle.textContent = 'Designation is Walker';
+        } else {
+          card.classList.remove('active');
+          subtitle.textContent = 'Not Walker';
         }
       }
     }

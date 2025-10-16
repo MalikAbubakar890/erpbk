@@ -282,6 +282,15 @@
       </a>
     </li>
     <?php endif; ?>
+
+    <?php if (app(\Illuminate\Contracts\Auth\Access\Gate::class)->check('activity_logs_view')): ?>
+    <li class="menu-item <?php echo e(Request::is('activity-logs*') ? 'active' : ''); ?>">
+      <a href="<?php echo e(route('activity-logs.index')); ?>" class="menu-link ">
+        <i class="menu-icon tf-icons ti ti-history"></i>
+        Activity Logs
+      </a>
+    </li>
+    <?php endif; ?>
   </ul>
 </li>
 <?php endif; ?>

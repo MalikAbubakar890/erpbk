@@ -3,9 +3,13 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use App\Traits\LogsActivity;
+use App\Traits\HasActiveStatus;
 
 class Accounts extends Model
 {
+  use LogsActivity, HasActiveStatus;
+
   public $table = 'accounts';
 
   public $fillable = [

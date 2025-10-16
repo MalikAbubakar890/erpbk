@@ -304,7 +304,7 @@ class SalikImport implements ToCollection
                 'reference_type' => 'Salik Voucher',
                 'trans_code'     => $transCode,
                 'trans_date'     => $transDate,
-                'narration'      => "Salik Import - Rider Debit ($count transactions)",
+                'narration'      => "salik charges month of $billingMonth ($count transactions)",
                 'debit'          => $totalAmount + $totalAdmin,
                 'billing_month'  => $billingMonth,
             ]);
@@ -317,7 +317,7 @@ class SalikImport implements ToCollection
                     'reference_type' => 'Salik Voucher',
                     'trans_code'     => $transCode,
                     'trans_date'     => $transDate,
-                    'narration'      => "Salik Import - Salik Credit ({$salik->transaction_id})",
+                    'narration'      => "salik charges month of $billingMonth ($count transactions)",
                     'credit'         => $salik->amount,
                     'billing_month'  => $billingMonth,
                 ]);
@@ -331,7 +331,7 @@ class SalikImport implements ToCollection
                     'reference_type' => 'Salik Voucher',
                     'trans_code'     => $transCode,
                     'trans_date'     => $transDate,
-                    'narration'      => "Salik Import - Admin Charges ($count × {$this->adminChargePerSalik})",
+                    'narration'      => "salik charges month of $billingMonth ($count × {$this->adminChargePerSalik})",
                     'credit'         => $totalAdmin,
                     'billing_month'  => $billingMonth,
                 ]);
@@ -345,7 +345,7 @@ class SalikImport implements ToCollection
                 'billing_month' => $billingMonth,
                 'amount'        => $totalAmount + $totalAdmin,
                 'voucher_type'  => 'SV',
-                'remarks'       => "Salik Import Main Voucher",
+                'remarks'       => "salik charges month of $billingMonth",
                 'ref_id'        => $firstSalik->id,
                 'rider_id'      => $rider->id,
                 'payment_to'    => $this->salikAccountId,

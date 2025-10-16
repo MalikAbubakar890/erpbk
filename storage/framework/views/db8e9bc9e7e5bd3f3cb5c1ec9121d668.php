@@ -9,19 +9,10 @@
       </div>
       <div class="col-sm-6">
         <?php if (app(\Illuminate\Contracts\Auth\Access\Gate::class)->check('visaloan_view')): ?>
-        <?php
-        $hasVisaExpenses = \App\Models\visa_expenses::where('rider_id', $account->id)->exists();
-        ?>
-        <?php if($hasVisaExpenses): ?>
         <a class="btn btn-primary action-btn show-modal mx-2"
           href="<?php echo e(route('VisaExpense.installmentPlan' , $account->id)); ?>" data-size="lg" data-title="Installment Plan">
           Installment Plan
         </a>
-        <?php else: ?>
-        <span class="btn btn-secondary action-btn mx-2" disabled title="No visa expenses found for this rider">
-          Installment Plan (No Expenses)
-        </span>
-        <?php endif; ?>
         <?php endif; ?>
         <?php if (app(\Illuminate\Contracts\Auth\Access\Gate::class)->check('visaexpense_create')): ?>
         <a class="btn btn-primary action-btn show-modal"

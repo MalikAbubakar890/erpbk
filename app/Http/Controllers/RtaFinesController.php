@@ -866,15 +866,15 @@ class RtaFinesController extends AppBaseController
             return;
         }
         $currentRiderId = $bike->rider_id;
-        $riders = Riders::all();
+        $riders = DB::table('riders')->get();
         if ($riders->isEmpty()) {
             echo '<option value="">There is no rider</option>';
         } else {
             echo '<option value="">Select Rider</option>';
             foreach ($riders as $r) {
-                $account = DB::table('accounts')->where('ref_id', $r->id)->first();
-                $selected = ($r->id == $currentRiderId) ? 'selected' : '';
-                echo '<option value="' . $account->ref_id . '" ' . $selected . '>'
+                echo '<option value="' . $r->id . '"'
+                    . ($r->id == $currentRiderId ? ' selected' : '')
+                    . '>'
                     . $r->rider_id . ' - ' . $r->name
                     . '</option>';
             }

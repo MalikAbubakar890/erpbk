@@ -109,134 +109,140 @@ $voucherType = request("vt");
   });
 }); */
 
-
-
-
-
-
-    $(document).ready(function() {
-        var base_url = $('#base_url').val();
-        getTotal();
-
-
-
-
-
-        var counter = 0;
-        $("#RID").on("change", function() {
-            var id = $('#RID').val();
-            var type = 5;
-
-            $.get(base_url + '/get_invoice_balance?id=' + id + '&type=' + type).done(function(data) {
-                $("#riderInvoiceBalance").val(data.invoice_balance);
-                $("#riderBalance").val(data.balance);
-                $("#inv_id").val(data.inv_id);
-            });
-        });
-
-        $("#addRiderRow").on("click", function() {
-            var item_id = $('#RID').val();
-            var item_name = $('#RID option:selected').text();
-            var item_price = $('#riderAmount').val();
-            var narration = $('#narration').val();
-            var inv_id = $('#inv_id').val();
-            var invoice = '';
-            if (item_price != '' && item_id != '') {
-
-                var newRow = '<tr style="padding:5px;"><td width="200"><label>' + item_name + '</label><input type="hidden" name="id[]" value="' + item_id + '" /><input type="hidden" name="inv_id[]" value="' + inv_id + '" /></td>';
-                newRow += '<td width="200"><input type="text" name="narration[]"  value="' + narration + '" class="form-control " /></td>';
-                newRow += '<td width="100"><input type="number" step="any" name="amount[]"  value="' + item_price + '" step="any" class="form-control  amount" onchange="getTotal();" /></td>';
-                newRow += '<td width="100"><input type="button" class="ibtnDel btn btn-md btn-xs btn-danger "  value="Delete"></td></tr>';
-
-                $("table.order-list").append(newRow);
-                $('#riderAmount').val('');
-                $('#narration').val('');
-                $('#RID option:selected').text('select');
-                $('#RID').val(0);
-                $('#riderBalance').val('');
-                counter++;
-
-            } else {
-                alert("Select Rider and Amount");
-            }
-            getTotal();
-        });
-
-
-        $("table.order-list").on("click", ".ibtnDel", function(event) {
-            $(this).closest("tr").remove();
-            counter -= 1;
-            getTotal();
-        });
-    });
-
-    $(".cr_amount").on("focus keyup change", function() {
-        getTotal();
-    });
-    $(".dr_amount").on("focus keyup change", function() {
-        getTotal();
-    });
-    $(".amount").on("focus keyup change", function() {
-        getTotal();
-    });
-
-    function getTotal() {
-        var cr_sum = 0;
-        var dr_sum = 0;
-        //iterate through each textboxes and add the values
-        $(".cr_amount").each(function() {
-            //add only if the value is number
-            if (!isNaN(this.value) && this.value.length != 0) {
-                cr_sum += parseFloat(this.value);
-            }
-        });
-        //iterate through each textboxes and add the values
-        $(".dr_amount").each(function() {
-            //add only if the value is number
-            if (!isNaN(this.value) && this.value.length != 0) {
-                dr_sum += parseFloat(this.value);
-            }
-        });
-        $(".amount").each(function() {
-            //add only if the value is number
-            if (!isNaN(this.value) && this.value.length != 0) {
-                cr_sum += parseFloat(this.value);
-            }
-        });
-        //.toFixed() method will roundoff the final sum to 2 decimal places
-        $("#total_cr").val(cr_sum.toFixed(2));
-        $("#total_dr").val(dr_sum.toFixed(2));
-    }
-
-    $(document).on("change", "#invoice_voucher_type", function() {
-        let thisVal = $(this).val();
-
-        if (thisVal == 5) {
-            $("#vendor_section").hide();
-            $("#rider_section").show();
-            $("table.order-list").html('');
-        } else {
-            $("#vendor_section").show();
-            $("#rider_section").hide();
-            $("table.order-list").html('');
+    // Wait for jQuery to be available
+    (function() {
+        // Check if jQuery is loaded
+        if (typeof jQuery === 'undefined') {
+            console.warn('jQuery not loaded yet, waiting...');
+            setTimeout(arguments.callee, 50);
+            return;
         }
-        getTotal();
-    });
 
-    function fetch_invoices(g) {
-        let id = g;
-        var vt = $("#invoice_voucher_type").val();
-        $.ajax({
-            url: "<?php echo e(url('fetch_invoices')); ?>/" + id + '/' + vt,
-            headers: {
-                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
-            },
-            success: function(data) {
-                $("table.order-list").html(data.htmlData);
-                $("#riderBalance").val(data.rider_balance);
-                $("#vendor_balance").val(data.vendor_balance);
+        $(document).ready(function() {
+            var base_url = $('#base_url').val();
+            getTotal();
 
+
+
+
+
+            var counter = 0;
+            $("#RID").on("change", function() {
+                var id = $('#RID').val();
+                var type = 5;
+
+                $.get(base_url + '/get_invoice_balance?id=' + id + '&type=' + type).done(function(data) {
+                    $("#riderInvoiceBalance").val(data.invoice_balance);
+                    $("#riderBalance").val(data.balance);
+                    $("#inv_id").val(data.inv_id);
+                });
+            });
+
+            $("#addRiderRow").on("click", function() {
+                var item_id = $('#RID').val();
+                var item_name = $('#RID option:selected').text();
+                var item_price = $('#riderAmount').val();
+                var narration = $('#narration').val();
+                var inv_id = $('#inv_id').val();
+                var invoice = '';
+                if (item_price != '' && item_id != '') {
+
+                    var newRow = '<tr style="padding:5px;"><td width="200"><label>' + item_name + '</label><input type="hidden" name="id[]" value="' + item_id + '" /><input type="hidden" name="inv_id[]" value="' + inv_id + '" /></td>';
+                    newRow += '<td width="200"><input type="text" name="narration[]"  value="' + narration + '" class="form-control " /></td>';
+                    newRow += '<td width="100"><input type="number" step="any" name="amount[]"  value="' + item_price + '" step="any" class="form-control  amount" onchange="getTotal();" /></td>';
+                    newRow += '<td width="100"><input type="button" class="ibtnDel btn btn-md btn-xs btn-danger "  value="Delete"></td></tr>';
+
+                    $("table.order-list").append(newRow);
+                    $('#riderAmount').val('');
+                    $('#narration').val('');
+                    $('#RID option:selected').text('select');
+                    $('#RID').val(0);
+                    $('#riderBalance').val('');
+                    counter++;
+
+                } else {
+                    alert("Select Rider and Amount");
+                }
+                getTotal();
+            });
+
+
+            $("table.order-list").on("click", ".ibtnDel", function(event) {
+                $(this).closest("tr").remove();
+                counter -= 1;
+                getTotal();
+            });
+
+            $(".cr_amount").on("focus keyup change", function() {
+                getTotal();
+            });
+            $(".dr_amount").on("focus keyup change", function() {
+                getTotal();
+            });
+            $(".amount").on("focus keyup change", function() {
+                getTotal();
+            });
+        }); // End of $(document).ready
+
+        function getTotal() {
+            var cr_sum = 0;
+            var dr_sum = 0;
+            //iterate through each textboxes and add the values
+            $(".cr_amount").each(function() {
+                //add only if the value is number
+                if (!isNaN(this.value) && this.value.length != 0) {
+                    cr_sum += parseFloat(this.value);
+                }
+            });
+            //iterate through each textboxes and add the values
+            $(".dr_amount").each(function() {
+                //add only if the value is number
+                if (!isNaN(this.value) && this.value.length != 0) {
+                    dr_sum += parseFloat(this.value);
+                }
+            });
+            $(".amount").each(function() {
+                //add only if the value is number
+                if (!isNaN(this.value) && this.value.length != 0) {
+                    cr_sum += parseFloat(this.value);
+                }
+            });
+            //.toFixed() method will roundoff the final sum to 2 decimal places
+            $("#total_cr").val(cr_sum.toFixed(2));
+            $("#total_dr").val(dr_sum.toFixed(2));
+        }
+
+        $(document).on("change", "#invoice_voucher_type", function() {
+            let thisVal = $(this).val();
+
+            if (thisVal == 5) {
+                $("#vendor_section").hide();
+                $("#rider_section").show();
+                $("table.order-list").html('');
+            } else {
+                $("#vendor_section").show();
+                $("#rider_section").hide();
+                $("table.order-list").html('');
             }
+            getTotal();
         });
-    }
+
+        function fetch_invoices(g) {
+            let id = g;
+            var vt = $("#invoice_voucher_type").val();
+            $.ajax({
+                url: "<?php echo e(url('fetch_invoices')); ?>/" + id + '/' + vt,
+                headers: {
+                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                },
+                success: function(data) {
+                    $("table.order-list").html(data.htmlData);
+                    $("#riderBalance").val(data.rider_balance);
+                    $("#vendor_balance").val(data.vendor_balance);
+
+                }
+            });
+        }
+
+    })(); // End of jQuery check wrapper
 </script><?php /**PATH D:\xammp1\htdocs\erpbk\resources\views/vouchers/fields.blade.php ENDPATH**/ ?>

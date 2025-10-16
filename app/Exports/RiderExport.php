@@ -1,6 +1,7 @@
 <?php
 
 namespace App\Exports;
+
 use App\Helpers\General;
 use App\Models\RiderActivities;
 use App\Models\Riders;
@@ -37,7 +38,7 @@ class RiderExport implements FromCollection, WithHeadings, WithMapping
 'personal_contact',
 'company_contact',
 ]
-) */ ; // select relevant columns
+) */; // select relevant columns
   }
   public function map($rider): array
   {
@@ -50,7 +51,7 @@ class RiderExport implements FromCollection, WithHeadings, WithMapping
       $rider->designation,
       $rider->salary_model,
       $rider->visa_occupation,
-      '',
+      $rider->customer?->name ?? $rider->customer_id ?? '',
       $rider->emirate_hub,
       $rider->personal_contact,
       $rider->company_contact,
@@ -59,6 +60,8 @@ class RiderExport implements FromCollection, WithHeadings, WithMapping
       $rider->dob,
       $rider->emirate_id,
       $rider->emirate_exp,
+      $rider->license_no,
+      $rider->license_expiry,
       $rider->country?->name,
       $rider->passport,
       $rider->passport_handover,
@@ -91,6 +94,8 @@ class RiderExport implements FromCollection, WithHeadings, WithMapping
       'DOB',
       'EID',
       'EID Expiry',
+      'License Number',
+      'License Expiry',
       'Nationality',
       'Passport No.',
       'Passport Handover Status',

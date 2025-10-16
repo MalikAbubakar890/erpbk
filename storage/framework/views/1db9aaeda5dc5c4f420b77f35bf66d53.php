@@ -87,7 +87,7 @@
    </tbody>
 </table>
 <?php if(method_exists($data, 'links')): ?>
-    <?php echo $data->links('components.global-pagination'); ?>
+<?php echo $data->links('components.global-pagination'); ?>
 
 <?php endif; ?>
 <div class="modal modal-default filtetmodal fade" id="customoizecolmn" tabindex="-1" data-bs-backdrop="static" role="dialog" aria-hidden="true">

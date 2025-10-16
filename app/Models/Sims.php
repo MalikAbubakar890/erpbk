@@ -3,9 +3,12 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use App\Traits\LogsActivity;
 
 class Sims extends Model
 {
+    use LogsActivity;
+
   public $table = 'sims';
 
   public $fillable = [

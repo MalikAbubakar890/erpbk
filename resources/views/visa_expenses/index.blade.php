@@ -9,19 +9,10 @@
       </div>
       <div class="col-sm-6">
         @can('visaloan_view')
-        @php
-        $hasVisaExpenses = \App\Models\visa_expenses::where('rider_id', $account->id)->exists();
-        @endphp
-        @if($hasVisaExpenses)
         <a class="btn btn-primary action-btn show-modal mx-2"
           href="{{ route('VisaExpense.installmentPlan' , $account->id) }}" data-size="lg" data-title="Installment Plan">
           Installment Plan
         </a>
-        @else
-        <span class="btn btn-secondary action-btn mx-2" disabled title="No visa expenses found for this rider">
-          Installment Plan (No Expenses)
-        </span>
-        @endif
         @endcan
         @can('visaexpense_create')
         <a class="btn btn-primary action-btn show-modal"

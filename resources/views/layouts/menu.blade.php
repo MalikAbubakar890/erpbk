@@ -304,6 +304,15 @@
       </a>
     </li>
     @endcan
+
+    @can('activity_logs_view')
+    <li class="menu-item {{ Request::is('activity-logs*') ? 'active' : '' }}">
+      <a href="{{ route('activity-logs.index') }}" class="menu-link ">
+        <i class="menu-icon tf-icons ti ti-history"></i>
+        Activity Logs
+      </a>
+    </li>
+    @endcan
   </ul>
 </li>
 @endcan

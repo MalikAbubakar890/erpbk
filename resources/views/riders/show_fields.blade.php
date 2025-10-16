@@ -163,7 +163,7 @@
             </div>
             <div class="col-md-3 form-group col-3">
                 <label>Project </label>
-                <p>{{@$rider->project->name}}</p>
+                <p>{{@$rider->customer->name}}</p>
 
             </div>
             <div class="col-md-3 form-group col-3">

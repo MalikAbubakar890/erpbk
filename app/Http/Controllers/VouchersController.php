@@ -143,61 +143,75 @@ class VouchersController extends Controller
    */
   public function store(Request $request, VoucherService $voucherService)
   {
-    //dd($request->all());
+    try {
+      //dd($request->all());
 
-    $request->billing_month = $request->billing_month . "-01";
+      $request->billing_month = $request->billing_month . "-01";
 
 
 
-    /** @var Vouchers $vouchers */
-    if ($request->voucher_type == 'JV') {
-      if (array_sum($request->dr_amount) != array_sum($request->cr_amount)) {
+      /** @var Vouchers $vouchers */
+      if ($request->voucher_type == 'JV') {
+        if (array_sum($request->dr_amount) != array_sum($request->cr_amount)) {
 
-        return response()->json(['errors' => ['error' => 'Total debit and credit must be equal.']], 422);
+          return response()->json(['errors' => ['error' => 'Total debit and credit must be equal.']], 422);
+        }
+        $result = $voucherService->JournalVoucher($request);
       }
-      $result = $voucherService->JournalVoucher($request);
-    }
-    /* if ($request->voucher_type == 5) {
-      $result = $voucherService->InvoiceVoucher($request);
-    }
-    if ($request->voucher_type == 9) {
-      $result = $voucherService->SimVoucher($request);
-    } */
-    /*  if ($request->voucher_type == 11) {
-         $result = $voucherService->FuelVoucher($request);
-     }
-     if ($request->voucher_type == 10) {
-         $result = $voucherService->RentVoucher($request);
-     }
-     if ($request->voucher_type == 8) {
-         $result = $voucherService->RtaVoucher($request);
-     } */
+      /* if ($request->voucher_type == 5) {
+        $result = $voucherService->InvoiceVoucher($request);
+      }
+      if ($request->voucher_type == 9) {
+        $result = $voucherService->SimVoucher($request);
+      } */
+      /*  if ($request->voucher_type == 11) {
+           $result = $voucherService->FuelVoucher($request);
+       }
+       if ($request->voucher_type == 10) {
+           $result = $voucherService->RentVoucher($request);
+       }
+       if ($request->voucher_type == 8) {
+           $result = $voucherService->RtaVoucher($request);
+       } */
 
-    if ($request->voucher_type == 'VL') {
-      $result = $voucherService->loanvoucher($request);
-    }
-    if (in_array($request->voucher_type, ['LV'])) {
-      $result = $voucherService->DefaultVoucher($request, 'debit');
-    }
-    if (in_array($request->voucher_type, ['AL'])) {
-      $result = $voucherService->DefaultVoucher($request, 'debit');
-    }
-    if (in_array($request->voucher_type, ['COD'])) {
-      $result = $voucherService->DefaultVoucher($request, 'debit');
-    }
-    if (in_array($request->voucher_type, ['PENALTY'])) {
-      $result = $voucherService->DefaultVoucher($request, 'debit');
-    }
-    if (in_array($request->voucher_type, ['INCENTIVE'])) {
-      $result = $voucherService->DefaultVoucher($request, 'debit');
-    }
-    /* if (in_array($request->voucher_type, [13])) {
-      $result = $voucherService->DefaultVoucher($request, 2);
+      if ($request->voucher_type == 'VL') {
+        $result = $voucherService->loanvoucher($request);
+      }
+      if (in_array($request->voucher_type, ['LV'])) {
+        $result = $voucherService->DefaultVoucher($request, 'debit');
+      }
+      if (in_array($request->voucher_type, ['AL'])) {
+        $result = $voucherService->DefaultVoucher($request, 'debit');
+      }
+      if (in_array($request->voucher_type, ['COD'])) {
+        $result = $voucherService->DefaultVoucher($request, 'debit');
+      }
+      if (in_array($request->voucher_type, ['PENALTY'])) {
+        $result = $voucherService->DefaultVoucher($request, 'debit');
+      }
+      if (in_array($request->voucher_type, ['INCENTIVE'])) {
+        $result = $voucherService->DefaultVoucher($request, 'debit');
+      }
+      /* if (in_array($request->voucher_type, [13])) {
+        $result = $voucherService->DefaultVoucher($request, 2);
 
-    } */
+      } */
 
-    //$vouchers = Vouchers::create($input);
-    return $result;
+      //$vouchers = Vouchers::create($input);
+      return $result;
+    } catch (\Exception $e) {
+      // Log the error for debugging
+      \Log::error('Voucher store error: ' . $e->getMessage(), [
+        'request_data' => $request->all(),
+        'trace' => $e->getTraceAsString()
+      ]);
+
+      // Return user-friendly error message
+      return response()->json([
+        'success' => false,
+        'message' => $e->getMessage()
+      ], 500);
+    }
   }
 
   /**
@@ -563,10 +577,16 @@ class VouchersController extends Controller
   public function fileUpload(Request $request, $id)
   {
     $voucher = Vouchers::find($id);
+
     if (isset($request->attach_file)) {
       $photo = $request->attach_file;
-      $docFile = $photo->store('public/vouchers');
-      $data['attach_file'] = basename($docFile);
+      if ($voucher->voucher_type == 'LV') {
+        $docFile = $photo->store('vouchers', 'public');
+        $data['attach_file'] = $docFile;
+      } else {
+        $docFile = $photo->store('public/vouchers');
+        $data['attach_file'] = basename($docFile);
+      }
       $voucher->attach_file = $data['attach_file'];
       $voucher->updated_by = auth()->id();
       $voucher->save();

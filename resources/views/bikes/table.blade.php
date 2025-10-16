@@ -1,33 +1,49 @@
 @push('third_party_stylesheets')
 @endpush
 <table class="table table-striped dataTable no-footer" id="dataTableBuilder">
-   <thead class="text-center">
+   <thead class="">
       <tr role="row">
-         <th title="Code" class="sorting" tabindex="0" aria-controls="dataTableBuilder" rowspan="1" colspan="1" aria-sort="descending" aria-label="Code: activate to sort column ascending">Code</th>
-         <th title="Plate" class="sorting" tabindex="0" aria-controls="dataTableBuilder" rowspan="1" colspan="1" aria-label="Plate: activate to sort column ascending">Plate</th>
-         <th title="Rider ID" class="sorting" tabindex="0" aria-controls="dataTableBuilder" rowspan="1" colspan="1" aria-label="Rider ID: activate to sort column ascending">Rider ID</th>
-         <th title="Rider Name" class="sorting" tabindex="0" aria-controls="dataTableBuilder" rowspan="1" colspan="1" aria-label="Rider Name: activate to sort column ascending">Rider Name</th>
-         <th title="Emirates" class="sorting" tabindex="0" aria-controls="dataTableBuilder" rowspan="1" colspan="1" aria-label="Emirates: activate to sort column ascending">Emirates</th>
-         <th title="Company" class="sorting" tabindex="0" aria-controls="dataTableBuilder" rowspan="1" colspan="1" aria-label="Company: activate to sort column ascending">Company</th>
-         <th title="Project" class="sorting" tabindex="0" aria-controls="dataTableBuilder" rowspan="1" colspan="1" aria-label="Project: activate to sort column ascending">Project</th>
-         <th title="Expiry" class="sorting" tabindex="0" aria-controls="dataTableBuilder" rowspan="1" colspan="1" aria-label="Expiry: activate to sort column ascending">Expiry</th>
-         <th title="Created By" class="sorting" tabindex="0" aria-controls="dataTableBuilder" rowspan="1" colspan="1" aria-label="Customer: activate to sort column ascending">Created By</th>
-         <th title="Updated By" class="sorting" tabindex="0" aria-controls="dataTableBuilder" rowspan="1" colspan="1" aria-label="Customer: activate to sort column ascending">Updated By</th>
-         <th title="Action" width="120px" class="sorting_disabled" rowspan="1" colspan="1" aria-label="Action"><a data-bs-toggle="modal" data-bs-target="#searchModal" href="javascript:void(0);"> <i class="fa fa-search"></i></a></th>
+         @php
+         $tableCols = $tableColumns ?? [];
+         $dataColumns = array_values(array_filter($tableCols, function($c){
+         $k = $c['data'] ?? ($c['key'] ?? null);
+         return $k !== 'search' && $k !== 'control';
+         }));
+         @endphp
+         @foreach($dataColumns as $col)
+         @php $title = $col['title'] ?? ($col['name'] ?? ($col['data'] ?? '')); @endphp
+         <th title="{{ $title }}" class="sorting" tabindex="0" rowspan="1" colspan="1">{{ $title }}</th>
+         @endforeach
          <th tabindex="0" rowspan="1" colspan="1" aria-sort="descending">
-            <a data-bs-toggle="modal" data-bs-target="#customoizecolmn" href="javascript:void(0);"> <i class="fa fa-filter"></i></a>
+            <a class="openFilterSidebar" href="javascript:void(0);"> <i class="fa fa-search"></i></a>
+         </th>
+         <th tabindex="0" rowspan="1" colspan="1" aria-sort="descending">
+            <a class="openColumnControlSidebar" href="javascript:void(0);" title="Column Control"> <i class="fa fa-columns"></i></a>
          </th>
       </tr>
    </thead>
    <tbody>
       @foreach($data as $r)
       <tr class="text-center">
+         @foreach($dataColumns as $col)
+         @php $key = $col['data'] ?? ($col['key'] ?? null); @endphp
+         @switch($key)
+         @case('bike_code')
          <td>{{ $r->bike_code }}</td>
-         <td><a href="{{ route('bikes.show', $r->id) }}">{{ $r->plate }}</a></td>
+         @break
+         @case('plate')
+         <td class="text-start"><a href="{{ route('bikes.show', $r->id) }}">{{ $r->plate }}</a></td>
+         @break
+         @case('rider_id')
          @php
          $rider = DB::table('riders')->where('id', $r->rider_id)->first();
          @endphp
          <td>{{ $rider->rider_id ?? '-' }}</td>
+         @break
+         @case('rider_name')
+         @php
+         $rider = DB::table('riders')->where('id', $r->rider_id)->first();
+         @endphp
          <td>
             @if ($rider)
             <a href="{{ route('riders.show', $rider->id) }}">{{ $rider->name }}</a>
@@ -35,67 +51,87 @@
             -
             @endif
          </td>
+         @break
+         @case('emirates')
          <td>{{ $r->emirates }}</td>
+         @break
+         @case('company')
          @php
          $company = DB::Table('leasing_companies')->where('id' , $r->company)->first();
          @endphp
          <td>{{ $company ? $company->name : '-' }}</td>
+         @break
+         @case('customer_id')
          <td>{{ DB::table('customers')->where('id' , $r->customer_id)->first()->name ?? '-' }}</td>
+         @break
+         @case('expiry_date')
          <td>{{ $r->expiry_date ? \Carbon\Carbon::parse($r->expiry_date)->format('d M Y') : '-' }}</td>
-         <td>{{ $r->created_by ? \App\Models\User::find($r->created_by)->name : '-' }}</td>
-         <td>{{ $r->updated_by ? \App\Models\User::find($r->updated_by)->name : '-' }}</td>
+         @break
+         @case('warehouse')
          <td>
+            @php
+            $badgeClass = match($r->warehouse) {
+            'Active' => 'bg-label-success',
+            'Return' => 'bg-label-warning',
+            'Vacation' => 'bg-label-info',
+            'Absconded' => 'bg-label-danger',
+            default => 'bg-label-secondary'
+            };
+            @endphp
+            <span class="badge {{ $badgeClass }}">{{ $r->warehouse ?? '-' }}</span>
+         </td>
+         @break
+         @case('status')
+         <td>
+            @php
+            $statusText = $r->status == 1 ? 'Active' : 'Inactive';
+            $badgeClass = $r->status == 1 ? 'bg-label-success' : 'bg-label-danger';
+            @endphp
+            <span class="badge {{ $badgeClass }}">{{ $statusText }}</span>
+         </td>
+         @break
+         @case('created_by')
+         <td>{{ $r->created_by ? \App\Models\User::find($r->created_by)->name : '-' }}</td>
+         @break
+         @case('updated_by')
+         <td>{{ $r->updated_by ? \App\Models\User::find($r->updated_by)->name : '-' }}</td>
+         @break
+         @case('action')
+         <td style="position: relative;">
             <div class="dropdown">
-               <button class="btn btn-text-secondary rounded-pill text-body-secondary border-0 p-2 me-n1 waves-effect" type="button" id="actiondropdown" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+               <button class="btn btn-text-secondary rounded-pill text-body-secondary border-0 p-2 me-n1 waves-effect" type="button" id="actiondropdown_{{ $r->id }}" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false" style="visibility: visible !important; display: inline-block !important;">
                   <i class="icon-base ti ti-dots icon-md text-body-secondary"></i>
                </button>
-               <div class="dropdown-menu dropdown-menu-end" aria-labelledby="actiondropdown" style="">
+               <div class="dropdown-menu dropdown-menu-end" aria-labelledby="actiondropdown_{{ $r->id }}" style="z-index: 1050;">
                   <a href="{{ route('bikes.show', $r->id) }}" class='dropdown-item waves-effect'>
-                     <i class="fa fa-eye"></i>Show Bike
+                     <i class="fa fa-eye my-1"></i>Show Bike
                   </a>
                   @can('item_edit')
                   <a href="{{ route('bikes.edit', $r->id) }}" class='dropdown-item waves-effect'>
-                     <i class="fa fa-edit"></i>Edit
+                     <i class="fa fa-edit my-1"></i>Edit
                   </a>
                   @endcan
                   @can('item_delete')
-                  <a href="javascript:void(0);" onclick='confirmDelete("{{route('bikes.delete', $r->id) }}")' class='dropdown-item waves-effect'>
-                     <i class="fa fa-trash mx-1"></i> Delete
+                  <a href="javascript:void(0);" data-url="{{ route('bikes.delete', $r->id) }}" class='dropdown-item waves-effect delete-bike'>
+                     <i class="fa fa-trash my-1"></i> Delete
                   </a>
                   @endcan
                </div>
             </div>
          </td>
+         @break
+         @default
+         <td>{{ data_get($r, $key, '-') }}</td>
+         @endswitch
+         @endforeach
+         <td></td>
          <td></td>
       </tr>
       @endforeach
    </tbody>
 </table>
 @if(method_exists($data, 'links'))
-    {!! $data->links('components.global-pagination') !!}
+{!! $data->links('components.global-pagination') !!}
 @endif
-<div class="modal modal-default filtetmodal fade" id="customoizecolmn" tabindex="-1" data-bs-backdrop="static" role="dialog" aria-hidden="true">
-   <div class="modal-dialog modal-lg modal-slide-top modal-full-top">
-      <div class="modal-content">
-         <div class="modal-header">
-            <h5 class="modal-title">Filter Riders</h5>
-            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-         </div>
-         <div class="modal-body" id="searchTopbody">
-            <div style="display: none;" class="loading-overlay" id="loading-overlay">
-               <div class="spinner-border text-primary" role="status"></div>
-            </div>
-            <form id="filterForm" action="{{ route('banks.index') }}" method="GET">
-               <div class="row">
-                  <div class="form-group col-md-12">
-                     <input type="number" name="search" class="form-control" placeholder="Search">
-                  </div>
-                  <div class="col-md-12 form-group text-center">
-                     <button type="submit" class="btn btn-primary pull-right mt-3"><i class="fa fa-filter mx-2"></i> Filter Data</button>
-                  </div>
-               </div>
-            </form>
-         </div>
-      </div>
-   </div>
-</div>
+
+<!-- Filter modal removed: using right-side sliding sidebar instead -->

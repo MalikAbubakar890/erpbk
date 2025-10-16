@@ -12,9 +12,15 @@
 
 {!! Form::close() !!}
 <script>
-    $(document).ready(function() {
-        getTotal();
+    // Wait for jQuery to be available
+    (function() {
+        if (typeof jQuery === 'undefined') {
+            setTimeout(arguments.callee, 50);
+            return;
+        }
 
-
-    });
+        $(document).ready(function() {
+            getTotal();
+        });
+    })();
 </script>

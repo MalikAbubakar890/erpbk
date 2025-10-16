@@ -4,9 +4,12 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use App\Traits\LogsActivity;
 
 class visa_expenses extends Model
 {
+    use LogsActivity;
+
     protected $table = 'visa_expenses';
 
     protected $fillable = [

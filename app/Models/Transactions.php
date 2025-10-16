@@ -3,9 +3,12 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use App\Traits\LogsActivity;
 
 class Transactions extends Model
 {
+    use LogsActivity;
+
   protected $fillable = [
     'trans_code',
     'trans_date',

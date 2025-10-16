@@ -280,9 +280,18 @@ class LedgerDataTable extends DataTable
                     $(api.column(7).footer()).html('<b>' + totalBalance.toFixed(2) + '</b>');
                 }",
         'buttons' => [
-          ['extend' => 'excel', 'className' => 'btn btn-success btn-sm no-corner', 'text' => '<i class="fa fa-file-excel"></i>&nbsp;Export to Excel'],
-          //['extend' => 'pdf', 'className' => 'btn btn-danger btn-sm no-corner', 'text' => 'Export to PDF'],
-          //['extend' => 'csv', 'className' => 'btn btn-info btn-sm no-corner', 'text' => 'Export to CSV'],
+          [
+            'text' => '<i class="fa fa-file-excel"></i>&nbsp;Export to Excel',
+            'className' => 'btn btn-success btn-sm no-corner',
+            'action' => 'function(e, dt, button, config) {
+              var account = new URLSearchParams(window.location.search).get("account");
+              var month = new URLSearchParams(window.location.search).get("month");
+              var url = "' . route('ledger.export') . '?";
+              if (account) url += "account=" + account + "&";
+              if (month) url += "month=" + month;
+              window.location.href = url;
+            }'
+          ],
           ['extend' => 'print', 'className' => 'btn btn-primary btn-sm no-corner', 'text' => '<i class="fa fa-print"></i>&nbsp;Print'],
         ],
         /* 'language' => [

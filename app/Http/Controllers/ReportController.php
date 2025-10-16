@@ -61,7 +61,11 @@ class ReportController extends Controller
     if ($request->designation && $request->designation !== '') {
       $result = $result->where('designation', $request->designation);
     }
-    $result = $result->get();
+    // Global pagination
+    $perPage = (int) ($request->get('per_page') ?: 25);
+    $page = (int) ($request->get('page') ?: 1);
+    $totalCount = $result->count();
+    $result = $result->orderBy('rider_id')->forPage($page, $perPage)->get();
 
 
 
@@ -162,6 +166,23 @@ class ReportController extends Controller
     $data .= '<th style="text-align: right">' . number_format($total_credit_sum, 2) . '</th>';
     $data .= '</tr>';
 
-    return compact('data', 'opening_balance_total', 'total', 'b_total', 'total_debit_sum', 'total_credit_sum');
+    // Render pagination links (global component) for consistency with riders
+    $paginationLinks = view('components.global-pagination', [
+      'paginator' => new \Illuminate\Pagination\LengthAwarePaginator([], $totalCount, $perPage, $page, ['path' => url()->current()]),
+      'perPageOptions' => [20, 50, 100, -1]
+    ])->render();
+
+    return [
+      'data' => $data,
+      'opening_balance_total' => $opening_balance_total,
+      'total' => $total,
+      'b_total' => $b_total,
+      'total_debit_sum' => $total_debit_sum,
+      'total_credit_sum' => $total_credit_sum,
+      'paginationLinks' => $paginationLinks,
+      'totalCount' => $totalCount,
+      'perPage' => $perPage,
+      'page' => $page,
+    ];
   }
 }

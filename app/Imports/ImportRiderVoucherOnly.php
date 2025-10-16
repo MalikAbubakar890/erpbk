@@ -70,7 +70,8 @@ class ImportRiderVoucherOnly implements ToCollection
                 $riderAccount = Accounts::where('ref_id', $rider->id)->first();
 
                 $transCode = Account::trans_code();
-
+                $billingsMonth = Carbon::parse($billingMonth ?: date('Y-m-01'))->format('M-Y');
+                $narration = $row[4] . ' Month of ' . $billingsMonth;
                 $voucherData = [
                     'trans_date' => $transDate ?: date('Y-m-d'),
                     'posting_date' => $transDate ?: date('Y-m-d'),
@@ -80,7 +81,7 @@ class ImportRiderVoucherOnly implements ToCollection
                     'payment_type' => 0,
                     'voucher_type' => $voucherType,
                     'amount' => $amount,
-                    'remarks' => 'Imported rider voucher',
+                    'remarks' => $narration,
                     'ref_id' => $rider->id,
                     'rider_id' => $rider->id,
                     'trans_code' => $transCode,
@@ -93,18 +94,9 @@ class ImportRiderVoucherOnly implements ToCollection
                 // Create accounting transactions (debit rider account, credit provided account)
                 $tx = new TransactionService();
 
-                // Get counter account name for better narration
-                $counterAccountName = '';
-                if (!empty($accountId)) {
-                    $counterAccount = Accounts::find($accountId);
-                    $counterAccountName = $counterAccount ? $counterAccount->name : 'Account ID ' . $accountId;
-                }
+
 
                 // Debit - rider account
-                $debitNarration = $voucherType . ' - ' . $rider->name . ' (Rider ID: ' . $rider->rider_id . ')';
-                if (!empty($counterAccountName)) {
-                    $debitNarration .= ' - To ' . $counterAccountName;
-                }
 
                 $tx->recordTransaction([
                     'account_id' => $riderAccount->id,
@@ -112,22 +104,20 @@ class ImportRiderVoucherOnly implements ToCollection
                     'reference_type' => $voucherType,
                     'trans_code' => $transCode,
                     'trans_date' => $voucherData['trans_date'],
-                    'narration' => $debitNarration,
+                    'narration' => $narration,
                     'debit' => $amount,
                     'billing_month' => $voucherData['billing_month'],
                 ]);
 
                 // Credit - counter account if provided
                 if (!empty($accountId)) {
-                    $creditNarration = $voucherType . ' - From ' . $rider->name . ' (Rider ID: ' . $rider->rider_id . ')';
-
                     $tx->recordTransaction([
                         'account_id' => $accountId,
                         'reference_id' => $voucher->id,
                         'reference_type' => $voucherType,
                         'trans_code' => $transCode,
                         'trans_date' => $voucherData['trans_date'],
-                        'narration' => $creditNarration,
+                        'narration' => $narration,
                         'credit' => $amount,
                         'billing_month' => $voucherData['billing_month'],
                     ]);

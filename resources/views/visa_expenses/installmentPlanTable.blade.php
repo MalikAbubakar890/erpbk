@@ -35,9 +35,11 @@
             <td>
                 <span id="billing_display_{{ $installment->id }}">{{ \Carbon\Carbon::parse($installment->billing_month)->format('M Y') }}</span>
                 @if($installment->status === 'pending')
+                @can('visaloan_edit')
                 <a href="javascript:void(0);" onclick="editBillingMonth({{ $installment->id }})" class="ms-2">
                     <i class="fa fa-edit text-primary"></i>
                 </a>
+                @endcan
                 @endif
                 <input type="month"
                     id="billing_input_{{ $installment->id }}"
@@ -76,17 +78,21 @@
                     </button>
                     <div class="dropdown-menu dropdown-menu-end" aria-labelledby="actiondropdown{{ $installment->id }}">
                         @if($installment->status === 'pending')
+                        @can('visaloan_edit')
                         <a href="javascript:void(0);"
                             onclick="markAsPaid({{ $installment->id }})"
                             class='dropdown-item waves-effect'>
                             <i class="fa fa-check me-2"></i> Mark as Paid
                         </a>
+                        @endcan
                         <div class="dropdown-divider"></div>
+                        @can('visaloan_edit')
                         <a href="javascript:void(0);"
                             onclick='confirmDeleteProtected("{{ route('VisaExpense.deleteInstallment', $installment->id) }}")'
                             class='dropdown-item waves-effect text-danger'>
                             <i class="fa fa-trash me-2"></i> Delete
                         </a>
+                        @endcan
                         @else
                         <span class="dropdown-item-text text-success">
                             <i class="fa fa-check me-2"></i> Paid

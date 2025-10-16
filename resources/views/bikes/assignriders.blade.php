@@ -48,10 +48,16 @@ $selectedDesignation = 'Cyclist';
             <input type="text" name="designation" class="form-control" readonly value="{{ $selectedDesignation }}">
         </div>
         <div class="col-md-3 form-group">
-            <label>Customer</label>
-            {!! Form::select('customer_id',App\Models\Customers::dropdown(),$selectedCustomer,
-            ['class' => 'form-select select2', 'id' => 'customer_id']) !!}
+            <label>Project</label>
+            {!! Form::select(
+            'customer_id_display',
+            App\Models\Customers::dropdown(),
+            $selectedCustomer,
+            ['class' => 'form-select select2', 'id' => 'customer_id_display', 'disabled' => true]
+            ) !!}
+            {!! Form::hidden('customer_id', $selectedCustomer) !!}
         </div>
+
         <div class="form-group col-md-3" id="active_date">
             <label for="exampleInputEmail1">Date</label>
             <input type="date" name="note_date" class="form-control" placeholder="Date" value="{{ date('Y-m-d') }}">
@@ -110,7 +116,6 @@ $selectedDesignation = 'Cyclist';
             $('input[name="designation"]').val(designation);
         }
     }
-
     // Update designation on page load
     $(document).ready(function() {
         updateDesignationBasedOnVehicleType();

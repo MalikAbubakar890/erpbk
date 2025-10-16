@@ -3,7 +3,8 @@
 if(isset($vouchers->voucher_type)){
 $voucherType = $vouchers->voucher_type;
 }else{
-$voucherType = request("vt");
+// Prefer explicitly provided $vt from parent include/view, fallback to request('vt')
+$voucherType = isset($vt) ? $vt : request('vt');
 }
 @endphp
 <input type="hidden" name="v_trans_code" value="{{@$vouchers->trans_code??0}}">
@@ -48,7 +49,14 @@ $voucherType = request("vt");
 </div>
 <div class="scrollbar">
 
-    <h5>{{\App\Helpers\General::VoucherType($voucherType)}}</h5>
+    @php
+    $vtLabel = \App\Helpers\General::VoucherType($voucherType);
+    if (is_array($vtLabel)) {
+    // Try common keys; fallback to JSON string to avoid htmlspecialchars on array
+    $vtLabel = $vtLabel['label'] ?? ($vtLabel['name'] ?? json_encode($vtLabel));
+    }
+    @endphp
+    <h5>{{ $vtLabel }}</h5>
 
     @if($voucherType == 'JV' || $voucherType == 'RFV')
     @php($accounts = \App\Models\Accounts::dropdown(null))

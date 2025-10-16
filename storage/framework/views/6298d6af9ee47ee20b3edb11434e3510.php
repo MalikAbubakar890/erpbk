@@ -53,10 +53,18 @@
          <?php case ('status'): ?>
          <?php
          $hasActiveBike = DB::table('bikes')->where('rider_id', $r->id)->where('warehouse', 'Active')->exists();
+         $isWalker = $r->designation === 'Walker';
+
+         if ($isWalker) {
+         $statusText = 'Active';
+         $badgeClass = 'bg-label-success';
+         } else {
+         $statusText = $hasActiveBike ? 'Active' : 'Inactive';
          $badgeClass = $hasActiveBike ? 'bg-label-success' : 'bg-label-danger';
+         }
          ?>
          <td>
-            <span class="badge <?php echo e($badgeClass); ?>"><?php echo e($hasActiveBike ? 'Active' : 'Inactive'); ?></span>
+            <span class="badge <?php echo e($badgeClass); ?>"><?php echo e($statusText); ?></span>
          </td>
          <?php break; ?>
          <?php case ('attendance'): ?>

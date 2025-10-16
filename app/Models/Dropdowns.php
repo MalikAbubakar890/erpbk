@@ -3,9 +3,12 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use App\Traits\LogsActivity;
 
 class Dropdowns extends Model
 {
+    use LogsActivity;
+
   public $table = 'dropdowns';
 
   public $fillable = [

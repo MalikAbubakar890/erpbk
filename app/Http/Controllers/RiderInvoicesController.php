@@ -20,7 +20,10 @@ use Illuminate\Http\Request;
 use App\Traits\GlobalPagination;
 use Flash;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Auth;
 use Maatwebsite\Excel\Facades\Excel;
+use Barryvdh\DomPDF\Facade\Pdf as PDF;
 
 class RiderInvoicesController extends AppBaseController
 {
@@ -218,6 +221,110 @@ class RiderInvoicesController extends AppBaseController
     Flash::success('Rider Invoices deleted successfully.');
 
     return redirect(route('riderInvoices.index'));
+  }
+
+  /**
+   * Bulk delete multiple rider invoices
+   */
+  public function bulkDelete(Request $request)
+  {
+    // Check permission
+    if (!auth()->user()->hasPermissionTo('riderinvoice_delete')) {
+      return response()->json([
+        'success' => false,
+        'message' => 'You do not have permission to delete invoices.'
+      ], 403);
+    }
+
+    try {
+      $invoiceIds = $request->input('invoice_ids', []);
+
+      if (empty($invoiceIds)) {
+        return response()->json([
+          'success' => false,
+          'message' => 'No invoices selected for deletion.'
+        ], 400);
+      }
+
+      $deletedCount = 0;
+      $errors = [];
+
+      // Start database transaction for atomicity
+      DB::beginTransaction();
+
+      try {
+        foreach ($invoiceIds as $invoiceId) {
+          try {
+            $riderInvoice = $this->riderInvoicesRepository->find($invoiceId);
+
+            if (empty($riderInvoice)) {
+              $errors[] = "Invoice ID {$invoiceId} not found.";
+              continue;
+            }
+
+            // Get transaction code for this invoice
+            $trans_code = Transactions::where('reference_type', 'Invoice')
+              ->where('reference_id', $invoiceId)
+              ->value('trans_code');
+
+            if ($trans_code) {
+              // Delete related transactions using TransactionService
+              $transactionService = new TransactionService();
+              $transactionService->deleteTransaction($trans_code);
+            }
+
+            // Delete related rider invoice items
+            \DB::table('rider_invoice_items')->where('inv_id', $invoiceId)->delete();
+
+            // Delete related vouchers that reference this invoice
+            \DB::table('vouchers')->where('ref_id', $invoiceId)->delete();
+
+            // Also delete vouchers by trans_code if they reference this invoice
+            if ($trans_code) {
+              \DB::table('vouchers')->where('trans_code', $trans_code)->delete();
+            }
+
+            // Delete the invoice itself
+            $this->riderInvoicesRepository->delete($invoiceId);
+
+            $deletedCount++;
+          } catch (\Exception $e) {
+            $errors[] = "Failed to delete invoice ID {$invoiceId}: " . $e->getMessage();
+          }
+        }
+
+        // Commit transaction if all deletions were successful
+        DB::commit();
+
+        if ($deletedCount > 0) {
+          $message = "Successfully deleted {$deletedCount} invoice(s).";
+          if (!empty($errors)) {
+            $message .= " Errors: " . implode(', ', $errors);
+          }
+
+          return response()->json([
+            'success' => true,
+            'message' => $message,
+            'deleted_count' => $deletedCount,
+            'errors' => $errors
+          ]);
+        } else {
+          return response()->json([
+            'success' => false,
+            'message' => 'No invoices were deleted. Errors: ' . implode(', ', $errors)
+          ], 400);
+        }
+      } catch (\Exception $e) {
+        // Rollback transaction on any error
+        DB::rollback();
+        throw $e;
+      }
+    } catch (\Exception $e) {
+      return response()->json([
+        'success' => false,
+        'message' => 'An error occurred during bulk deletion: ' . $e->getMessage()
+      ], 500);
+    }
   }
 
   public function import(Request $request)

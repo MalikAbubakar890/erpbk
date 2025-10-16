@@ -354,41 +354,8 @@ class VisaexpenseController extends AppBaseController
 
         $account = Accounts::findOrFail($riderId);
 
-        // First check if rider has any visa expenses at all
-        $hasVisaExpenses = visa_expenses::where('rider_id', $riderId)->exists();
 
-        if (!$hasVisaExpenses) {
-            $errorMessage = 'No visa expense entries found for this rider. Please add visa expenses before creating an installment plan.';
 
-            if (request()->ajax()) {
-                return response()->json([
-                    'success' => false,
-                    'errors' => ['rider_id' => $errorMessage]
-                ], 422);
-            }
-
-            Flash::error($errorMessage);
-            return redirect()->back();
-        }
-
-        // Calculate total unpaid amount for this rider
-        $totalUnpaidAmount = visa_expenses::where('rider_id', $riderId)
-            ->where('payment_status', 'unpaid')
-            ->sum('amount');
-
-        if ($totalUnpaidAmount <= 0) {
-            $errorMessage = 'No unpaid visa expenses found for this rider. All visa expenses are already paid.';
-
-            if (request()->ajax()) {
-                return response()->json([
-                    'success' => false,
-                    'errors' => ['rider_id' => $errorMessage]
-                ], 422);
-            }
-
-            Flash::error($errorMessage);
-            return redirect()->back();
-        }
 
         // Check if there's already an installment plan for this rider in the current month
         $currentMonth = Carbon::now()->format('Y-m');
@@ -399,7 +366,7 @@ class VisaexpenseController extends AppBaseController
         if ($existingCurrentMonthPlan) {
             Flash::warning('An installment plan already exists for this rider in ' . Carbon::now()->format('F Y') . '. You can still create a new plan, but please select a different starting month.');
         }
-        return view('visa_expenses.createInstallmentPlan', compact('account', 'totalUnpaidAmount', 'existingCurrentMonthPlan'));
+        return view('visa_expenses.createInstallmentPlan', compact('account', 'existingCurrentMonthPlan'));
     }
 
     public function createInstallmentPlan(Request $request)
@@ -423,40 +390,6 @@ class VisaexpenseController extends AppBaseController
             // Get the rider account (visa expense account)
             $riderAccount = Accounts::findOrFail($validated['rider_id']);
 
-            // Double-check that rider has visa expenses before creating installment plan
-            $hasVisaExpenses = visa_expenses::where('rider_id', $validated['rider_id'])->exists();
-            if (!$hasVisaExpenses) {
-                $errorMessage = 'No visa expense entries found for this rider. Please add visa expenses before creating an installment plan.';
-
-                if ($request->ajax()) {
-                    return response()->json([
-                        'success' => false,
-                        'errors' => ['rider_id' => $errorMessage]
-                    ], 422);
-                }
-
-                Flash::error($errorMessage);
-                return redirect()->back();
-            }
-
-            // Check for unpaid visa expenses
-            $hasUnpaidExpenses = visa_expenses::where('rider_id', $validated['rider_id'])
-                ->where('payment_status', 'unpaid')
-                ->exists();
-
-            if (!$hasUnpaidExpenses) {
-                $errorMessage = 'No unpaid visa expenses found for this rider. All visa expenses are already paid.';
-
-                if ($request->ajax()) {
-                    return response()->json([
-                        'success' => false,
-                        'errors' => ['rider_id' => $errorMessage]
-                    ], 422);
-                }
-
-                Flash::error($errorMessage);
-                return redirect()->back();
-            }
 
 
 

@@ -10,6 +10,7 @@ $vehicleTypeName = $vehicleModel ? strtolower($vehicleModel->name) : '';
 }
 
 
+
 $selectedDesignation = '';
 if (strpos($vehicleTypeName, 'bike') !== false) {
 $selectedDesignation = 'Rider';
@@ -39,7 +40,7 @@ $selectedDesignation = 'Cyclist';
             <input type="text" name="designation" class="form-control" disabled placeholder="Designation" value="{{ $selectedDesignation }}">
         </div>
         <div class="col-md-3 form-group">
-            {!! Form::label('customer_id', 'Customer') !!}
+            {!! Form::label('customer_id', 'Project') !!}
             {!! Form::select('customer_id',App\Models\Customers::dropdown(),$selectedCustomer,
             ['class' => 'form-select select2', 'id' => 'customer_id']) !!}
         </div>

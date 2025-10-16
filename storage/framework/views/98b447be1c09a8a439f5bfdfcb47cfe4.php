@@ -159,7 +159,7 @@
             </div>
             <div class="col-md-3 form-group col-3">
                 <label>Project </label>
-                <p><?php echo e(@$rider->project->name); ?></p>
+                <p><?php echo e(@$rider->customer->name); ?></p>
 
             </div>
             <div class="col-md-3 form-group col-3">

@@ -348,13 +348,13 @@
         @php
         $billing_month = date('M-y', strtotime($riderInvoice->billing_month));
         // Fetch selected adjustments
-        $fines = DB::Table('rta_fines')->where('billing_month' , $billing_month)->where('rider_id' , $riderInvoice->rider->id)->sum('total_amount');
+        $fines = DB::Table('rta_fines')->where('billing_month' , $riderInvoice->billing_month)->where('rider_id' , $riderInvoice->rider->id)->sum('total_amount');
         $salik = DB::Table('saliks')->where('billing_month' , $billing_month)->where('rider_id' , $riderInvoice->rider->id)->sum('total_amount');
-        $cod = DB::table('vouchers')->where('ref_id' , $riderInvoice->rider->id)->where('voucher_type' , 'COD')->where('billing_month' , $billing_month)->sum('amount');
-        $penalty = DB::table('vouchers')->where('ref_id' , $riderInvoice->rider->id)->where('voucher_type' , 'PN')->where('billing_month' , $billing_month)->sum('amount');
-        $incentive = DB::table('vouchers')->where('ref_id' , $riderInvoice->rider->id)->where('voucher_type' , 'INC')->where('billing_month' , $billing_month)->sum('amount');
-        $advance_salary = DB::table('vouchers')->where('ref_id' , $riderInvoice->rider->id)->where('voucher_type' , 'AL')->where('billing_month' , $billing_month)->sum('amount');
-        $vendor_charges = DB::table('vouchers')->where('ref_id' , $riderInvoice->rider->id)->where('voucher_type' , 'VC')->where('billing_month' , $billing_month)->sum('amount');
+        $cod = DB::table('vouchers')->where('ref_id' , $riderInvoice->rider->id)->where('voucher_type' , 'COD')->where('billing_month' , $riderInvoice->billing_month)->sum('amount');
+        $penalty = DB::table('vouchers')->where('ref_id' , $riderInvoice->rider->id)->where('voucher_type' , 'PN')->where('billing_month' , $riderInvoice->billing_month)->sum('amount');
+        $incentive = DB::table('vouchers')->where('ref_id' , $riderInvoice->rider->id)->where('voucher_type' , 'INC')->where('billing_month' , $riderInvoice->billing_month)->sum('amount');
+        $advance_salary = DB::table('vouchers')->where('ref_id' , $riderInvoice->rider->id)->where('voucher_type' , 'AL')->where('billing_month' , $riderInvoice->billing_month)->sum('amount');
+        $vendor_charges = DB::table('vouchers')->where('ref_id' , $riderInvoice->rider->id)->where('voucher_type' , 'VC')->where('billing_month' , $riderInvoice->billing_month)->sum('amount');
         // Previous balance from account transactions (sum of debit - credit before invoice month)
         $rider_balance = 0;
         if($riderInvoice->rider && $riderInvoice->rider->account_id) {

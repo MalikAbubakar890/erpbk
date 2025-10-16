@@ -10,21 +10,10 @@
                     <i class="fa fa-arrow-left me-2"></i>Back
                 </a>
                 @can('visaloan_create')
-                @php
-                $hasUnpaidVisaExpenses = \App\Models\visa_expenses::where('rider_id', $account->id)
-                ->where('payment_status', 'unpaid')
-                ->exists();
-                @endphp
-                @if($hasUnpaidVisaExpenses)
                 <a class="btn btn-success action-btn show-modal"
                     href="javascript:void(0);" data-action="{{ route('VisaExpense.createInstallmentPlanForm', $account->id) }}" data-size="lg" data-title="Create Installment Entry">
                     <i class="fa fa-plus me-2"></i>Installment Plan
                 </a>
-                @else
-                <span class="btn btn-secondary" disabled title="No unpaid visa expenses found for this rider">
-                    <i class="fa fa-plus me-2"></i>Installment Plan (No Unpaid)
-                </span>
-                @endif
                 @endcan
                 @if($data->count() > 0)
                 <a href="{{ route('VisaExpense.generateInstallmentInvoice', $account->id) }}"

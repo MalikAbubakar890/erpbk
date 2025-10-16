@@ -27,6 +27,9 @@ use App\Models\Riders;
 use App\Models\Files;
 use App\Models\Transactions;
 use App\Models\Vouchers;
+use App\Models\Bikes;
+use App\Models\BikeHistory;
+use Illuminate\Support\Facades\Auth;
 use App\Repositories\RidersRepository;
 use App\Traits\GlobalPagination;
 use Illuminate\Http\Request;
@@ -94,7 +97,7 @@ class RidersController extends AppBaseController
       ->select('riders.*', \DB::raw('COALESCE(ra.days_count, 0) as days_count'))
       ->orderBy('days_count', 'asc');
     if ($request->has('rider_id') && !empty($request->rider_id)) {
-      $query->where('rider_id', 'like', '%' . $request->rider_id . '%');
+      $query->where('riders.rider_id', 'like', '%' . $request->rider_id . '%');
     }
     if ($request->has('name') && !empty($request->name)) {
       $query->where('name', 'like', '%' . $request->name . '%');
@@ -117,20 +120,42 @@ class RidersController extends AppBaseController
     if ($request->has('attendance') && !empty($request->attendance)) {
       $query->where('attendance', $request->attendance);
     }
-    // New: explicit absconder[] filter (expects absconder[]=1)
+    // Explicit tag filters coming from slider cards
     $absconderParam = (array) $request->input('absconder', []);
+    $followupParam = (array) $request->input('followup', []);
+    $llicenseParam = (array) $request->input('llicense', []);
+
+    // Absconder (expects absconder[]=1)
     if (!empty($absconderParam) && in_array('1', $absconderParam, true)) {
       $query->where('absconder', 1);
+    }
+    // Follow Up (expects followup[]=1)
+    if (!empty($followupParam) && in_array('1', $followupParam, true)) {
+      $query->where('flowup', 1);
+    }
+    // Learning License (expects llicense[]=1)
+    if (!empty($llicenseParam) && in_array('1', $llicenseParam, true)) {
+      $query->where('l_license', 1);
     }
 
     // Filter by rider status (followup, llicense, active, inactive)
     if ($request->has('rider_status') && !empty($request->rider_status)) {
       $statusFilters = $request->rider_status;
 
-      // Backward compatibility: if absconder[] present, drop 'absconder' from rider_status[]
+      // If explicit tag params are present, drop corresponding tokens from rider_status[]
       if (!empty($absconderParam)) {
         $statusFilters = array_values(array_filter($statusFilters, function ($s) {
           return $s !== 'absconder';
+        }));
+      }
+      if (!empty($followupParam)) {
+        $statusFilters = array_values(array_filter($statusFilters, function ($s) {
+          return $s !== 'followup';
+        }));
+      }
+      if (!empty($llicenseParam)) {
+        $statusFilters = array_values(array_filter($statusFilters, function ($s) {
+          return $s !== 'llicense';
         }));
       }
 
@@ -142,13 +167,8 @@ class RidersController extends AppBaseController
             } elseif ($status === 'llicense') {
               $q->orWhere('l_license', 1);
             } elseif ($status === 'active') {
-              // Active riders: status = 1 AND have active bike assigned
-              $q->orWhere(function ($subQuery) {
-                $subQuery->where('status', 1)
-                  ->whereHas('bikes', function ($bikeQuery) {
-                    $bikeQuery->where('warehouse', 'Active');
-                  });
-              });
+              // Active riders: status = 1 (regardless of bike assignment)
+              $q->orWhere('status', 1);
             } elseif ($status === 'inactive') {
               // Inactive riders: status = 3 OR no active bike assigned
               $q->orWhere(function ($subQuery) {
@@ -169,9 +189,7 @@ class RidersController extends AppBaseController
           $query->where('l_license', 1);
         } elseif ($statusFilters === 'active') {
           // Active riders: status = 1 AND have active bike assigned
-          $query->where('status', 1)->whereHas('bikes', function ($q) {
-            $q->where('warehouse', 'Active');
-          });
+          $query->where('status', 1);
         } elseif ($statusFilters === 'inactive') {
           // Inactive riders: status = 3 OR no active bike assigned
           $query->where(function ($q) {
@@ -278,7 +296,7 @@ class RidersController extends AppBaseController
       ->orderBy('riders.id', 'desc');
 
     if ($request->has('rider_id') && !empty($request->rider_id)) {
-      $query->where('rider_id', 'like', '%' . $request->rider_id . '%');
+      $query->where('riders.rider_id', 'like', '%' . $request->rider_id . '%');
     }
     if ($request->has('name') && !empty($request->name)) {
       $query->where('name', 'like', '%' . $request->name . '%');
@@ -302,9 +320,41 @@ class RidersController extends AppBaseController
       $query->where('attendance', $request->attendance);
     }
 
+    // Explicit tag filters coming from slider cards (AJAX)
+    $absconderParam = (array) $request->input('absconder', []);
+    $followupParam = (array) $request->input('followup', []);
+    $llicenseParam = (array) $request->input('llicense', []);
+
+    if (!empty($absconderParam) && in_array('1', $absconderParam, true)) {
+      $query->where('absconder', 1);
+    }
+    if (!empty($followupParam) && in_array('1', $followupParam, true)) {
+      $query->where('flowup', 1);
+    }
+    if (!empty($llicenseParam) && in_array('1', $llicenseParam, true)) {
+      $query->where('l_license', 1);
+    }
+
     // Filter by rider status (followup, llicense, active, inactive)
     if ($request->has('rider_status') && !empty($request->rider_status)) {
       $statusFilters = $request->rider_status;
+
+      // If explicit tag params are present, drop corresponding tokens from rider_status[]
+      if (!empty($absconderParam)) {
+        $statusFilters = array_values(array_filter($statusFilters, function ($s) {
+          return $s !== 'absconder';
+        }));
+      }
+      if (!empty($followupParam)) {
+        $statusFilters = array_values(array_filter($statusFilters, function ($s) {
+          return $s !== 'followup';
+        }));
+      }
+      if (!empty($llicenseParam)) {
+        $statusFilters = array_values(array_filter($statusFilters, function ($s) {
+          return $s !== 'llicense';
+        }));
+      }
 
       if (is_array($statusFilters)) {
         $query->where(function ($q) use ($statusFilters) {
@@ -314,13 +364,8 @@ class RidersController extends AppBaseController
             } elseif ($status === 'llicense') {
               $q->orWhere('l_license', 1);
             } elseif ($status === 'active') {
-              // Active riders: status = 1 AND have active bike assigned
-              $q->orWhere(function ($subQuery) {
-                $subQuery->where('status', 1)
-                  ->whereHas('bikes', function ($bikeQuery) {
-                    $bikeQuery->where('warehouse', 'Active');
-                  });
-              });
+              // Active riders: status = 1 (regardless of bike assignment)
+              $q->orWhere('status', 1);
             } elseif ($status === 'inactive') {
               // Inactive riders: status = 3 OR no active bike assigned
               $q->orWhere(function ($subQuery) {
@@ -343,9 +388,7 @@ class RidersController extends AppBaseController
           $query->where('l_license', 1);
         } elseif ($statusFilters === 'active') {
           // Active riders: status = 1 AND have active bike assigned
-          $query->where('status', 1)->whereHas('bikes', function ($q) {
-            $q->where('warehouse', 'Active');
-          });
+          $query->where('status', 1);
         } elseif ($statusFilters === 'inactive') {
           // Inactive riders: status = 3 OR no active bike assigned
           $query->where(function ($q) {
@@ -1262,6 +1305,134 @@ class RidersController extends AppBaseController
     }
   }
 
+  public function toggleWalker(Request $request, $id)
+  {
+    $rider = $this->ridersRepository->find($id);
+
+    if (empty($rider)) {
+      return response()->json(['error' => 'Rider not found'], 404);
+    }
+
+    try {
+      // Toggle designation Walker: if currently Walker -> clear, else set to Walker
+      $isSettingWalker = $rider->designation !== 'Walker';
+      $rider->designation = $isSettingWalker ? 'Walker' : null;
+
+      // If setting to Walker, set status to 1 and assign fleet supervisor and customer
+      if ($isSettingWalker) {
+        $rider->status = 1;
+        $rider->fleet_supervisor = 'Waqas';
+        $rider->customer_id = 1;
+      } else {
+        $rider->status = 3;
+      }
+
+      $rider->save();
+
+      // If setting to Walker and a bike is currently assigned, return it today
+      if ($isSettingWalker) {
+        $bike = Bikes::where('rider_id', $rider->id)->first();
+        if ($bike) {
+          $today = Carbon::now()->toDateString();
+
+          // Close last open bike history for this rider and bike
+          $lastHistory = BikeHistory::where('bike_id', $bike->id)
+            ->where('rider_id', $rider->id)
+            ->whereNull('return_date')
+            ->latest('note_date')
+            ->first();
+          if ($lastHistory) {
+            $lastHistory->update([
+              'warehouse'   => 'Return',
+              'return_date' => $today,
+              'updated_by'  => Auth::id(),
+            ]);
+          }
+
+          // Update bike to returned
+          $bike->update([
+            'rider_id'  => null,
+            'warehouse' => 'Return',
+          ]);
+
+          // Note: customer_id is already set to 1 when Walker is activated
+          // No need to detach from customer for Walkers
+        }
+      }
+
+      return response()->json([
+        'success' => true,
+        'message' => 'Designation updated successfully',
+        'designation' => $rider->designation,
+      ]);
+    } catch (\Exception $e) {
+      return response()->json([
+        'success' => false,
+        'message' => 'Error updating designation'
+      ], 500);
+    }
+  }
+
+  public function returnBike(Request $request, $id)
+  {
+    $rider = $this->ridersRepository->find($id);
+
+    if (empty($rider)) {
+      return response()->json(['error' => 'Rider not found'], 404);
+    }
+
+    try {
+      $bike = Bikes::where('rider_id', $rider->id)->first();
+      if (!$bike) {
+        return response()->json([
+          'success' => false,
+          'message' => 'No bike currently assigned to this rider'
+        ], 400);
+      }
+
+      $returnDate = $request->input('return_date');
+      $returnDate = $returnDate ? Carbon::parse($returnDate)->toDateString() : Carbon::now()->toDateString();
+      $notes = $request->input('notes');
+
+      // Close last open bike history for this rider and bike
+      $lastHistory = BikeHistory::where('bike_id', $bike->id)
+        ->where('rider_id', $rider->id)
+        ->whereNull('return_date')
+        ->latest('note_date')
+        ->first();
+      if ($lastHistory) {
+        $lastHistory->update([
+          'warehouse'   => 'Return',
+          'return_date' => $returnDate,
+          'notes'       => $notes,
+        ]);
+      }
+
+      // Update bike to returned
+      $bike->update([
+        'rider_id'  => null,
+        'warehouse' => 'Return',
+      ]);
+
+      // Update rider state
+      $rider->status = 3; // Return
+      $rider->designation = null;
+      $rider->customer_id = null;
+      $rider->save();
+
+      return response()->json([
+        'success' => true,
+        'message' => 'Bike returned successfully',
+        'return_date' => $returnDate,
+      ]);
+    } catch (\Exception $e) {
+      return response()->json([
+        'success' => false,
+        'message' => 'Error returning bike'
+      ], 500);
+    }
+  }
+
   public function storeadvanceloan(Request $request)
   {
     try {
@@ -1910,6 +2081,27 @@ class RidersController extends AppBaseController
     $accounts = Accounts::dropdown(null);
     $bank_accounts = Accounts::bankAccountsDropdown();
     return view('riders.vendorcharges-modal', compact('rider', 'account', 'accounts', 'bank_accounts'));
+  }
+
+  /**
+   * Unified voucher modal for rider: supports types AL, COD, PN, PAY, VC
+   * Incentive remains separate as requested.
+   */
+  public function voucher($rider_id)
+  {
+    $rider = Riders::find($rider_id);
+    $account = Accounts::where('ref_id', $rider_id)->where('account_type', 'expense')->first();
+    $accounts = Accounts::dropdown(null);
+    $bank_accounts = Accounts::bankAccountsDropdown();
+    // Provide available voucher types (exclude Incentive)
+    $voucherTypes = [
+      'AL'  => 'Advance Loan',
+      'COD' => 'COD',
+      'PN'  => 'Penalty',
+      'PAY' => 'Payment',
+      'VC'  => 'Vendor Charges',
+    ];
+    return view('riders.voucher-modal', compact('rider', 'account', 'accounts', 'bank_accounts', 'voucherTypes'));
   }
 
   public function storevendorcharges(Request $request)

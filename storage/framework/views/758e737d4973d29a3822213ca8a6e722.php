@@ -3,17 +3,25 @@
 <table class="table table-striped dataTable no-footer" id="dataTableBuilder">
    <thead class="text-center">
       <tr>
-         <th colspan="11" class="text-start">
+         <th colspan="12" class="text-start">
             <div class="d-flex justify-content-between align-items-center">
                <h5 class="mb-0">Rider Invoices</h5>
-               <span id="current-month-total" class="badge bg-primary fs-6">
-                  Current Month Total: <?php echo e(number_format($currentMonthTotal, 1)); ?>
+               <div class="d-flex align-items-center">
+                  <button id="deleteSelectedBtn" class="btn btn-danger btn-sm me-2" style="display: none;" onclick="deleteSelectedInvoices()">
+                     <i class="fa fa-trash"></i> Delete Selected
+                  </button>
+                  <span id="current-month-total" class="badge bg-primary fs-6">
+                     Current Month Total: <?php echo e(number_format($currentMonthTotal, 1)); ?>
 
-               </span>
+                  </span>
+               </div>
             </div>
          </th>
       </tr>
       <tr role="row">
+         <th title="Select All" class="sorting_disabled" rowspan="1" colspan="1" width="50px">
+            <input type="checkbox" id="selectAllCheckbox" onchange="toggleSelectAll(this)">
+         </th>
          <th title="Id" class="sorting" rowspan="1" colspan="1">Id</th>
          <th title="Inv Date" class="sorting" rowspan="1" colspan="1">Inv Date</th>
          <th title="Billing Month" class="sorting" rowspan="1" colspan="1">Billing Month</th>
@@ -33,6 +41,9 @@
    <tbody>
       <?php $__currentLoopData = $data; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $r): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
       <tr class="text-center">
+         <td>
+            <input type="checkbox" class="invoice-checkbox" value="<?php echo e($r->id); ?>" onchange="updateDeleteButton()">
+         </td>
          <td><?php echo e($r->id); ?></td>
          <td><?php echo e(\Carbon\Carbon::parse($r->inv_date)->format('d M Y')); ?></td>
          <td><?php echo e(\Carbon\Carbon::parse($r->billing_month)->format('M Y')); ?></td>
@@ -98,7 +109,7 @@
                   <?php endif; ?>
                   <?php endif; ?>
                   <?php if (app(\Illuminate\Contracts\Auth\Access\Gate::class)->check('riderinvoice_delete')): ?>
-                  <a href="javascript:void(0);" onclick='confirmDelete("<?php echo e(route('riderInvoices.delete', $r->id)); ?>")' class='dropdown-item waves-effect'>
+                  <a href="javascript:void(0);" onclick="confirmDelete('<?php echo e(route('riderInvoices.delete', $r->id)); ?>')" class='dropdown-item waves-effect'>
                      <i class="fa fa-trash mx-1"></i> Delete
                   </a>
                   <?php endif; ?>

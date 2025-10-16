@@ -532,10 +532,6 @@
                                 <option value="Inactive" {{ request('bike_assignment_status') == 'Inactive' ? 'selected' : '' }}>Inactive</option>
                             </select>
                         </div>
-                        <div class="form-group col-md-12">
-                            <label for="quick_search">Quick Search</label>
-                            <input type="text" name="quick_search" id="quickSearchSidebar" class="form-control" placeholder="Quick Search..." value="{{ request('quick_search') }}">
-                        </div>
                         <div class="col-md-12 form-group text-center">
                             <button type="submit" class="btn btn-primary pull-right mt-3"><i class="fa fa-filter mx-2"></i> Filter Data</button>
                         </div>

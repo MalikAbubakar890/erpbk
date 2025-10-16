@@ -100,7 +100,7 @@
         {!! Form::text('policy_no', $bikes->policy_no ?? '', ['class' => 'form-control', 'maxlength' => 100, 'maxlength' => 100]) !!}
       </div>
       <div class="form-group col-sm-3">
-        {!! Form::label('customer_id', 'Customer:',['class'=>'required']) !!}
+        {!! Form::label('customer_id', 'Project:',['class'=>'required']) !!}
         {!! Form::select('customer_id',App\Models\Customers::dropdown(),null,
         ['class' => 'form-select select2', 'required']) !!}
       </div>
