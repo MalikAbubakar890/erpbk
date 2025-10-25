@@ -1,5 +1,10 @@
 @extends('layouts.app')
 @section('title', 'Activity Log Details')
+
+@section('page-style')
+<link rel="stylesheet" href="{{ asset('css/activity-logs.css') }}">
+@endsection
+
 @section('content')
 
 <div class="container-fluid">
@@ -114,7 +119,136 @@
                                 <div class="card-body">
                                     <div class="row">
                                         @if(isset($activityLog->changes['old']) && isset($activityLog->changes['new']))
-                                        <!-- Updated record -->
+                                        <!-- Updated record with highlighted changes -->
+                                        @if(isset($activityLog->changed_fields) && count($activityLog->changed_fields) > 0)
+                                        <div class="col-12">
+                                            <h6 class="text-primary mb-3">Changed Fields Only</h6>
+                                            <div class="table-responsive">
+                                                <table class="table table-bordered">
+                                                    <thead>
+                                                        <tr>
+                                                            <th>Field</th>
+                                                            <th>Previous Value</th>
+                                                            <th>New Value</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        @foreach($activityLog->changed_fields as $field => $change)
+                                                        <tr class="bg-light-warning">
+                                                            <td><strong>{{ ucfirst(str_replace('_', ' ', $field)) }}</strong></td>
+                                                            <td class="text-danger">
+                                                                @if(is_array($change['old']))
+                                                                <pre class="mb-0">{{ json_encode($change['old'], JSON_PRETTY_PRINT) }}</pre>
+                                                                @else
+                                                                {{ $change['old'] ?: '-' }}
+                                                                @endif
+                                                            </td>
+                                                            <td class="text-success">
+                                                                @if(is_array($change['new']))
+                                                                <pre class="mb-0">{{ json_encode($change['new'], JSON_PRETTY_PRINT) }}</pre>
+                                                                @else
+                                                                {{ $change['new'] ?: '-' }}
+                                                                @endif
+                                                            </td>
+                                                        </tr>
+                                                        @endforeach
+                                                    </tbody>
+                                                </table>
+                                            </div>
+
+                                            <div class="mt-3">
+                                                <button type="button" class="btn btn-sm btn-outline-secondary" id="showAllFields">
+                                                    Show All Fields
+                                                </button>
+                                            </div>
+
+                                            <div id="allFieldsContainer" class="mt-3" style="display: none;">
+                                                <h6 class="text-secondary mb-3">All Fields</h6>
+                                                <div class="table-responsive">
+                                                    <table class="table table-bordered">
+                                                        <thead>
+                                                            <tr>
+                                                                <th>Field</th>
+                                                                <th>Previous Value</th>
+                                                                <th>New Value</th>
+                                                            </tr>
+                                                        </thead>
+                                                        <tbody>
+                                                            @foreach($activityLog->highlighted_changes as $field => $change)
+                                                            <tr class="{{ $change['changed'] ? 'bg-light-warning' : '' }}">
+                                                                <td><strong>{{ ucfirst(str_replace('_', ' ', $field)) }}</strong></td>
+                                                                <td class="{{ $change['changed'] ? 'text-danger' : 'text-muted' }}">
+                                                                    @if(is_array($change['old']))
+                                                                    <pre class="mb-0">{{ json_encode($change['old'], JSON_PRETTY_PRINT) }}</pre>
+                                                                    @else
+                                                                    {{ $change['old'] ?: '-' }}
+                                                                    @endif
+                                                                </td>
+                                                                <td class="{{ $change['changed'] ? 'text-success' : 'text-muted' }}">
+                                                                    @if(is_array($change['new']))
+                                                                    <pre class="mb-0">{{ json_encode($change['new'], JSON_PRETTY_PRINT) }}</pre>
+                                                                    @else
+                                                                    {{ $change['new'] ?: '-' }}
+                                                                    @endif
+                                                                </td>
+                                                            </tr>
+                                                            @endforeach
+                                                        </tbody>
+                                                    </table>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        @elseif(isset($activityLog->highlighted_changes))
+                                        <div class="col-12">
+                                            <h6 class="text-primary mb-3">No Changes Detected</h6>
+                                            <div class="alert alert-info">
+                                                No changes were detected between the old and new values.
+                                            </div>
+
+                                            <div class="mt-3">
+                                                <button type="button" class="btn btn-sm btn-outline-secondary" id="showAllFields">
+                                                    Show All Fields
+                                                </button>
+                                            </div>
+
+                                            <div id="allFieldsContainer" class="mt-3" style="display: none;">
+                                                <h6 class="text-secondary mb-3">All Fields</h6>
+                                                <div class="table-responsive">
+                                                    <table class="table table-bordered">
+                                                        <thead>
+                                                            <tr>
+                                                                <th>Field</th>
+                                                                <th>Previous Value</th>
+                                                                <th>New Value</th>
+                                                            </tr>
+                                                        </thead>
+                                                        <tbody>
+                                                            @foreach($activityLog->highlighted_changes as $field => $change)
+                                                            <tr>
+                                                                <td><strong>{{ ucfirst(str_replace('_', ' ', $field)) }}</strong></td>
+                                                                <td class="text-muted">
+                                                                    @if(is_array($change['old']))
+                                                                    <pre class="mb-0">{{ json_encode($change['old'], JSON_PRETTY_PRINT) }}</pre>
+                                                                    @else
+                                                                    {{ $change['old'] ?: '-' }}
+                                                                    @endif
+                                                                </td>
+                                                                <td class="text-muted">
+                                                                    @if(is_array($change['new']))
+                                                                    <pre class="mb-0">{{ json_encode($change['new'], JSON_PRETTY_PRINT) }}</pre>
+                                                                    @else
+                                                                    {{ $change['new'] ?: '-' }}
+                                                                    @endif
+                                                                </td>
+                                                            </tr>
+                                                            @endforeach
+                                                        </tbody>
+                                                    </table>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        @else
+                                        <!-- Fallback to original display if highlighting is not available -->
                                         <div class="col-md-6">
                                             <h6 class="text-danger mb-3">Previous Values</h6>
                                             <div class="table-responsive">
@@ -141,6 +275,7 @@
                                                 </table>
                                             </div>
                                         </div>
+                                        @endif
                                         @elseif(isset($activityLog->changes['new']))
                                         <!-- Created record -->
                                         <div class="col-12">
@@ -213,4 +348,25 @@
     </div>
 </div>
 
+@endsection
+
+@section('page-script')
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const showAllFieldsBtn = document.getElementById('showAllFields');
+        const allFieldsContainer = document.getElementById('allFieldsContainer');
+
+        if (showAllFieldsBtn && allFieldsContainer) {
+            showAllFieldsBtn.addEventListener('click', function() {
+                if (allFieldsContainer.style.display === 'none') {
+                    allFieldsContainer.style.display = 'block';
+                    showAllFieldsBtn.textContent = 'Hide All Fields';
+                } else {
+                    allFieldsContainer.style.display = 'none';
+                    showAllFieldsBtn.textContent = 'Show All Fields';
+                }
+            });
+        }
+    });
+</script>
 @endsection

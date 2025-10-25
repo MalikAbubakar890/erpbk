@@ -429,22 +429,6 @@ $account = App\Models\Accounts::where('ref_id', $result['id'])->where('account_t
               </li>
             </ul>
           </ul>
-          <div class="d-flex justify-content-start mb-3">
-            @isset($result)
-            @can('rider_edit')
-            <a href="{{route('riders.edit', $result['id'])}}" class="btn btn-outline-primary btn-sm waves-effect waves-light btn-block me-1"><i class="fa fa-edit"></i>&nbsp;Edit</a>
-            @endcan
-            @can('email_create')
-            <a href="javascript:void();" data-action="{{route('rider.sendemail', $result['id'])}}" data-size="md"
-              data-title="{{$result['name'] . ' (' . $result['rider_id'] }}')" class="btn btn-outline-warning btn-sm show-modal text-nowrap"><i class="fas fa-envelope"></i>&nbsp;Send Email</a>
-            @endcan
-            @can('timeline_create')
-            <a href="javascript:void(0);" data-action="{{url('riders/job_status/' . $result['id']) }}" data-size="md" data-title="Add Timeline" class="btn btn-outline-success btn-sm text-nowrap show-modal mx-1"><i class="fas fa-chart-bar"></i>&nbsp;Add Timeline</a>
-            @endcan
-            @endisset
-            {{-- <a href="javascript:void(0);" class="btn btn-default btn-block no-print" onclick="window.print();"><i class="fa fa-print"></i>&nbsp;<b>Print</b></a>
- --}}
-          </div>
           @isset($result)
           <div class="d-flex flex-wrap justify-content-start gap-2 gap-md-3">
             <!-- Absconder Status Card -->
@@ -681,7 +665,7 @@ $account = App\Models\Accounts::where('ref_id', $result['id'])->where('account_t
         </div>
       </div>
     </div>
-    <div class="card mb-5" id="cardBody" style="margin-top: 20px; height:1300px !important;overflow: auto;">
+    <div class="card mb-5" id="cardBody" style="margin-top: 20px; position: relative;">
       @yield('page_content')
     </div>
   </div>
@@ -1503,5 +1487,7 @@ $account = App\Models\Accounts::where('ref_id', $result['id'])->where('account_t
     document.head.appendChild(navStyle);
   });
 </script>
+
+@include('riders.action-buttons')
 
 @endsection

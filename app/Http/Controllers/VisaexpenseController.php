@@ -543,33 +543,38 @@ class VisaexpenseController extends AppBaseController
 
     public function payInstallment(Request $request)
     {
-
-
         $validated = $request->validate([
-            'installment_id' => 'required|exists:visa_installment_plans,id'
+            'installment_id' => 'required|exists:visa_installment_plans,id',
+            'status' => 'nullable|in:pending,paid'
         ]);
 
         try {
             DB::beginTransaction();
 
             $installment = visa_installment_plan::findOrFail($validated['installment_id']);
+            $currentStatus = $installment->status;
+            $newStatus = $request->has('status') ? $validated['status'] : visa_installment_plan::STATUS_PAID;
 
-            if ($installment->status === visa_installment_plan::STATUS_PAID) {
-                Flash::error('This installment is already paid.');
+            // If status is already what we want to set it to
+            if ($currentStatus === $newStatus) {
+                $actionText = $newStatus === visa_installment_plan::STATUS_PAID ? 'paid' : 'pending';
+                Flash::info('This installment is already marked as ' . $actionText . '.');
                 return redirect()->back();
             }
 
-            // Mark installment as paid
-            $installment->status = visa_installment_plan::STATUS_PAID;
+            // Update the status
+            $installment->status = $newStatus;
+            $installment->updated_by = auth()->user()->id;
             $installment->save();
 
             DB::commit();
 
-            Flash::success('Installment marked as paid successfully.');
+            $actionText = $newStatus === visa_installment_plan::STATUS_PAID ? 'paid' : 'pending';
+            Flash::success('Installment marked as ' . $actionText . ' successfully.');
             return redirect()->back();
         } catch (\Exception $e) {
             DB::rollBack();
-            Flash::error('Error processing payment: ' . $e->getMessage());
+            Flash::error('Error processing status change: ' . $e->getMessage());
             return redirect()->back();
         }
     }
@@ -584,21 +589,19 @@ class VisaexpenseController extends AppBaseController
             'installment_id' => 'required|exists:visa_installment_plans,id',
             'field' => 'required|in:date,billing_month,amount',
             'value' => 'required',
-            'update_subsequent' => 'nullable|in:true,false,1,0'
+            'update_subsequent' => 'nullable|in:true,false,1,0',
+            'mark_as_paid' => 'nullable|boolean'
         ]);
 
         // Convert update_subsequent to boolean
         $validated['update_subsequent'] = in_array($request->input('update_subsequent'), ['true', '1', 1, true], true);
+        $markAsPaid = in_array($request->input('mark_as_paid'), ['true', '1', 1, true], true);
 
         try {
             DB::beginTransaction();
 
             $installment = visa_installment_plan::findOrFail($validated['installment_id']);
-
-            if ($installment->status === visa_installment_plan::STATUS_PAID) {
-                Flash::error('Cannot edit a paid installment.');
-                return redirect()->back();
-            }
+            $isPaid = $installment->status === visa_installment_plan::STATUS_PAID;
 
             // Get the rider account for transactions
             $riderAccount = Accounts::findOrFail($installment->rider_id);
@@ -617,14 +620,17 @@ class VisaexpenseController extends AppBaseController
                 // Check if billing month already contains day, if not add it
                 $billingMonth = (strlen($validated['value']) <= 7) ? $validated['value'] . "-01" : $validated['value'];
 
-                // Update current installment date to 10th of next month from new billing month
-                $newBillingDate = Carbon::parse($validated['value'] . '-01');
-                $installment->date = $newBillingDate->addMonth()->day(10)->format('Y-m-d');
+                // Only update date for pending installments or if explicitly requested
+                if (!$isPaid) {
+                    // Update current installment date to 10th of next month from new billing month
+                    $newBillingDate = Carbon::parse($validated['value'] . '-01');
+                    $installment->date = $newBillingDate->addMonth()->day(10)->format('Y-m-d');
+                }
                 $installment->updated_by = auth()->user()->id;
                 $installment->save();
 
-                // Update subsequent installments if requested
-                if ($validated['update_subsequent']) {
+                // Update subsequent installments if requested and this is not a paid installment
+                if ($validated['update_subsequent'] && !$isPaid) {
                     $this->updateSubsequentInstallments($installment, 'billing_month', $validated['value'], $rider);
                 }
             } elseif ($validated['field'] === 'date') {
@@ -638,8 +644,8 @@ class VisaexpenseController extends AppBaseController
                     $billingMonth = $billingMonth . "-01";
                 }
 
-                // Update subsequent installments if requested
-                if ($validated['update_subsequent']) {
+                // Update subsequent installments if requested and this is not a paid installment
+                if ($validated['update_subsequent'] && !$isPaid) {
                     $this->updateSubsequentInstallments($installment, 'date', $validated['value'], $rider);
                 }
             } elseif ($validated['field'] === 'amount') {
@@ -653,8 +659,8 @@ class VisaexpenseController extends AppBaseController
                     $billingMonth = $billingMonth . "-01";
                 }
 
-                // Update subsequent installments if requested - handle proportional recalculation
-                if ($validated['update_subsequent']) {
+                // Update subsequent installments if requested and this is not a paid installment
+                if ($validated['update_subsequent'] && !$isPaid) {
                     $this->recalculateInstallmentAmounts($installment, $validated['value'], $rider);
                 }
             }
@@ -718,11 +724,20 @@ class VisaexpenseController extends AppBaseController
                 }
             }
 
+            // If this is a paid installment and we want to keep it paid
+            if ($markAsPaid && !$isPaid) {
+                $installment->status = visa_installment_plan::STATUS_PAID;
+                $installment->save();
+            }
+
             DB::commit();
 
             $message = ucfirst($validated['field']) . ' updated successfully with voucher and transactions.';
-            if ($validated['update_subsequent']) {
+            if ($validated['update_subsequent'] && !$isPaid) {
                 $message .= ' Subsequent installments were also updated accordingly.';
+            }
+            if ($markAsPaid && !$isPaid) {
+                $message .= ' Installment marked as paid.';
             }
 
             Flash::success($message);
@@ -744,12 +759,22 @@ class VisaexpenseController extends AppBaseController
             'changes' => 'nullable|string',
             'deletions' => 'nullable|string',
             'additions' => 'nullable|string',
+            'date_changes' => 'nullable|string',
+            'billing_changes' => 'nullable|string',
         ]);
 
         $changes = $request->filled('changes') ? json_decode($validated['changes'], true) : [];
         $deletions = $request->filled('deletions') ? json_decode($validated['deletions'], true) : [];
         $additions = $request->filled('additions') ? json_decode($validated['additions'], true) : [];
-        if ((!is_array($changes) || empty($changes)) && (empty($deletions) || !is_array($deletions)) && (empty($additions) || !is_array($additions))) {
+        $dateChanges = $request->filled('date_changes') ? json_decode($validated['date_changes'], true) : [];
+        $billingChanges = $request->filled('billing_changes') ? json_decode($validated['billing_changes'], true) : [];
+
+        if ((!is_array($changes) || empty($changes)) &&
+            (empty($deletions) || !is_array($deletions)) &&
+            (empty($additions) || !is_array($additions)) &&
+            (empty($dateChanges) || !is_array($dateChanges)) &&
+            (empty($billingChanges) || !is_array($billingChanges))
+        ) {
             \Flash::warning('Nothing to finalize.');
             return redirect()->back();
         }
@@ -771,9 +796,7 @@ class VisaexpenseController extends AppBaseController
                 /** @var \App\Models\visa_installment_plan $installment */
                 $installment = visa_installment_plan::findOrFail($installmentId);
 
-                if ($installment->status === visa_installment_plan::STATUS_PAID) {
-                    throw new \RuntimeException('Cannot edit a paid installment (ID: ' . $installmentId . ').');
-                }
+                // Allow editing paid installments - this check is removed
 
                 $firstRiderId = $firstRiderId ?: $installment->rider_id;
 
@@ -1078,9 +1101,72 @@ class VisaexpenseController extends AppBaseController
                 }
             }
 
+            // Process date changes if any
+            if (is_array($dateChanges) && !empty($dateChanges)) {
+                foreach ($dateChanges as $installmentId => $newDate) {
+                    $installment = visa_installment_plan::findOrFail($installmentId);
+                    $installment->date = $newDate;
+                    $installment->updated_by = auth()->user()->id;
+                    $installment->save();
+
+                    // Update related voucher
+                    $voucher = Vouchers::where('ref_id', $installment->id)
+                        ->where('voucher_type', 'VL')
+                        ->first();
+                    if ($voucher) {
+                        $voucher->trans_date = $newDate;
+                        $voucher->updated_by = auth()->user()->id;
+                        $voucher->save();
+                    }
+
+                    // Update related transactions
+                    $transactions = Transactions::where('reference_id', $installment->id)
+                        ->where('reference_type', 'VL')
+                        ->get();
+                    foreach ($transactions as $transaction) {
+                        $transaction->trans_date = $newDate;
+                        $transaction->updated_at = now();
+                        $transaction->save();
+                    }
+                }
+            }
+
+            // Process billing month changes if any
+            if (is_array($billingChanges) && !empty($billingChanges)) {
+                foreach ($billingChanges as $installmentId => $newBillingMonth) {
+                    $installment = visa_installment_plan::findOrFail($installmentId);
+                    $installment->billing_month = $newBillingMonth;
+                    $installment->updated_by = auth()->user()->id;
+                    $installment->save();
+
+                    // Check if billing month already contains day, if not add it
+                    $billingMonthWithDay = (strlen($newBillingMonth) <= 7) ? $newBillingMonth . "-01" : $newBillingMonth;
+
+                    // Update related voucher
+                    $voucher = Vouchers::where('ref_id', $installment->id)
+                        ->where('voucher_type', 'VL')
+                        ->first();
+                    if ($voucher) {
+                        $voucher->billing_month = $billingMonthWithDay;
+                        $voucher->updated_by = auth()->user()->id;
+                        $voucher->save();
+                    }
+
+                    // Update related transactions
+                    $transactions = Transactions::where('reference_id', $installment->id)
+                        ->where('reference_type', 'VL')
+                        ->get();
+                    foreach ($transactions as $transaction) {
+                        $transaction->billing_month = $billingMonthWithDay;
+                        $transaction->updated_at = now();
+                        $transaction->save();
+                    }
+                }
+            }
+
             \DB::commit();
 
-            \Flash::success('Payment finalized. Changes saved and vouchers updated successfully.');
+            \Flash::success('Payment finalized. All changes saved and vouchers updated successfully.');
             if ($firstRiderId) {
                 return redirect()->route('VisaExpense.installmentPlan', $firstRiderId);
             }

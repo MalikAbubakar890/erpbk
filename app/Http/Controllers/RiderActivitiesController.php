@@ -226,4 +226,29 @@ class RiderActivitiesController extends AppBaseController
 
     return view('rider_activities.import');
   }
+
+  public function importKeeta(Request $request)
+  {
+    if ($request->isMethod('post')) {
+      $rules = [
+        'file' => 'required|max:50000|mimes:xlsx,csv,xls'
+      ];
+      $message = [
+        'file.required' => 'Excel File Required',
+        'file.mimes' => 'File must be a CSV, XLS, or XLSX file'
+      ];
+
+      try {
+        $this->validate($request, $rules, $message);
+        Excel::import(new \App\Imports\ImportKeetaRiderActivities(), $request->file('file'));
+        Flash::success('Keeta Rider Activities imported successfully.');
+        return redirect()->back()->with('success', 'Keeta Rider Activities imported successfully');
+      } catch (\Exception $e) {
+        Flash::error('Error importing Keeta Rider Activities: ' . $e->getMessage());
+        return redirect()->back()->withErrors(['file' => 'Error importing file: ' . $e->getMessage()]);
+      }
+    }
+
+    return view('rider_activities.import_keeta');
+  }
 }

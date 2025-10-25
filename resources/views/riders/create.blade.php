@@ -2,19 +2,19 @@
 
 @section('page_content')
 
-{!! Form::open(['route' => 'riders.store','id'=>'formajax']) !!}
+{!! Form::open(['route' => 'riders.store','id'=>'formajax', 'class' => 'form-with-fixed-footer']) !!}
 <input type="hidden" id="redirect_url" value="{{route('riders.index')}}" />
-<div class="card-body">
+<div class="card-body card-body-with-footer">
 
     <div class="row">
         @include('riders.fields')
     </div>
 
 </div>
-<div class="card-footer bg-light border-top">
+<div class="card-footer bg-light border-top fixed-footer">
     <div class="d-flex justify-content-end gap-3">
-        <a href="{{ route('riders.index') }}" class="btn btn-outline-secondary px-4">Cancel</a>
-        <button type="submit" class="btn btn-primary px-4">Save Information</button>
+        <a href="{{ route('riders.index') }}" class="btn btn-outline-secondary">Cancel</a>
+        <button type="submit" class="btn btn-primary">Save Information</button>
     </div>
 </div>
 
@@ -64,6 +64,29 @@
         font-size: 12px;
         color: #007bff;
         z-index: 1000;
+    }
+
+    /* Form validation styles */
+    .form-control.is-invalid {
+        border-color: #dc3545 !important;
+        padding-right: calc(1.5em + 0.75rem);
+        background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12' width='12' height='12' fill='none' stroke='%23dc3545'%3e%3ccircle cx='6' cy='6' r='4.5'/%3e%3cpath stroke-linejoin='round' d='M5.8 3.6h.4L6 6.5z'/%3e%3ccircle cx='6' cy='8.2' r='.6' fill='%23dc3545' stroke='none'/%3e%3c/svg%3e");
+        background-repeat: no-repeat;
+        background-position: right calc(0.375em + 0.1875rem) center;
+        background-size: calc(0.75em + 0.375rem) calc(0.75em + 0.375rem);
+    }
+
+    .invalid-feedback {
+        display: none;
+        width: 100%;
+        margin-top: 0.25rem;
+        font-size: 0.875em;
+        color: #dc3545;
+        font-weight: 500;
+    }
+
+    .invalid-feedback[style*="display: block"] {
+        display: block !important;
     }
 
     /* Notification styles */
@@ -195,9 +218,17 @@
             }
         });
 
-        // Fast AJAX Form Submission
+        // Fast AJAX Form Submission with double-submit prevention
+        let isSubmitting = false;
+
         $('#formajax').on('submit', function(e) {
             e.preventDefault();
+
+            // Prevent double submission
+            if (isSubmitting) {
+                return false;
+            }
+            isSubmitting = true;
 
             const form = $(this);
             const submitButton = form.find('button[type="submit"]');
@@ -220,30 +251,86 @@
                     'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
                 },
                 success: function(response) {
-                    // Show success immediately
-                    showNotification('Rider created successfully!', 'success');
+                    if (response.success) {
+                        // Show success immediately
+                        showNotification('Rider created successfully!', 'success');
 
-                    // Redirect after short delay
-                    setTimeout(function() {
-                        window.location.href = $('#redirect_url').val();
-                    }, 800);
+                        // Keep button disabled to prevent re-submission
+                        submitButton.html('<i class="fa fa-check me-2"></i>Created!');
+
+                        // Redirect after short delay
+                        setTimeout(function() {
+                            window.location.href = $('#redirect_url').val();
+                        }, 800);
+                    } else {
+                        // Handle unsuccessful response
+                        isSubmitting = false;
+                        submitButton.html(originalText).prop('disabled', false);
+                        showNotification(response.message || 'Failed to create rider. Please try again.', 'error');
+                    }
                 },
                 error: function(xhr) {
-                    // Handle errors
+                    // Re-enable form submission on error
+                    isSubmitting = false;
                     submitButton.html(originalText).prop('disabled', false);
+
+                    // Clear previous error states
+                    $('.form-control').removeClass('is-invalid');
+                    $('.invalid-feedback').hide();
 
                     if (xhr.status === 422) {
                         // Validation errors
-                        const errors = xhr.responseJSON.errors;
-                        let errorMessage = 'Please fix the following errors:\n';
-                        Object.keys(errors).forEach(function(key) {
-                            errorMessage += '• ' + errors[key][0] + '\n';
-                        });
+                        let errorMessage = '';
+
+                        if (xhr.responseJSON && xhr.responseJSON.message) {
+                            errorMessage = xhr.responseJSON.message;
+                        } else if (xhr.responseJSON && xhr.responseJSON.errors) {
+                            const errors = xhr.responseJSON.errors;
+                            errorMessage = 'Please fix the following errors:\n';
+
+                            // Display inline errors for each field
+                            Object.keys(errors).forEach(function(key) {
+                                errorMessage += '• ' + errors[key][0] + '\n';
+
+                                // Highlight the specific field with error
+                                const fieldElement = $('[name="' + key + '"]');
+                                if (fieldElement.length) {
+                                    fieldElement.addClass('is-invalid');
+
+                                    // Show inline error message
+                                    const errorDiv = $('#' + key + '_error');
+                                    if (errorDiv.length) {
+                                        errorDiv.text(errors[key][0]).show().css('display', 'block');
+                                    }
+                                }
+
+                                // Special handling for rider_id field
+                                if (key === 'rider_id') {
+                                    $('#rider_id_field').addClass('is-invalid').focus();
+                                    $('#rider_id_error').text(errors[key][0]).show().css('display', 'block');
+                                }
+
+                                // Special handling for courier_id field
+                                if (key === 'courier_id') {
+                                    $('#courier_id_field').addClass('is-invalid');
+                                    $('#courier_id_error').text(errors[key][0]).show().css('display', 'block');
+                                }
+                            });
+                        } else {
+                            errorMessage = 'Validation error occurred. Please check your inputs.';
+                        }
+
                         showNotification(errorMessage, 'error');
                     } else if (xhr.status === 500) {
-                        showNotification('Server error occurred. Please try again.', 'error');
+                        const message = xhr.responseJSON && xhr.responseJSON.message ?
+                            xhr.responseJSON.message :
+                            'Server error occurred. Please try again.';
+                        showNotification(message, 'error');
                     } else {
-                        showNotification('An error occurred while creating. Please try again.', 'error');
+                        const message = xhr.responseJSON && xhr.responseJSON.message ?
+                            xhr.responseJSON.message :
+                            'An error occurred while creating. Please try again.';
+                        showNotification(message, 'error');
                     }
                 },
                 timeout: 30000 // 30 seconds timeout
@@ -252,6 +339,14 @@
 
         // Function to show notifications
         function showNotification(message, type) {
+            // Clear any existing notifications first
+            const existingNotifications = document.querySelectorAll('.notification');
+            existingNotifications.forEach(notif => {
+                if (notif.parentNode) {
+                    notif.parentNode.removeChild(notif);
+                }
+            });
+
             // Create notification element
             const notification = document.createElement('div');
             notification.className = `notification notification-${type}`;
@@ -274,13 +369,14 @@
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
             z-index: 9999;
             animation: slideIn 0.3s ease;
-            max-width: 300px;
+            max-width: 400px;
         `;
 
             // Add to page
             document.body.appendChild(notification);
 
-            // Remove after 3 seconds
+            // Remove after 5 seconds for errors, 3 seconds for success
+            const duration = type === 'error' ? 5000 : 3000;
             setTimeout(() => {
                 notification.style.animation = 'slideOut 0.3s ease';
                 setTimeout(() => {
@@ -288,7 +384,7 @@
                         notification.parentNode.removeChild(notification);
                     }
                 }, 300);
-            }, 3000);
+            }, duration);
         }
     });
 </script>

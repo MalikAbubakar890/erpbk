@@ -232,6 +232,7 @@ Route::middleware(['auth', 'web'])->group(function () {
 
   Route::resource('riderActivities', App\Http\Controllers\RiderActivitiesController::class);
   Route::any('rider/activities-import', [\App\Http\Controllers\RiderActivitiesController::class, 'import'])->name('rider.activities_import');
+  Route::any('rider/keeta-activities-import', [\App\Http\Controllers\RiderActivitiesController::class, 'importKeeta'])->name('rider.keeta_activities_import');
 
   /* Rider section end here */
 

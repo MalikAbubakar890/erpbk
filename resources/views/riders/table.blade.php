@@ -17,9 +17,7 @@
          <th tabindex="0" rowspan="1" colspan="1" aria-sort="descending">
             <a class="openFilterSidebar" href="javascript:void(0);"> <i class="fa fa-search"></i></a>
          </th>
-         <th tabindex="0" rowspan="1" colspan="1" aria-sort="descending">
-            <a class="openColumnControlSidebar" href="javascript:void(0);" title="Column Control"> <i class="fa fa-columns"></i></a>
-         </th>
+
       </tr>
    </thead>
    <tbody>
@@ -126,7 +124,6 @@
          <td>{{ data_get($r, $key, '-') }}</td>
          @endswitch
          @endforeach
-         <td></td>
          <td></td>
       </tr>
       @endforeach

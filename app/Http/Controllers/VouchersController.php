@@ -406,7 +406,7 @@ class VouchersController extends Controller
 
 
 
-    if (in_array($request->voucher_type, ['LV'])) {
+    if (in_array($request->voucher_type, ['LV', 'AL', 'COD', 'PN', 'PAY', 'VC'])) {
       $result = $voucherService->DefaultVoucher($request, 'debit');
     }
     /*  if (in_array($request->voucher_type, [13])) {
@@ -578,16 +578,11 @@ class VouchersController extends Controller
   {
     $voucher = Vouchers::find($id);
 
-    if (isset($request->attach_file)) {
-      $photo = $request->attach_file;
-      if ($voucher->voucher_type == 'LV') {
-        $docFile = $photo->store('vouchers', 'public');
-        $data['attach_file'] = $docFile;
-      } else {
-        $docFile = $photo->store('public/vouchers');
-        $data['attach_file'] = basename($docFile);
-      }
-      $voucher->attach_file = $data['attach_file'];
+    if ($request->hasFile('attach_file')) {
+      $photo = $request->file('attach_file');
+      $fileName = $photo->getClientOriginalName();
+      $photo->storeAs('public/vouchers', $fileName);
+      $voucher->attach_file = $fileName;
       $voucher->updated_by = auth()->id();
       $voucher->save();
     }

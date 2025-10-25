@@ -52,8 +52,8 @@ class ActivityLogController extends Controller
             ->orderBy('action')
             ->pluck('action');
 
-        // Paginate results
-        $activityLogs = $query->orderBy('id', 'asc')->paginate(50);
+        // Paginate results - Changed to descending order by created_at
+        $activityLogs = $query->orderBy('created_at', 'desc')->paginate(50);
 
         return view('activity_logs.index', compact(
             'activityLogs',
@@ -69,6 +69,18 @@ class ActivityLogController extends Controller
     public function show(ActivityLog $activityLog)
     {
         $activityLog->load('user');
+
+        // Process changes to highlight differences
+        if ($activityLog->changes && isset($activityLog->changes['old']) && isset($activityLog->changes['new'])) {
+            $highlightedChanges = $this->highlightChanges($activityLog->changes['old'], $activityLog->changes['new']);
+            $activityLog->highlighted_changes = $highlightedChanges;
+
+            // Filter to only show changed fields
+            $activityLog->changed_fields = array_filter($highlightedChanges, function ($change) {
+                return $change['changed'] === true;
+            });
+        }
+
         return view('activity_logs.show', compact('activityLog'));
     }
 
@@ -120,5 +132,70 @@ class ActivityLogController extends Controller
 
 
         return response()->json($stats);
+    }
+
+    /**
+     * Highlight changes between old and new values.
+     * 
+     * @param array $oldValues
+     * @param array $newValues
+     * @return array
+     */
+    private function highlightChanges(array $oldValues, array $newValues): array
+    {
+        $highlightedChanges = [];
+
+        // Process all fields in both old and new values
+        $allFields = array_unique(array_merge(array_keys($oldValues), array_keys($newValues)));
+
+        foreach ($allFields as $key) {
+            $oldValue = $oldValues[$key] ?? null;
+            $newValue = $newValues[$key] ?? null;
+
+            // Skip if both values are arrays or objects
+            if (is_array($newValue) || is_array($oldValue)) {
+                $highlightedChanges[$key] = [
+                    'old' => $oldValue,
+                    'new' => $newValue,
+                    'changed' => $this->hasArrayChanged($oldValue, $newValue)
+                ];
+                continue;
+            }
+
+            // Convert to string for comparison
+            $oldValueStr = (string)$oldValue;
+            $newValueStr = (string)$newValue;
+
+            $highlightedChanges[$key] = [
+                'old' => $oldValueStr,
+                'new' => $newValueStr,
+                'changed' => $oldValueStr !== $newValueStr
+            ];
+        }
+
+        return $highlightedChanges;
+    }
+
+    /**
+     * Check if array values have changed
+     * 
+     * @param mixed $oldValue
+     * @param mixed $newValue
+     * @return bool
+     */
+    private function hasArrayChanged($oldValue, $newValue): bool
+    {
+        // If one is array and other is not, they're different
+        if (is_array($oldValue) !== is_array($newValue)) {
+            return true;
+        }
+
+        // If both are arrays, compare serialized versions
+        if (is_array($oldValue) && is_array($newValue)) {
+            return json_encode($oldValue) !== json_encode($newValue);
+        }
+
+        // Compare as strings
+        return (string)$oldValue !== (string)$newValue;
     }
 }

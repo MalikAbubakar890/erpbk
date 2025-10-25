@@ -1,0 +1,4 @@
+courier_id,date,name,area,status,shift,device,rating,delivery_experience,login_time,online_hours,orders,delivered_orders,cancelled,rejected,returned,rejected_orders
+1760539517518103,2025-10-22,John Doe,Dubai,Active,Morning,Android,4.8,95.5,08:00,8.5,20,15,0,2,0,2
+1760539517518104,2025-10-22,Jane Smith,Dubai,Active,Evening,iPhone,4.5,92.3,14:00,7.2,15,12,1,1,0,1
+1760539517518105,2025-10-22,Mike Johnson,Abu Dhabi,Active,Morning,Android,4.9,98.2,07:30,9.0,20,18,0,0,0,0

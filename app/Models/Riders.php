@@ -15,6 +15,7 @@ class Riders extends Model
   public $fillable = [
     'name',
     'rider_id',
+    'courier_id',
     'account_id',
     'personal_contact',
     'company_contact',
@@ -78,6 +79,7 @@ class Riders extends Model
 
   protected $casts = [
     'name' => 'string',
+    'courier_id' => 'string',
     'personal_contact' => 'string',
     'company_contact' => 'string',
     'personal_email' => 'string',
@@ -131,6 +133,7 @@ class Riders extends Model
   public static array $rules = [
     'name' => 'required|string|max:191',
     'rider_id' => 'required|unique:riders,rider_id',
+    'courier_id' => 'nullable|string|max:191',
     'personal_contact' => 'nullable|string|max:191',
     'company_contact' => 'nullable|string|max:191',
     'personal_email' => 'required|string|max:191',

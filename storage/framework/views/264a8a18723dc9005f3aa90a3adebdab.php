@@ -342,8 +342,9 @@
 </div>
 <!-- Filter Overlay -->
 <div id="filterOverlay" class="filter-overlay"></div>
+<?php $__env->stopSection(); ?>
 
-<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+<?php $__env->startPush('page-scripts'); ?>
 <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
 <script src="<?php echo e(URL::asset('export_excel/jquery.table2excel.js')); ?>"></script>
 <script>
@@ -362,7 +363,13 @@
 
         // Quick search
         $('#quickSearch').on('keyup', function(e) {
-            if (e.keyCode === 13 || $(this).val().length === 0) {
+            if (e.keyCode === 13) {
+                get_data();
+            } else if ($(this).val().length === 0) {
+                // Clear quick search from URL when emptied
+                const url = new URL(window.location);
+                url.searchParams.delete('quick_search');
+                window.history.pushState({}, '', url.toString());
                 get_data();
             }
         });
@@ -380,28 +387,51 @@
             });
         });
 
+        // Load filters from URL on page load
+        loadFiltersFromURL();
+
         // Initial load
         get_data();
 
-        // Pagination controls
-        $(document).on('change', '#pageSize', function() {
-            applyPagination();
-        });
-        $(document).on('click', '#firstPage', function() {
-            changePage('first');
-        });
-        $(document).on('click', '#prevPage', function() {
-            changePage('prev');
-        });
-        $(document).on('click', '#nextPage', function() {
-            changePage('next');
-        });
-        $(document).on('click', '#lastPage', function() {
-            changePage('last');
+        // Override global-pagination component behavior for AJAX
+        // Use event delegation since pagination is dynamically loaded
+        $(document).on('change', '#perPageSelect', function(e) {
+            e.preventDefault();
+            e.stopImmediatePropagation(); // Stop the default pagination behavior
+
+            let selectedValue = $(this).val();
+
+            // Convert 'all' or '-1' to -1 for consistency
+            if (selectedValue === 'all' || selectedValue === '-1') {
+                selectedValue = '-1';
+            }
+
+            const url = new URL(window.location);
+
+            // Set per_page parameter
+            url.searchParams.set('per_page', selectedValue);
+
+            // Reset to page 1 when changing per page
+            url.searchParams.delete('page');
+
+            // Update URL without reloading
+            window.history.pushState({}, '', url.toString());
+
+            // Trigger AJAX data reload
+            get_data();
+
+            return false;
         });
     });
 
     function get_data() {
+        // Update URL with current filter values
+        updateURLWithFilters();
+
+        // Get per_page from URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const perPage = urlParams.get('per_page') || '25';
+
         $('.filter-loading-overlay').show();
         $.ajax({
             url: "<?php echo e(url('reports/rider_report_data')); ?>",
@@ -409,8 +439,8 @@
                 'X-CSRF-TOKEN': $('meta[name=\"csrf-token\"]').attr('content')
             },
             type: "POST",
-            timeout: 20000,
-            data: $('#filterForm').serialize() + '&quick_search=' + encodeURIComponent($('#quickSearch').val() || ''),
+            timeout: 120000, // 120 seconds for large datasets
+            data: $('#filterForm').serialize() + '&quick_search=' + encodeURIComponent($('#quickSearch').val() || '') + '&per_page=' + encodeURIComponent(perPage),
             success: function(data) {
                 try {
                     // Try to normalize both JSON and HTML responses
@@ -469,11 +499,26 @@
                     }
                 }
             },
-            error: function(xhr) {
+            error: function(xhr, textStatus, errorThrown) {
                 $('.filter-loading-overlay').hide();
-                console.error('Rider report load failed', xhr && xhr.status, xhr && xhr.responseText);
+
+                let errorMessage = 'Failed to load report data.';
+
+                if (textStatus === 'timeout') {
+                    errorMessage = 'Request timed out. The report is taking too long to load. Try reducing the number of records or contact support.';
+                    console.error('Rider report timeout - Request exceeded 120 seconds');
+                } else if (xhr.status === 0) {
+                    errorMessage = 'Network error. Please check your internet connection and try again.';
+                    console.error('Rider report network error');
+                } else if (xhr.status === 500) {
+                    errorMessage = 'Server error occurred. Please try again or contact support.';
+                    console.error('Rider report server error', xhr.status, xhr.responseText);
+                } else {
+                    console.error('Rider report load failed', xhr.status, textStatus, errorThrown);
+                }
+
                 if (!$('#get_data').children().length) {
-                    $('#get_data').html('<tr><td colspan="16"><div class="alert alert-warning mb-0">Failed to load report data. Please try again.</div></td></tr>');
+                    $('#get_data').html('<tr><td colspan="16"><div class="alert alert-danger mb-0"><i class="fa fa-exclamation-triangle"></i> ' + errorMessage + '</div></td></tr>');
                 }
             }
         });
@@ -488,6 +533,18 @@
     });
 
     function get_data_with_page(page) {
+        // Update URL with page number while preserving filters
+        const url = new URL(window.location);
+        if (page && page != 1) {
+            url.searchParams.set('page', page);
+        } else {
+            url.searchParams.delete('page');
+        }
+        window.history.pushState({}, '', url.toString());
+
+        // Get per_page from URL
+        const perPage = url.searchParams.get('per_page') || '25';
+
         $('.filter-loading-overlay').show();
         $.ajax({
             url: "<?php echo e(url('reports/rider_report_data')); ?>?page=" + encodeURIComponent(page),
@@ -495,8 +552,8 @@
                 'X-CSRF-TOKEN': $('meta[name=\"csrf-token\"]').attr('content')
             },
             type: "POST",
-            timeout: 20000,
-            data: $('#filterForm').serialize() + '&quick_search=' + encodeURIComponent($('#quickSearch').val() || ''),
+            timeout: 120000, // 120 seconds for large datasets
+            data: $('#filterForm').serialize() + '&quick_search=' + encodeURIComponent($('#quickSearch').val() || '') + '&per_page=' + encodeURIComponent(perPage),
             dataType: "JSON",
             success: function(data) {
                 try {
@@ -548,12 +605,82 @@
                     }
                 }
             },
-            error: function(xhr) {
+            error: function(xhr, textStatus, errorThrown) {
                 $('.filter-loading-overlay').hide();
-                console.error('Rider report load failed', xhr && xhr.status, xhr && xhr.responseText);
+
+                let errorMessage = 'Failed to load report data.';
+
+                if (textStatus === 'timeout') {
+                    errorMessage = 'Request timed out. The report is taking too long to load. Try reducing the number of records or contact support.';
+                    console.error('Rider report timeout - Request exceeded 120 seconds');
+                } else if (xhr.status === 0) {
+                    errorMessage = 'Network error. Please check your internet connection and try again.';
+                    console.error('Rider report network error');
+                } else if (xhr.status === 500) {
+                    errorMessage = 'Server error occurred. Please try again or contact support.';
+                    console.error('Rider report server error', xhr.status, xhr.responseText);
+                } else {
+                    console.error('Rider report load failed', xhr.status, textStatus, errorThrown);
+                }
+
+                $('#get_data').html('<tr><td colspan="16"><div class="alert alert-danger mb-0"><i class="fa fa-exclamation-triangle"></i> ' + errorMessage + '</div></td></tr>');
             }
         });
     }
+
+    // Function to update URL with current filter values
+    function updateURLWithFilters() {
+        const url = new URL(window.location);
+
+        // Get all form values
+        const designation = $('#designation').val();
+        const vid = $('[name="VID"]').val();
+        const status = $('#status').val();
+        const billing_month = $('#billing_month').val();
+        const quick_search = $('#quickSearch').val();
+
+        // Preserve per_page if it exists
+        const perPage = url.searchParams.get('per_page');
+
+        // Clear existing filter parameters (but keep per_page)
+        url.searchParams.delete('designation');
+        url.searchParams.delete('VID');
+        url.searchParams.delete('status');
+        url.searchParams.delete('billing_month');
+        url.searchParams.delete('quick_search');
+
+        // Add non-empty values to URL
+        if (designation) url.searchParams.set('designation', designation);
+        if (vid) url.searchParams.set('VID', vid);
+        if (status) url.searchParams.set('status', status);
+        if (billing_month) url.searchParams.set('billing_month', billing_month);
+        if (quick_search) url.searchParams.set('quick_search', quick_search);
+
+        // Restore per_page if it existed
+        if (perPage) url.searchParams.set('per_page', perPage);
+
+        // Update URL without reloading the page
+        window.history.pushState({}, '', url.toString());
+    }
+
+    // Function to load filters from URL parameters on page load
+    function loadFiltersFromURL() {
+        const url = new URL(window.location);
+
+        // Get URL parameters
+        const designation = url.searchParams.get('designation');
+        const vid = url.searchParams.get('VID');
+        const status = url.searchParams.get('status');
+        const billing_month = url.searchParams.get('billing_month');
+        const quick_search = url.searchParams.get('quick_search');
+
+        // Set form values from URL
+        if (designation) $('#designation').val(designation);
+        if (vid) $('[name="VID"]').val(vid);
+        if (status) $('#status').val(status);
+        if (billing_month) $('#billing_month').val(billing_month);
+        if (quick_search) $('#quickSearch').val(quick_search);
+    }
 </script>
-<?php $__env->stopSection(); ?>
+<?php $__env->stopPush(); ?>
 <?php echo $__env->make('layouts.app', \Illuminate\Support\Arr::except(get_defined_vars(), ['__data', '__path']))->render(); ?><?php /**PATH D:\xammp1\htdocs\erpbk\resources\views/reports/rider_report.blade.php ENDPATH**/ ?>

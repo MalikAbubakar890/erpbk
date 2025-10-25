@@ -12,22 +12,64 @@
 <section class="content-header">
     <div class="container-fluid">
         <!-- Enhanced Fleet Supervisor Accordion Section -->
-        <div class="fleet-supervisor-section">
-            <div class="fleet-supervisor-header">
-                <div class="fleet-supervisor-header-left">
-                    <div class="fleet-supervisor-icon">
+        <div class="filter-tabs-section mb-4" id="filter-tabs-section">
+            <div class="container-fluid d-flex justify-content-between">
+                <?php
+                $activeFiltersCount = count(request('rider_status', [])) + (request('balance_filter') ? 1 : 0);
+
+                // Helper function to toggle rider status in URL
+                function toggleRiderStatus($status) {
+                $currentStatuses = request('rider_status', []);
+                $newStatuses = $currentStatuses;
+
+                if (in_array($status, $currentStatuses)) {
+                // Remove the status
+                $newStatuses = array_diff($currentStatuses, [$status]);
+                } else {
+                // Add the status
+                $newStatuses[] = $status;
+                }
+
+                $queryParams = request()->query();
+                $queryParams['rider_status'] = array_values($newStatuses);
+
+                return request()->fullUrlWithQuery($queryParams);
+                }
+
+                // Helper function to toggle balance filter in URL
+                function toggleBalanceFilter() {
+                $queryParams = request()->query();
+
+                if (request('balance_filter') == 'greater_than_zero') {
+                unset($queryParams['balance_filter']);
+                } else {
+                $queryParams['balance_filter'] = 'greater_than_zero';
+                }
+
+                return request()->fullUrlWithQuery($queryParams);
+                }
+                ?>
+
+
+                <div class="filter-tabs">
+                    <?php if($activeFiltersCount > 0): ?>
+                    <div class="filter-status">
+                        <div class="filter-info">
+                            <i class="ti ti-filter"></i>
+                            <span><?php echo e($activeFiltersCount); ?> filter<?php echo e($activeFiltersCount > 1 ? 's' : ''); ?> applied</span>
+                            <a href="<?php echo e(route('riders.index')); ?>" class="btn btn-sm btn-outline-secondary ms-2">
+                                <i class="ti ti-x"></i>
+                                Clear All
+                            </a>
+                        </div>
+                    </div>
+                    <?php endif; ?>
+                    <a href="<?php echo e(route('riders.index')); ?>" class="filter-tab <?php echo e(!request('rider_status') && !request('balance_filter') ? 'active' : ''); ?>">
                         <i class="ti ti-users"></i>
-                    </div>
-                    <div>
-                        <h1 class="fleet-supervisor-title">Manage and monitor</h1>
-                    </div>
+                        All Riders
+                    </a>
                 </div>
                 <div class="fleet-supervisor-header-right d-flex align-items-center">
-
-                    <button class="fleet-supervisor-toggle  mx-2  collapsed" id="fleetSupervisorToggle">
-                        <span>Toggle View</span>
-                        <i class="ti ti-chevron-down"></i>
-                    </button>
                     <div class="action-buttons">
                         <div class="action-dropdown-container">
                             <button class="action-dropdown-btn" id="addRiderDropdownBtn">
@@ -55,8 +97,15 @@
                                 <a class="action-dropdown-item show-modal" href="javascript:void(0);" data-size="sm" data-title="Import Rider Activities" data-action="<?php echo e(route('rider.activities_import')); ?>">
                                     <i class="ti ti-activity"></i>
                                     <div>
-                                        <div class="action-dropdown-item-text">Import Activities</div>
-                                        <div class="action-dropdown-item-desc">Import rider activity data</div>
+                                        <div class="action-dropdown-item-text">Import Noon Activities</div>
+                                        <div class="action-dropdown-item-desc">Import Noon rider activity data</div>
+                                    </div>
+                                </a>
+                                <a class="action-dropdown-item show-modal" href="javascript:void(0);" data-size="sm" data-title="Import Keeta Rider Activities" data-action="<?php echo e(route('rider.keeta_activities_import')); ?>">
+                                    <i class="ti ti-brand-telegram"></i>
+                                    <div>
+                                        <div class="action-dropdown-item-text">Import Keeta Activities</div>
+                                        <div class="action-dropdown-item-desc">Import Keeta rider activity data</div>
                                     </div>
                                 </a>
                                 <a class="action-dropdown-item" href="<?php echo e(route('rider.exportRiders')); ?>">
@@ -73,12 +122,21 @@
                                         <div class="action-dropdown-item-desc">Open import modal</div>
                                     </div>
                                 </a>
+                                <a class="action-dropdown-item openColumnControlSidebar" href="javascript:void(0);" data-size="sm" data-title="Column Control">
+                                    <i class="ti ti-columns"></i>
+                                    <div>
+                                        <div class="action-dropdown-item-text">Column Control</div>
+                                        <div class="action-dropdown-item-desc">Open column control modal</div>
+                                    </div>
+                                </a>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
-            <div class="fleet-supervisor-accordion collapsed" id="fleetSupervisorAccordion">
+        </div>
+        <div class="fleet-supervisor-section">
+            <div class="fleet-supervisor-accordion expanded" id="fleetSupervisorAccordion">
                 <div class="fleet-supervisor-slider-container">
                     <div class="slider-controls">
                         <button class="slider-btn prev-btn" id="prevBtn" type="button">
@@ -353,65 +411,7 @@
             }, 500);
         </script>
         <!-- Filter Tabs Section -->
-        <div class="filter-tabs-section mb-4">
-            <div class="container-fluid d-flex justify-content-between">
-                <?php
-                $activeFiltersCount = count(request('rider_status', [])) + (request('balance_filter') ? 1 : 0);
 
-                // Helper function to toggle rider status in URL
-                function toggleRiderStatus($status) {
-                $currentStatuses = request('rider_status', []);
-                $newStatuses = $currentStatuses;
-
-                if (in_array($status, $currentStatuses)) {
-                // Remove the status
-                $newStatuses = array_diff($currentStatuses, [$status]);
-                } else {
-                // Add the status
-                $newStatuses[] = $status;
-                }
-
-                $queryParams = request()->query();
-                $queryParams['rider_status'] = array_values($newStatuses);
-
-                return request()->fullUrlWithQuery($queryParams);
-                }
-
-                // Helper function to toggle balance filter in URL
-                function toggleBalanceFilter() {
-                $queryParams = request()->query();
-
-                if (request('balance_filter') == 'greater_than_zero') {
-                unset($queryParams['balance_filter']);
-                } else {
-                $queryParams['balance_filter'] = 'greater_than_zero';
-                }
-
-                return request()->fullUrlWithQuery($queryParams);
-                }
-                ?>
-
-
-                <div class="filter-tabs">
-                    <?php if($activeFiltersCount > 0): ?>
-                    <div class="filter-status">
-                        <div class="filter-info">
-                            <i class="ti ti-filter"></i>
-                            <span><?php echo e($activeFiltersCount); ?> filter<?php echo e($activeFiltersCount > 1 ? 's' : ''); ?> applied</span>
-                            <a href="<?php echo e(route('riders.index')); ?>" class="btn btn-sm btn-outline-secondary ms-2">
-                                <i class="ti ti-x"></i>
-                                Clear All
-                            </a>
-                        </div>
-                    </div>
-                    <?php endif; ?>
-                    <a href="<?php echo e(route('riders.index')); ?>" class="filter-tab <?php echo e(!request('rider_status') && !request('balance_filter') ? 'active' : ''); ?>">
-                        <i class="ti ti-users"></i>
-                        All Riders
-                    </a>
-                </div>
-            </div>
-        </div>
         <div id="filterSidebar" class="filter-sidebar" style="z-index: 1111;">
             <div class="filter-header">
                 <h5>Filter Riders</h5>
@@ -423,6 +423,10 @@
                         <div class="form-group col-md-12">
                             <label for="id">Rider Id</label>
                             <input type="number" name="rider_id" class="form-control" placeholder="Filter By Rider ID" value="<?php echo e(request('rider_id')); ?>">
+                        </div>
+                        <div class="form-group col-md-12">
+                            <label for="courier_id">Courier ID</label>
+                            <input type="number" name="courier_id" class="form-control" placeholder="Filter By Courier ID" value="<?php echo e(request('courier_id')); ?>">
                         </div>
                         <div class="form-group col-md-12">
                             <label for="name">Rider Name</label>
@@ -548,7 +552,7 @@ use Illuminate\Support\Facades\Schema;
 $filteredColumns = Schema::getColumnListing('riders');
 
 // Columns to exclude
-$exclude = ['email', 'NFDID', 'cdm_deposit_id', 'DEPT', 'job_status', 'attach_documents', 'other_details', 'TAID', 'dob', 'mashreq_id', 'PID', 'branded_plate_no', 'vaccine_status', 'created_at', 'updated_at', 'VID', 'noon_no', 'contract', 'image_name', 'rider_reference', 'vat', 'attendance_date', 'l_license'];
+$exclude = ['id', 'email', 'NFDID', 'cdm_deposit_id', 'DEPT', 'job_status', 'attach_documents', 'other_details', 'TAID', 'dob', 'mashreq_id', 'PID', 'branded_plate_no', 'vaccine_status', 'created_at', 'updated_at', 'VID', 'noon_no', 'contract', 'image_name', 'rider_reference', 'vat', 'attendance_date', 'l_license'];
 
 // Final filtered columns
 $dbColumns = array_diff($filteredColumns, $exclude);
@@ -568,7 +572,10 @@ $preferredOrder = [
 $columns = [];
 $added = [];
 $makeTitle = function ($key) {
-return ucwords(str_replace('_', ' ', $key));
+$customTitles = [
+'doj' => 'Date of Joining',
+];
+return $customTitles[$key] ?? ucwords(str_replace('_', ' ', $key));
 };
 
 // If Absconder filter is active, make sure 'absconder' column is prioritized
@@ -615,7 +622,7 @@ $tableColumns = $columns;
     <div class="card">
         <div class="card-header d-flex justify-content-between">
             <div class="card-title">
-                <h3>Riders</h3>
+                <!-- <h3>Riders</h3> -->
             </div>
             <div class="card-search">
                 <input type="text" id="quickSearch" name="quick_search" class="form-control" placeholder="Quick Search..." value="<?php echo e(request('quick_search')); ?>">
@@ -638,7 +645,29 @@ $tableColumns = $columns;
 </div>
 <?php $__env->stopSection(); ?>
 <?php $__env->startSection('page-script'); ?>
+<script src="<?php echo e(asset('js/riders-table-fix.js')); ?>"></script>
 <script type="text/javascript">
+    // Make filter tabs section sticky on scroll
+    $(document).ready(function() {
+        const filterTabsSection = document.getElementById('filter-tabs-section');
+        const originalWidth = filterTabsSection.offsetWidth;
+        const originalPosition = filterTabsSection.getBoundingClientRect();
+        const parentElement = filterTabsSection.parentElement;
+        const parentPadding = parseInt(window.getComputedStyle(parentElement).paddingLeft) || 0;
+
+        window.addEventListener('scroll', function() {
+            const parentRect = parentElement.getBoundingClientRect();
+            if (parentRect.top < 0) {
+                filterTabsSection.classList.add('filter-tabs-fixed');
+                filterTabsSection.style.width = originalWidth + 'px';
+                filterTabsSection.style.left = (parentRect.left + parentPadding) + 'px';
+            } else {
+                filterTabsSection.classList.remove('filter-tabs-fixed');
+                filterTabsSection.style.width = '';
+                filterTabsSection.style.left = '';
+            }
+        });
+    });
     $(document).ready(function() {
         $('#fleet_supervisor').select2({
             dropdownParent: $('#searchTopbody'),
@@ -674,7 +703,16 @@ $tableColumns = $columns;
 </script>
 <script type="text/javascript">
     $(document).ready(function() {
-        // Filter sidebar functionality
+        // Filter sidebar functionality - open on hover
+        $(document).on('mouseenter', '#openFilterSidebar, .openFilterSidebar', function(e) {
+            e.preventDefault();
+            console.log('Filter button hovered!'); // Debug line
+            $('#filterSidebar').addClass('open');
+            $('#filterOverlay').addClass('show');
+            return false;
+        });
+
+        // Keep the original click handler for mobile devices
         $(document).on('click', '#openFilterSidebar, .openFilterSidebar', function(e) {
             e.preventDefault();
             console.log('Filter button clicked!'); // Debug line

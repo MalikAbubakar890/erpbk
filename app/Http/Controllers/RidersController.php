@@ -99,6 +99,14 @@ class RidersController extends AppBaseController
     if ($request->has('rider_id') && !empty($request->rider_id)) {
       $query->where('riders.rider_id', 'like', '%' . $request->rider_id . '%');
     }
+    if ($request->has('courier_id') && !empty($request->courier_id)) {
+      $courierIdInput = $request->courier_id;
+      // Remove 'CI-' prefix if present (case-insensitive)
+      if (stripos($courierIdInput, 'CI-') === 0) {
+        $courierIdInput = substr($courierIdInput, 3);
+      }
+      $query->where('riders.courier_id', 'like', '%' . $courierIdInput . '%');
+    }
     if ($request->has('name') && !empty($request->name)) {
       $query->where('name', 'like', '%' . $request->name . '%');
     }
@@ -234,6 +242,7 @@ class RidersController extends AppBaseController
         ->where(function ($q) use ($search) {
           $q->where('riders.name', 'like', "%{$search}%")
             ->orWhere('riders.rider_id', 'like', "%{$search}%")
+            ->orWhere('riders.courier_id', 'like', "%{$search}%")
             ->orWhere('riders.branded_plate_no', 'like', "%{$search}%")
             ->orWhere('riders.fleet_supervisor', 'like', "%{$search}%")
             ->orWhere('riders.emirate_hub', 'like', "%{$search}%")
@@ -297,6 +306,14 @@ class RidersController extends AppBaseController
 
     if ($request->has('rider_id') && !empty($request->rider_id)) {
       $query->where('riders.rider_id', 'like', '%' . $request->rider_id . '%');
+    }
+    if ($request->has('courier_id') && !empty($request->courier_id)) {
+      $courierIdInput = $request->courier_id;
+      // Remove 'CI-' prefix if present (case-insensitive)
+      if (stripos($courierIdInput, 'CI-') === 0) {
+        $courierIdInput = substr($courierIdInput, 3);
+      }
+      $query->where('riders.courier_id', 'like', '%' . $courierIdInput . '%');
     }
     if ($request->has('name') && !empty($request->name)) {
       $query->where('name', 'like', '%' . $request->name . '%');
@@ -418,6 +435,7 @@ class RidersController extends AppBaseController
         ->where(function ($q) use ($search) {
           $q->where('riders.name', 'like', "%{$search}%")
             ->orWhere('riders.rider_id', 'like', "%{$search}%")
+            ->orWhere('riders.courier_id', 'like', "%{$search}%")
             ->orWhere('riders.branded_plate_no', 'like', "%{$search}%")
             ->orWhere('riders.fleet_supervisor', 'like', "%{$search}%")
             ->orWhere('riders.emirate_hub', 'like', "%{$search}%")
@@ -480,54 +498,125 @@ class RidersController extends AppBaseController
    */
   public function store(CreateRidersRequest $request)
   {
-    $input = $request->all();
-    $items = $request->get('items');
+    try {
+      DB::beginTransaction();
 
-    $riders = $this->ridersRepository->create($input);
-    if ($riders) {
+      $input = $request->all();
+      $items = $request->get('items');
 
-      /* $parentAccount = Accounts::firstOrCreate(
-        ['name' => 'Riders', 'account_type' => 'Liability', 'parent_id' => null],
-        ['name' => 'Riders', 'account_type' => 'Liability', 'account_code' => Account::code()]
-      ); */
+      // Check if rider with this rider_id already exists
+      $existingRider = Riders::where('rider_id', $input['rider_id'])->first();
+      if ($existingRider) {
+        DB::rollback();
 
-      $account = new Accounts();
-      $account->account_code = 'RD' . str_pad($riders->rider_id, 4, "0", STR_PAD_LEFT);
-      $account->name = $riders->name;
-      $account->account_type = 'Liability';
-      $account->ref_name = 'Rider';
-      $account->parent_id = HeadAccount::RIDER;
-      $account->ref_id = $riders->id;
-      $account->save();
-
-      if ($items) {
-        foreach ($items['id'] as $key => $val) {
-          if ($items['id'][$key] != 0) {
-            $riderItemPrice = new RiderItemPrice();
-            $riderItemPrice->item_id = $items['id'][$key];
-            $riderItemPrice->price = isset($item['price'][$key]) ? $items['price'][$key] : 0;
-            $riderItemPrice->RID = $riders->id;
-            $riderItemPrice->save();
-          }
+        if (request()->ajax()) {
+          return response()->json([
+            'success' => false,
+            'message' => 'A rider with ID ' . $input['rider_id'] . ' already exists. Please use a different Rider ID.',
+            'errors' => [
+              'rider_id' => ['A rider with this ID already exists.']
+            ]
+          ], 422);
         }
+
+        Flash::error('A rider with ID ' . $input['rider_id'] . ' already exists.');
+        return redirect()->back()->withInput();
       }
 
-      $riders->account_id = $account->id;
-      $riders->status = 3;
-      $riders->save();
-    }
+      $riders = $this->ridersRepository->create($input);
+      if ($riders) {
 
-    // Check if request is AJAX
-    if (request()->ajax()) {
-      return response()->json([
-        'success' => true,
-        'message' => 'Rider created successfully!',
-        'redirect_url' => route('riders.index')
-      ]);
-    }
+        /* $parentAccount = Accounts::firstOrCreate(
+          ['name' => 'Riders', 'account_type' => 'Liability', 'parent_id' => null],
+          ['name' => 'Riders', 'account_type' => 'Liability', 'account_code' => Account::code()]
+        ); */
 
-    Flash::success('Rider created successfully.');
-    return redirect(route('riders.index'));
+        $account = new Accounts();
+        $account->account_code = 'RD' . str_pad($riders->rider_id, 4, "0", STR_PAD_LEFT);
+        $account->name = $riders->name;
+        $account->account_type = 'Liability';
+        $account->ref_name = 'Rider';
+        $account->parent_id = HeadAccount::RIDER;
+        $account->ref_id = $riders->id;
+        $account->save();
+
+        if ($items) {
+          foreach ($items['id'] as $key => $val) {
+            if ($items['id'][$key] != 0) {
+              $riderItemPrice = new RiderItemPrice();
+              $riderItemPrice->item_id = $items['id'][$key];
+              $riderItemPrice->price = isset($item['price'][$key]) ? $items['price'][$key] : 0;
+              $riderItemPrice->RID = $riders->id;
+              $riderItemPrice->save();
+            }
+          }
+        }
+
+        $riders->account_id = $account->id;
+        $riders->status = 3;
+        $riders->save();
+      }
+
+      DB::commit();
+
+      // Check if request is AJAX
+      if (request()->ajax()) {
+        return response()->json([
+          'success' => true,
+          'message' => 'Rider created successfully!',
+          'redirect_url' => route('riders.index')
+        ]);
+      }
+
+      Flash::success('Rider created successfully.');
+      return redirect(route('riders.index'));
+    } catch (\Illuminate\Database\QueryException $e) {
+      DB::rollback();
+
+      // Handle duplicate entry error
+      if ($e->getCode() == 23000) {
+        $errorMessage = 'A rider with this ID already exists. Please use a different Rider ID.';
+
+        if (request()->ajax()) {
+          return response()->json([
+            'success' => false,
+            'message' => $errorMessage,
+            'errors' => [
+              'rider_id' => ['A rider with this ID already exists.']
+            ]
+          ], 422);
+        }
+
+        Flash::error($errorMessage);
+        return redirect()->back()->withInput();
+      }
+
+      // Handle other database errors
+      Log::error('Rider creation error: ' . $e->getMessage());
+
+      if (request()->ajax()) {
+        return response()->json([
+          'success' => false,
+          'message' => 'An error occurred while creating the rider. Please try again.'
+        ], 500);
+      }
+
+      Flash::error('An error occurred while creating the rider. Please try again.');
+      return redirect()->back()->withInput();
+    } catch (\Exception $e) {
+      DB::rollback();
+      Log::error('Rider creation error: ' . $e->getMessage());
+
+      if (request()->ajax()) {
+        return response()->json([
+          'success' => false,
+          'message' => 'An unexpected error occurred. Please try again.'
+        ], 500);
+      }
+
+      Flash::error('An unexpected error occurred. Please try again.');
+      return redirect()->back()->withInput();
+    }
   }
 
   /**

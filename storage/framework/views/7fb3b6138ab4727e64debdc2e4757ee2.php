@@ -19,7 +19,7 @@
         <tr class="text-center" data-status="<?php echo e($installment->status); ?>">
             <td>
                 <span id="date_display_<?php echo e($installment->id); ?>"><?php echo e(\Carbon\Carbon::parse($installment->date)->format('d M Y')); ?></span>
-                <?php if($installment->status === 'pending'): ?>
+                <?php if (app(\Illuminate\Contracts\Auth\Access\Gate::class)->check('visaloan_edit')): ?>
                 <a href="javascript:void(0);" onclick="editDate(<?php echo e($installment->id); ?>)" class="ms-2">
                     <i class="fa fa-edit text-primary"></i>
                 </a>
@@ -34,7 +34,7 @@
             </td>
             <td>
                 <span id="billing_display_<?php echo e($installment->id); ?>"><?php echo e(\Carbon\Carbon::parse($installment->billing_month)->format('M Y')); ?></span>
-                <?php if($installment->status === 'pending'): ?>
+                <?php if (app(\Illuminate\Contracts\Auth\Access\Gate::class)->check('visaloan_edit')): ?>
                 <a href="javascript:void(0);" onclick="editBillingMonth(<?php echo e($installment->id); ?>)" class="ms-2">
                     <i class="fa fa-edit text-primary"></i>
                 </a>
@@ -49,7 +49,7 @@
             </td>
             <td>
                 <span id="amount_display_<?php echo e($installment->id); ?>"><?php echo e(number_format($installment->amount, 2)); ?></span>
-                <?php if($installment->status === 'pending'): ?>
+                <?php if (app(\Illuminate\Contracts\Auth\Access\Gate::class)->check('visaloan_edit')): ?>
                 <a href="javascript:void(0);" onclick="editAmount(<?php echo e($installment->id); ?>)" class="ms-2">
                     <i class="fa fa-edit text-primary"></i>
                 </a>
@@ -75,6 +75,7 @@
                         <i class="icon-base ti ti-dots icon-md text-body-secondary"></i>
                     </button>
                     <div class="dropdown-menu dropdown-menu-end" aria-labelledby="actiondropdown<?php echo e($installment->id); ?>">
+                        <?php if (app(\Illuminate\Contracts\Auth\Access\Gate::class)->check('visaloan_edit')): ?>
                         <?php if($installment->status === 'pending'): ?>
                         <a href="javascript:void(0);"
                             onclick="markAsPaid(<?php echo e($installment->id); ?>)"
@@ -88,8 +89,16 @@
                             <i class="fa fa-trash me-2"></i> Delete
                         </a>
                         <?php else: ?>
-                        <span class="dropdown-item-text text-success">
-                            <i class="fa fa-check me-2"></i> Paid
+                        <a href="javascript:void(0);"
+                            onclick="markAsPending(<?php echo e($installment->id); ?>)"
+                            class='dropdown-item waves-effect'>
+                            <i class="fa fa-undo me-2"></i> Mark as Pending
+                        </a>
+                        <?php endif; ?>
+                        <?php else: ?>
+                        <span class="dropdown-item-text text-<?php echo e($installment->status === 'paid' ? 'success' : 'warning'); ?>">
+                            <i class="fa fa-<?php echo e($installment->status === 'paid' ? 'check' : 'clock'); ?> me-2"></i> <?php echo e(ucfirst($installment->status)); ?>
+
                         </span>
                         <?php endif; ?>
                     </div>
@@ -147,6 +156,15 @@
         }
     }
 
+    function markAsPending(installmentId) {
+        if (confirm('Are you sure you want to mark this installment as pending?')) {
+            submitForm('<?php echo e(route("VisaExpense.payInstallment")); ?>', {
+                'installment_id': installmentId,
+                'status': 'pending'
+            });
+        }
+    }
+
     // Edit functions - show input field
     function editDate(installmentId) {
         document.getElementById('date_display_' + installmentId).classList.add('d-none');
@@ -171,74 +189,132 @@
     function saveDate(installmentId) {
         const newValue = document.getElementById('date_input_' + installmentId).value;
         const originalValue = document.getElementById('date_input_' + installmentId).getAttribute('data-original') || '';
+        const dateInput = document.getElementById('date_input_' + installmentId);
+        const dateDisplay = document.getElementById('date_display_' + installmentId);
+        const row = dateInput.closest('tr');
+        const isPaid = row && row.getAttribute('data-status') === 'paid';
 
         if (newValue && newValue !== originalValue) {
-            // Validate that the new date is not in the past
-            const selectedDate = new Date(newValue);
-            const today = new Date();
-            today.setHours(0, 0, 0, 0);
+            // Only validate date is not in past for pending installments
+            if (!isPaid) {
+                const selectedDate = new Date(newValue);
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
 
-            if (selectedDate < today) {
-                alert('You cannot select a date in the past.');
-                document.getElementById('date_input_' + installmentId).value = originalValue;
-                return;
+                if (selectedDate < today) {
+                    alert('You cannot select a date in the past for pending installments.');
+                    dateInput.value = originalValue;
+                    return;
+                }
             }
 
-            if (confirm('Are you sure you want to update the date? This will also update subsequent installments, voucher and transactions.')) {
-                submitForm('<?php echo e(route("VisaExpense.updateInstallmentField")); ?>', {
-                    'installment_id': installmentId,
-                    'field': 'date',
-                    'value': newValue,
-                    'update_subsequent': true
+            if (isPaid) {
+                // For paid installments, update display and track change for finalization
+                dateDisplay.textContent = new Date(newValue).toLocaleDateString('en-GB', {
+                    day: '2-digit',
+                    month: 'short',
+                    year: 'numeric'
                 });
+                dateInput.classList.add('d-none');
+                dateDisplay.classList.remove('d-none');
+
+                // Track the change for finalization
+                if (!window.DATE_CHANGES) window.DATE_CHANGES = {};
+                DATE_CHANGES[installmentId] = newValue;
+
+                // Mark row as modified
+                row.classList.add('bg-warning-subtle');
+                row.setAttribute('data-modified', '1');
+                showFinalizeBannerAttention();
+                updateFinalizeBannerVisibility();
                 return;
+            } else {
+                // For pending installments, confirm and submit directly
+                if (confirm('Are you sure you want to update the date? This will also update subsequent installments, voucher and transactions.')) {
+                    submitForm('<?php echo e(route("VisaExpense.updateInstallmentField")); ?>', {
+                        'installment_id': installmentId,
+                        'field': 'date',
+                        'value': newValue,
+                        'update_subsequent': true
+                    });
+                    return;
+                }
             }
         }
 
         // Cancel edit
-        document.getElementById('date_input_' + installmentId).classList.add('d-none');
-        document.getElementById('date_display_' + installmentId).classList.remove('d-none');
+        dateInput.classList.add('d-none');
+        dateDisplay.classList.remove('d-none');
     }
 
     function saveBillingMonth(installmentId) {
         const newValue = document.getElementById('billing_input_' + installmentId).value;
         const originalValue = document.getElementById('billing_input_' + installmentId).getAttribute('data-original') || '';
+        const billingInput = document.getElementById('billing_input_' + installmentId);
+        const billingDisplay = document.getElementById('billing_display_' + installmentId);
+        const row = billingInput.closest('tr');
+        const isPaid = row && row.getAttribute('data-status') === 'paid';
 
         if (newValue && newValue !== originalValue) {
-            // Validate that the new billing month is not in the past
-            const selectedDate = new Date(newValue + '-01');
-            const today = new Date();
-            const currentMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+            // Only validate month is not in past for pending installments
+            if (!isPaid) {
+                const selectedDate = new Date(newValue + '-01');
+                const today = new Date();
+                const currentMonth = new Date(today.getFullYear(), today.getMonth(), 1);
 
-            if (selectedDate < currentMonth) {
-                alert('You cannot select a billing month in the past.');
-                document.getElementById('billing_input_' + installmentId).value = originalValue;
-                return;
+                if (selectedDate < currentMonth) {
+                    alert('You cannot select a billing month in the past for pending installments.');
+                    billingInput.value = originalValue;
+                    return;
+                }
             }
 
-            if (confirm('Are you sure you want to update the billing month? This will also update subsequent installments, voucher and transactions.')) {
-                submitForm('<?php echo e(route("VisaExpense.updateInstallmentField")); ?>', {
-                    'installment_id': installmentId,
-                    'field': 'billing_month',
-                    'value': newValue,
-                    'update_subsequent': true
+            if (isPaid) {
+                // For paid installments, update display and track change for finalization
+                const formattedDate = new Date(newValue + '-01').toLocaleDateString('en-GB', {
+                    month: 'short',
+                    year: 'numeric'
                 });
+                billingDisplay.textContent = formattedDate;
+                billingInput.classList.add('d-none');
+                billingDisplay.classList.remove('d-none');
+
+                // Track the change for finalization
+                if (!window.BILLING_CHANGES) window.BILLING_CHANGES = {};
+                BILLING_CHANGES[installmentId] = newValue;
+
+                // Mark row as modified
+                row.classList.add('bg-warning-subtle');
+                row.setAttribute('data-modified', '1');
+                showFinalizeBannerAttention();
+                updateFinalizeBannerVisibility();
                 return;
+            } else {
+                // For pending installments, confirm and submit directly
+                if (confirm('Are you sure you want to update the billing month? This will also update subsequent installments, voucher and transactions.')) {
+                    submitForm('<?php echo e(route("VisaExpense.updateInstallmentField")); ?>', {
+                        'installment_id': installmentId,
+                        'field': 'billing_month',
+                        'value': newValue,
+                        'update_subsequent': true
+                    });
+                    return;
+                }
             }
         }
 
         // Cancel edit
-        document.getElementById('billing_input_' + installmentId).classList.add('d-none');
-        document.getElementById('billing_display_' + installmentId).classList.remove('d-none');
+        billingInput.classList.add('d-none');
+        billingDisplay.classList.remove('d-none');
     }
 
     function saveAmount(installmentId) {
         const newValue = document.getElementById('amount_input_' + installmentId).value;
         const originalValue = document.getElementById('amount_input_' + installmentId).getAttribute('data-original') || '';
-
-        // Only update UI and track change locally; do NOT submit to server here
         const amountInput = document.getElementById('amount_input_' + installmentId);
         const amountDisplay = document.getElementById('amount_display_' + installmentId);
+        const row = amountInput.closest('tr');
+        const isPaid = row && row.getAttribute('data-status') === 'paid';
 
         // Validate amount is positive
         if (!newValue || parseFloat(newValue) <= 0) {
@@ -246,16 +322,29 @@
             amountInput.value = originalValue;
             validateAmountInput(amountInput);
         } else {
-            // Update display immediately
+            // Update display immediately for all installments (paid or pending)
             amountDisplay.textContent = formatCurrency(parseFloat(newValue));
 
             // Track change if different from original; else remove from tracking
             if (newValue !== originalValue) {
                 INSTALLMENT_AMOUNT_CHANGES[installmentId] = parseFloat(newValue);
                 amountInput.setAttribute('data-changed', '1');
+
+                // For paid installments, mark the row to indicate it needs finalization
+                if (isPaid) {
+                    row.classList.add('bg-warning-subtle');
+                    row.setAttribute('data-modified', '1');
+                    showFinalizeBannerAttention();
+                }
             } else {
                 delete INSTALLMENT_AMOUNT_CHANGES[installmentId];
                 amountInput.removeAttribute('data-changed');
+
+                // Remove highlight if reverting to original value
+                if (isPaid) {
+                    row.classList.remove('bg-warning-subtle');
+                    row.removeAttribute('data-modified');
+                }
             }
         }
 
@@ -375,11 +464,14 @@
         const selectedDate = new Date(input.value);
         const today = new Date();
         today.setHours(0, 0, 0, 0);
+        const row = input.closest('tr');
+        const isPaid = row && row.getAttribute('data-status') === 'paid';
 
-        if (selectedDate < today) {
+        // Only validate date is not in past for pending installments
+        if (!isPaid && selectedDate < today) {
             input.style.borderColor = '#dc3545';
             input.style.backgroundColor = '#f8d7da';
-            input.title = 'Cannot select a date in the past';
+            input.title = 'Cannot select a date in the past for pending installments';
         } else {
             input.style.borderColor = '#28a745';
             input.style.backgroundColor = '#d4edda';
@@ -391,11 +483,14 @@
         const selectedDate = new Date(input.value + '-01');
         const today = new Date();
         const currentMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+        const row = input.closest('tr');
+        const isPaid = row && row.getAttribute('data-status') === 'paid';
 
-        if (selectedDate < currentMonth) {
+        // Only validate month is not in past for pending installments
+        if (!isPaid && selectedDate < currentMonth) {
             input.style.borderColor = '#dc3545';
             input.style.backgroundColor = '#f8d7da';
-            input.title = 'Cannot select a billing month in the past';
+            input.title = 'Cannot select a billing month in the past for pending installments';
         } else {
             input.style.borderColor = '#28a745';
             input.style.backgroundColor = '#d4edda';
@@ -455,6 +550,8 @@
 
     function getVisiblePendingDelta() {
         let delta = 0;
+
+        // Process pending rows
         const pendingRows = document.querySelectorAll('tr[data-status="pending"]');
         pendingRows.forEach(row => {
             if (row.getAttribute('data-deleted') === '1') return;
@@ -467,6 +564,21 @@
                 delta += (safeCurrent - safeOriginal);
             }
         });
+
+        // include paid rows that have been modified
+        const paidRows = document.querySelectorAll('tr[data-status="paid"][data-modified="1"]');
+        paidRows.forEach(row => {
+            const amountInput = row.querySelector('[id^="amount_input_"]');
+            if (amountInput) {
+                const currentVal = parseFloat(amountInput.value);
+                const originalVal = parseFloat(amountInput.getAttribute('data-original'));
+                const safeCurrent = isNaN(currentVal) ? 0 : currentVal;
+                const safeOriginal = isNaN(originalVal) ? 0 : originalVal;
+                // For paid rows, we need to add the difference to the pending total
+                delta += (safeCurrent - safeOriginal);
+            }
+        });
+
         // include deletions delta (subtract original amounts)
         for (const [id, originalAmount] of Object.entries(INSTALLMENT_DELETIONS)) {
             const orig = parseFloat(originalAmount);
@@ -518,7 +630,11 @@
     }
 
     function hasUnsavedChanges() {
-        return Object.keys(INSTALLMENT_AMOUNT_CHANGES).length > 0 || Object.keys(INSTALLMENT_DELETIONS).length > 0 || (Array.isArray(INSTALLMENT_ADDITIONS) && INSTALLMENT_ADDITIONS.length > 0);
+        return Object.keys(INSTALLMENT_AMOUNT_CHANGES).length > 0 ||
+            Object.keys(INSTALLMENT_DELETIONS).length > 0 ||
+            (Array.isArray(INSTALLMENT_ADDITIONS) && INSTALLMENT_ADDITIONS.length > 0) ||
+            (window.DATE_CHANGES && Object.keys(window.DATE_CHANGES).length > 0) ||
+            (window.BILLING_CHANGES && Object.keys(window.BILLING_CHANGES).length > 0);
     }
 
     function updateFinalizeBannerVisibility() {
@@ -553,11 +669,13 @@
             alert('Totals mismatch. Adjust amounts to exactly match the required total before finalizing.');
             return;
         }
-        // Build payload of changes + deletions + additions
+        // Build payload of changes + deletions + additions + date changes + billing changes
         const payload = {
             changes: JSON.stringify(INSTALLMENT_AMOUNT_CHANGES),
             deletions: JSON.stringify(Object.keys(INSTALLMENT_DELETIONS)),
-            additions: JSON.stringify(INSTALLMENT_ADDITIONS)
+            additions: JSON.stringify(INSTALLMENT_ADDITIONS),
+            date_changes: JSON.stringify(window.DATE_CHANGES || {}),
+            billing_changes: JSON.stringify(window.BILLING_CHANGES || {})
         };
         IS_FINALIZING = true;
         submitForm('<?php echo e(route("VisaExpense.finalizePayment")); ?>', payload);
@@ -683,6 +801,4 @@
             </div>
         </div>
     </div>
-</div>
-</div>
 </div><?php /**PATH D:\xammp1\htdocs\erpbk\resources\views/visa_expenses/installmentPlanTable.blade.php ENDPATH**/ ?>

@@ -14,12 +14,17 @@
 
 <?php
 $currentPerPage = request()->input('per_page', $defaultPerPage);
+
+// Handle 'all' and -1 options
+if ($currentPerPage === 'all' || $currentPerPage === -1 || $currentPerPage === '-1') {
+$isShowingAll = true;
+$displayPerPage = 'all';
+} else {
 $currentPerPage = is_numeric($currentPerPage) ? (int) $currentPerPage : $defaultPerPage;
 $currentPerPage = $currentPerPage > 0 ? $currentPerPage : $defaultPerPage;
-
-// Handle 'all' option
-$isShowingAll = $currentPerPage === 'all' || $currentPerPage >= $paginator->total();
+$isShowingAll = $currentPerPage >= $paginator->total();
 $displayPerPage = $isShowingAll ? 'all' : $currentPerPage;
+}
 ?>
 
 <?php if($paginator->hasPages() || $paginator->total() > 0): ?>
@@ -35,8 +40,8 @@ $displayPerPage = $isShowingAll ? 'all' : $currentPerPage;
                 <label for="perPageSelect" class="form-label me-2 mb-0">Show:</label>
                 <select id="perPageSelect" class="form-select form-select-sm" style="width: auto; display: inline-block;">
                     <?php $__currentLoopData = $perPageOptions; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $option): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
-                    <?php if($option === 'all'): ?>
-                    <option value="all" <?php echo e($displayPerPage === 'all' ? 'selected' : ''); ?>>
+                    <?php if($option === 'all' || $option === -1 || $option === '-1'): ?>
+                    <option value="<?php echo e($option); ?>" <?php echo e(($displayPerPage === 'all' || $currentPerPage == -1 || $currentPerPage == '-1') ? 'selected' : ''); ?>>
                         All (<?php echo e($paginator->total()); ?>)
                     </option>
                     <?php else: ?>

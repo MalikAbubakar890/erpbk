@@ -7,8 +7,38 @@
             <div class="form-group col-sm-4">
                 <?php echo Form::label('rider_id', 'Rider ID:',['class'=>'required']); ?>
 
-                <?php echo Form::number('rider_id', null, ['class' => 'form-control','required']); ?>
+                <?php echo Form::number('rider_id', null, ['class' => 'form-control','required', 'id' => 'rider_id_field']); ?>
 
+                <div class="invalid-feedback" id="rider_id_error" style="display: none;"></div>
+                <?php $__errorArgs = ['rider_id'];
+$__bag = $errors->getBag($__errorArgs[1] ?? 'default');
+if ($__bag->has($__errorArgs[0])) :
+if (isset($message)) { $__messageOriginal = $message; }
+$message = $__bag->first($__errorArgs[0]); ?>
+                <span class="text-danger"><?php echo e($message); ?></span>
+                <?php unset($message);
+if (isset($__messageOriginal)) { $message = $__messageOriginal; }
+endif;
+unset($__errorArgs, $__bag); ?>
+            </div>
+
+            <!-- Courier ID -->
+            <div class="form-group col-sm-4">
+                <?php echo Form::label('courier_id', 'Courier ID:'); ?>
+
+                <?php echo Form::number('courier_id', null, ['class' => 'form-control', 'id' => 'courier_id_field']); ?>
+
+                <div class="invalid-feedback" id="courier_id_error" style="display: none;"></div>
+                <?php $__errorArgs = ['courier_id'];
+$__bag = $errors->getBag($__errorArgs[1] ?? 'default');
+if ($__bag->has($__errorArgs[0])) :
+if (isset($message)) { $__messageOriginal = $message; }
+$message = $__bag->first($__errorArgs[0]); ?>
+                <span class="text-danger"><?php echo e($message); ?></span>
+                <?php unset($message);
+if (isset($__messageOriginal)) { $message = $__messageOriginal; }
+endif;
+unset($__errorArgs, $__bag); ?>
             </div>
 
             <!-- Name -->
@@ -26,9 +56,6 @@
                 <?php echo Form::tel('personal_contact', null, ['class' => 'form-control', 'placeholder' => '05XXXXXXXX', 'maxlength' => 10]); ?>
 
             </div>
-        </div>
-
-        <div class="row">
             <!-- Personal Email -->
             <div class="form-group col-sm-4">
                 <?php echo Form::label('personal_email', 'Personal Email:',['class'=>'required']); ?>
@@ -65,9 +92,6 @@
                 ]); ?>
 
             </div>
-        </div>
-
-        <div class="row">
             <!-- Date of Birth -->
             <div class="form-group col-sm-4">
                 <?php echo Form::label('dob', 'Date Of Birth:'); ?>

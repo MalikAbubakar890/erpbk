@@ -1,5 +1,17 @@
 @push('third_party_stylesheets')
 @endpush
+<style>
+   td:focus,
+   th:focus {
+      outline: 2px solid #2196f3;
+      outline-offset: -2px;
+      background: #e3f2fd;
+   }
+
+   th {
+      white-space: nowrap;
+   }
+</style>
 <table class="table table-striped dataTable no-footer" id="dataTableBuilder">
    <thead class="">
       <tr role="row">
@@ -29,22 +41,22 @@
          @php $key = $col['data'] ?? ($col['key'] ?? null); @endphp
          @switch($key)
          @case('bike_code')
-         <td>{{ $r->bike_code }}</td>
+         <td tabindex="0">{{ $r->bike_code }}</td>
          @break
          @case('plate')
-         <td class="text-start"><a href="{{ route('bikes.show', $r->id) }}">{{ $r->plate }}</a></td>
+         <td tabindex="0" class="text-start"><a href="{{ route('bikes.show', $r->id) }}">{{ $r->plate }}</a></td>
          @break
          @case('rider_id')
          @php
          $rider = DB::table('riders')->where('id', $r->rider_id)->first();
          @endphp
-         <td>{{ $rider->rider_id ?? '-' }}</td>
+         <td tabindex="0">{{ $rider->rider_id ?? '-' }}</td>
          @break
          @case('rider_name')
          @php
          $rider = DB::table('riders')->where('id', $r->rider_id)->first();
          @endphp
-         <td>
+         <td tabindex="0">
             @if ($rider)
             <a href="{{ route('riders.show', $rider->id) }}">{{ $rider->name }}</a>
             @else
@@ -53,22 +65,22 @@
          </td>
          @break
          @case('emirates')
-         <td>{{ $r->emirates }}</td>
+         <td tabindex="0">{{ $r->emirates }}</td>
          @break
          @case('company')
          @php
          $company = DB::Table('leasing_companies')->where('id' , $r->company)->first();
          @endphp
-         <td>{{ $company ? $company->name : '-' }}</td>
+         <td tabindex="0">{{ $company ? $company->name : '-' }}</td>
          @break
          @case('customer_id')
-         <td>{{ DB::table('customers')->where('id' , $r->customer_id)->first()->name ?? '-' }}</td>
+         <td tabindex="0">{{ DB::table('customers')->where('id' , $r->customer_id)->first()->name ?? '-' }}</td>
          @break
          @case('expiry_date')
-         <td>{{ $r->expiry_date ? \Carbon\Carbon::parse($r->expiry_date)->format('d M Y') : '-' }}</td>
+         <td tabindex="0">{{ $r->expiry_date ? \Carbon\Carbon::parse($r->expiry_date)->format('d M Y') : '-' }}</td>
          @break
          @case('warehouse')
-         <td>
+         <td tabindex="0">
             @php
             $badgeClass = match($r->warehouse) {
             'Active' => 'bg-label-success',
@@ -82,7 +94,7 @@
          </td>
          @break
          @case('status')
-         <td>
+         <td tabindex="0">
             @php
             $statusText = $r->status == 1 ? 'Active' : 'Inactive';
             $badgeClass = $r->status == 1 ? 'bg-label-success' : 'bg-label-danger';
@@ -91,13 +103,13 @@
          </td>
          @break
          @case('created_by')
-         <td>{{ $r->created_by ? \App\Models\User::find($r->created_by)->name : '-' }}</td>
+         <td tabindex="0">{{ $r->created_by ? \App\Models\User::find($r->created_by)->name : '-' }}</td>
          @break
          @case('updated_by')
-         <td>{{ $r->updated_by ? \App\Models\User::find($r->updated_by)->name : '-' }}</td>
+         <td tabindex="0">{{ $r->updated_by ? \App\Models\User::find($r->updated_by)->name : '-' }}</td>
          @break
          @case('action')
-         <td style="position: relative;">
+         <td tabindex="0" style="position: relative;">
             <div class="dropdown">
                <button class="btn btn-text-secondary rounded-pill text-body-secondary border-0 p-2 me-n1 waves-effect" type="button" id="actiondropdown_{{ $r->id }}" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false" style="visibility: visible !important; display: inline-block !important;">
                   <i class="icon-base ti ti-dots icon-md text-body-secondary"></i>
@@ -121,7 +133,7 @@
          </td>
          @break
          @default
-         <td>{{ data_get($r, $key, '-') }}</td>
+         <td tabindex="0">{{ data_get($r, $key, '-') }}</td>
          @endswitch
          @endforeach
          <td></td>

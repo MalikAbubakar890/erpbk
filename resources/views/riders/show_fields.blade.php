@@ -18,6 +18,11 @@
             </div>
             <!--col-->
             <div class="col-md-3 form-group col-3">
+                <label>Courier ID </label>
+                <p>{{@$result['courier_id']}}</p>
+            </div>
+            <!--col-->
+            <div class="col-md-3 form-group col-3">
                 <label>Rider Name </label>
                 <p>{{@$result['name']}}</p>
             </div>
@@ -82,6 +87,10 @@
                 <div class="col-md-3 form-group col-3">
                     <label class="required">Rider ID</label>
                     <input type="text" class="form-control form-control-sm" name="rider_id" value="{{$result['rider_id']}}" readonly>
+                </div>
+                <div class="col-md-3 form-group col-3">
+                    <label>Courier ID</label>
+                    <input type="text" class="form-control form-control-sm" name="courier_id" value="{{@$result['courier_id']}}">
                 </div>
                 <div class="col-md-3 form-group col-3">
                     <label>Rider Name</label>

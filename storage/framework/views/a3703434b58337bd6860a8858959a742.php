@@ -78,7 +78,7 @@
                             </a></li>
                         <?php endif; ?>
                         <?php if (app(\Illuminate\Contracts\Auth\Access\Gate::class)->check('voucher_edit')): ?>
-                        <?php if($voucher->voucher_type !='RFV' && $voucher->voucher_type !='SV' && $voucher->voucher_type !='VL'): ?>
+                        <?php if(in_array($voucher->voucher_type, ['AL', 'COD', 'PN', 'PAY', 'VC', 'JV'])): ?>
                         <li><a href="javascript:void(0);" data-size="xl"
                                 data-title="Edit Voucher No. <?php echo e($voucher->voucher_type.'-'.str_pad($voucher->id,4,'0',STR_PAD_LEFT)); ?>"
                                 data-action="<?php echo e(route('vouchers.edit', $voucher->trans_code)); ?>"
@@ -86,10 +86,9 @@
                                 <i class="fa fa-edit my-1"></i> Edit
                             </a></li>
                         <?php endif; ?>
-
                         <?php endif; ?>
                         <?php if (app(\Illuminate\Contracts\Auth\Access\Gate::class)->check('voucher_delete')): ?>
-                        <?php if($voucher->voucher_type !='RFV' && $voucher->voucher_type !='SV' && $voucher->voucher_type !='VL'): ?>
+                        <?php if(in_array($voucher->voucher_type, ['AL', 'COD', 'PN', 'PAY', 'VC', 'JV'])): ?>
                         <li><a href="javascript:void(0);" onclick="deleteVoucher('<?php echo e($voucher->trans_code); ?>')" class='dropdown-item waves-effect text-danger'>
                                 <i class="fa fa-trash my-1"></i> Delete
                             </a></li>
@@ -122,7 +121,7 @@
 </div>
 <?php endif; ?>
 
-<script>
+<script type="text/javascript">
     function deleteVoucher(transCode) {
         if (confirm('Are you sure you want to delete this voucher?')) {
             $.ajax({

@@ -34,6 +34,9 @@ class ReportController extends Controller
   }
   public function rider_report_data(Request $request)
   {
+    // Increase execution time for large datasets (e.g., "Show All")
+    set_time_limit(300); // 5 minutes max execution time
+
     $data = '';
     $total = 0;
     $ob_total = 0;
@@ -51,7 +54,9 @@ class ReportController extends Controller
       }
     }
 
-    $result = new Riders();
+    // Optimize query with eager loading to reduce database queries
+    $result = Riders::with(['vendor', 'bikes']);
+
     if ($request->status && $request->status !== '') {
       $result = $result->where('status', $request->status);
     }
@@ -61,11 +66,29 @@ class ReportController extends Controller
     if ($request->designation && $request->designation !== '') {
       $result = $result->where('designation', $request->designation);
     }
+
     // Global pagination
-    $perPage = (int) ($request->get('per_page') ?: 25);
+    $perPage = $request->get('per_page', 25);
+
+    // Handle 'all' and -1 options (show all records)
+    if ($perPage === 'all' || $perPage === '-1' || $perPage == -1) {
+      $perPage = $result->count(); // Get all records
+    } else {
+      $perPage = (int) $perPage;
+      if ($perPage <= 0) $perPage = 25;
+    }
+
     $page = (int) ($request->get('page') ?: 1);
     $totalCount = $result->count();
     $result = $result->orderBy('rider_id')->forPage($page, $perPage)->get();
+
+    // Pre-load active bikes status for all riders in one query
+    $riderIds = $result->pluck('id')->toArray();
+    $activeBikeRiders = DB::table('bikes')
+      ->whereIn('rider_id', $riderIds)
+      ->where('warehouse', 'Active')
+      ->pluck('rider_id')
+      ->toArray();
 
 
 
@@ -123,13 +146,9 @@ class ReportController extends Controller
       $data .= '<td >' . @$rider->labor_card_number . '</td>';
       $data .= '<td  >' . @$rider->bikes->plate . '</td>';
       $data .= '<td  >' . $rider->wps . '</td>';
-      $hasActiveBike = DB::table('bikes')
-        ->where('rider_id', @$rider->id)
-        ->where('warehouse', 'Active')
-        ->exists();
 
-      // Determine status based on bike assignment
-      $isActive = $hasActiveBike;
+      // Use pre-loaded active bike status (optimized - no database query per rider)
+      $isActive = in_array($rider->id, $activeBikeRiders);
       $badgeClass = $isActive ? 'bg-label-success' : 'bg-label-danger';
       $statusText = $isActive ? 'Active' : 'Inactive';
       $data .= '<td>

@@ -11776,6 +11776,9 @@ button.list-group-item-gray.active {
 .card .card-body + .card-footer {
   padding-top: 0;
 }
+.card .card-body + .card-footer {
+  padding-top: 20px;
+}
 .card[class*=card-border-shadow-] {
   position: relative;
   border-bottom: none;

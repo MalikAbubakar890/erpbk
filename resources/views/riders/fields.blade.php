@@ -6,7 +6,21 @@
             <!-- Rider ID -->
             <div class="form-group col-sm-4">
                 {!! Form::label('rider_id', 'Rider ID:',['class'=>'required']) !!}
-                {!! Form::number('rider_id', null, ['class' => 'form-control','required']) !!}
+                {!! Form::number('rider_id', null, ['class' => 'form-control','required', 'id' => 'rider_id_field']) !!}
+                <div class="invalid-feedback" id="rider_id_error" style="display: none;"></div>
+                @error('rider_id')
+                <span class="text-danger">{{ $message }}</span>
+                @enderror
+            </div>
+
+            <!-- Courier ID -->
+            <div class="form-group col-sm-4">
+                {!! Form::label('courier_id', 'Courier ID:') !!}
+                {!! Form::number('courier_id', null, ['class' => 'form-control', 'id' => 'courier_id_field']) !!}
+                <div class="invalid-feedback" id="courier_id_error" style="display: none;"></div>
+                @error('courier_id')
+                <span class="text-danger">{{ $message }}</span>
+                @enderror
             </div>
 
             <!-- Name -->
@@ -20,9 +34,6 @@
                 {!! Form::label('personal_contact', 'Rider Contact:') !!}
                 {!! Form::tel('personal_contact', null, ['class' => 'form-control', 'placeholder' => '05XXXXXXXX', 'maxlength' => 10]) !!}
             </div>
-        </div>
-
-        <div class="row">
             <!-- Personal Email -->
             <div class="form-group col-sm-4">
                 {!! Form::label('personal_email', 'Personal Email:',['class'=>'required']) !!}
@@ -53,9 +64,6 @@
                 'placeholder' => 'Select Ethnicity'
                 ]) !!}
             </div>
-        </div>
-
-        <div class="row">
             <!-- Date of Birth -->
             <div class="form-group col-sm-4">
                 {!! Form::label('dob', 'Date Of Birth:') !!}

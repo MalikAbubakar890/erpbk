@@ -1,5 +1,17 @@
 <?php $__env->startPush('third_party_stylesheets'); ?>
 <?php $__env->stopPush(); ?>
+<style>
+   td:focus,
+   th:focus {
+      outline: 2px solid #2196f3;
+      outline-offset: -2px;
+      background: #e3f2fd;
+   }
+
+   th {
+      white-space: nowrap;
+   }
+</style>
 <table class="table table-striped dataTable no-footer" id="dataTableBuilder">
    <thead class="">
       <tr role="row">
@@ -29,22 +41,22 @@
          <?php $key = $col['data'] ?? ($col['key'] ?? null); ?>
          <?php switch($key):
          case ('bike_code'): ?>
-         <td><?php echo e($r->bike_code); ?></td>
+         <td tabindex="0"><?php echo e($r->bike_code); ?></td>
          <?php break; ?>
          <?php case ('plate'): ?>
-         <td class="text-start"><a href="<?php echo e(route('bikes.show', $r->id)); ?>"><?php echo e($r->plate); ?></a></td>
+         <td tabindex="0" class="text-start"><a href="<?php echo e(route('bikes.show', $r->id)); ?>"><?php echo e($r->plate); ?></a></td>
          <?php break; ?>
          <?php case ('rider_id'): ?>
          <?php
          $rider = DB::table('riders')->where('id', $r->rider_id)->first();
          ?>
-         <td><?php echo e($rider->rider_id ?? '-'); ?></td>
+         <td tabindex="0"><?php echo e($rider->rider_id ?? '-'); ?></td>
          <?php break; ?>
          <?php case ('rider_name'): ?>
          <?php
          $rider = DB::table('riders')->where('id', $r->rider_id)->first();
          ?>
-         <td>
+         <td tabindex="0">
             <?php if($rider): ?>
             <a href="<?php echo e(route('riders.show', $rider->id)); ?>"><?php echo e($rider->name); ?></a>
             <?php else: ?>
@@ -53,22 +65,22 @@
          </td>
          <?php break; ?>
          <?php case ('emirates'): ?>
-         <td><?php echo e($r->emirates); ?></td>
+         <td tabindex="0"><?php echo e($r->emirates); ?></td>
          <?php break; ?>
          <?php case ('company'): ?>
          <?php
          $company = DB::Table('leasing_companies')->where('id' , $r->company)->first();
          ?>
-         <td><?php echo e($company ? $company->name : '-'); ?></td>
+         <td tabindex="0"><?php echo e($company ? $company->name : '-'); ?></td>
          <?php break; ?>
          <?php case ('customer_id'): ?>
-         <td><?php echo e(DB::table('customers')->where('id' , $r->customer_id)->first()->name ?? '-'); ?></td>
+         <td tabindex="0"><?php echo e(DB::table('customers')->where('id' , $r->customer_id)->first()->name ?? '-'); ?></td>
          <?php break; ?>
          <?php case ('expiry_date'): ?>
-         <td><?php echo e($r->expiry_date ? \Carbon\Carbon::parse($r->expiry_date)->format('d M Y') : '-'); ?></td>
+         <td tabindex="0"><?php echo e($r->expiry_date ? \Carbon\Carbon::parse($r->expiry_date)->format('d M Y') : '-'); ?></td>
          <?php break; ?>
          <?php case ('warehouse'): ?>
-         <td>
+         <td tabindex="0">
             <?php
             $badgeClass = match($r->warehouse) {
             'Active' => 'bg-label-success',
@@ -82,7 +94,7 @@
          </td>
          <?php break; ?>
          <?php case ('status'): ?>
-         <td>
+         <td tabindex="0">
             <?php
             $statusText = $r->status == 1 ? 'Active' : 'Inactive';
             $badgeClass = $r->status == 1 ? 'bg-label-success' : 'bg-label-danger';
@@ -91,13 +103,13 @@
          </td>
          <?php break; ?>
          <?php case ('created_by'): ?>
-         <td><?php echo e($r->created_by ? \App\Models\User::find($r->created_by)->name : '-'); ?></td>
+         <td tabindex="0"><?php echo e($r->created_by ? \App\Models\User::find($r->created_by)->name : '-'); ?></td>
          <?php break; ?>
          <?php case ('updated_by'): ?>
-         <td><?php echo e($r->updated_by ? \App\Models\User::find($r->updated_by)->name : '-'); ?></td>
+         <td tabindex="0"><?php echo e($r->updated_by ? \App\Models\User::find($r->updated_by)->name : '-'); ?></td>
          <?php break; ?>
          <?php case ('action'): ?>
-         <td style="position: relative;">
+         <td tabindex="0" style="position: relative;">
             <div class="dropdown">
                <button class="btn btn-text-secondary rounded-pill text-body-secondary border-0 p-2 me-n1 waves-effect" type="button" id="actiondropdown_<?php echo e($r->id); ?>" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false" style="visibility: visible !important; display: inline-block !important;">
                   <i class="icon-base ti ti-dots icon-md text-body-secondary"></i>
@@ -121,7 +133,7 @@
          </td>
          <?php break; ?>
          <?php default: ?>
-         <td><?php echo e(data_get($r, $key, '-')); ?></td>
+         <td tabindex="0"><?php echo e(data_get($r, $key, '-')); ?></td>
          <?php endswitch; ?>
          <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
          <td></td>

@@ -147,7 +147,8 @@ class BikesController extends AppBaseController
       'bike_code',
       'plate',
       'rider_id',
-      'rider_name',
+      // Rider name is a computed column and should always be available
+      'rider_name', // Ensure rider_name is included and controllable
       'emirates',
       'company',
       'customer_id',
@@ -166,7 +167,11 @@ class BikesController extends AppBaseController
 
     // Add preferred DB columns first
     foreach ($preferredOrder as $key) {
-      if (in_array($key, $dbColumns)) {
+      // Add rider_name always, even if not in DB
+      if ($key === 'rider_name') {
+        $columns[] = ['data' => 'rider_name', 'title' => $makeTitle('rider_name')];
+        $added['rider_name'] = true;
+      } elseif (in_array($key, $dbColumns)) {
         $columns[] = ['data' => $key, 'title' => $makeTitle($key)];
         $added[$key] = true;
       }
@@ -367,6 +372,33 @@ class BikesController extends AppBaseController
     $bikes = $this->bikesRepository->update($request->all(), $id);
     $bikes->updated_by = Auth::user()->id;
     $bikes->save();
+
+    // Sync customer_id and designation to rider if changed and rider is assigned
+    if ($bikes->rider_id && $request->has('customer_id')) {
+      $rider = Riders::find($bikes->rider_id);
+      if ($rider) {
+        $customer_id = $request->customer_id;
+        // Determine new designation (copy from assignrider logic)
+        $designation = $rider->designation;
+        $emirate_hub = $request->emirate_hub;
+        if ($bikes->vehicle_type) {
+          $vehicleModel = \DB::table('vehicle_models')->where('id', $bikes->vehicle_type)->first();
+          $vehicleTypeName = $vehicleModel ? strtolower($vehicleModel->name) : '';
+          if (strpos($vehicleTypeName, 'bike') !== false) {
+            $designation = 'Rider';
+          } elseif (strpos($vehicleTypeName, 'car') !== false || strpos($vehicleTypeName, 'van') !== false) {
+            $designation = 'Driver';
+          } elseif (strpos($vehicleTypeName, 'cyclist') !== false) {
+            $designation = 'Cyclist';
+          }
+        }
+        $rider->update([
+          'customer_id' => $customer_id,
+          'designation' => $designation,
+          'emirate_hub' => $emirate_hub,
+        ]);
+      }
+    }
     return response()->json(['message' => 'Bike updated successfully.']);
   }
 
@@ -447,6 +479,12 @@ class BikesController extends AppBaseController
               'notes'       => $request->notes ?? null,
               'created_by'  => Auth::id()
             ]);
+
+            // Fire event for WhatsApp notification
+            $rider = Riders::find($request->rider_id);
+            if ($rider) {
+              event(new \App\Events\BikeAssignedEvent($bike, $rider, now(), Auth::user()));
+            }
             break;
           case 'Absconded':
             Riders::where('id', $bike->rider_id)
@@ -567,6 +605,12 @@ class BikesController extends AppBaseController
           Riders::where('id', $request->rider_id)
             ->update(['status' => 1, 'designation' => $designation, 'customer_id' => $customer_id, 'emirate_hub' => $emirate_hub]);
           $bike->update(['rider_id' => $request->rider_id, 'warehouse' => $request->warehouse]);
+
+          // Fire event for WhatsApp notification
+          $rider = Riders::find($request->rider_id);
+          if ($rider) {
+            event(new \App\Events\BikeAssignedEvent($bike, $rider, now(), Auth::user()));
+          }
         } elseif ($request->warehouse == 'Absconded') {
           $data['rider_id'] = $bike->rider_id;
           Riders::where('id', $bike->rider_id)
@@ -582,7 +626,8 @@ class BikesController extends AppBaseController
             ->update(['status' => 3, 'designation' => 'null', 'customer_id' => 'null', 'emirate_hub' => 'null']);
           $bike->update(['rider_id' => $request->rider_id, 'warehouse' => $request->warehouse]);
         }
-        // Save bike history
+        // Save bike history with created_by
+        $data['created_by'] = Auth::id(); // Save who assigned the bike
         BikeHistory::create($data);
         DB::commit();
         return response()->json(['message' => 'Rider assigned successfully.']);

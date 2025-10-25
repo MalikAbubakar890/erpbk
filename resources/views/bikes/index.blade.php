@@ -296,6 +296,26 @@
                     </select>
                 </div>
                 <div class="form-group col-md-12">
+                    <label for="customer_id">Filter by Customer</label>
+                    <select class="form-control " id="customer_id" name="customer_id">
+                        @php
+                        $customerids = DB::table('bikes')
+                        ->whereNotNull('customer_id')
+                        ->where('customer_id', '!=', '')
+                        ->pluck('customer_id')
+                        ->unique();
+                        $customers = DB::table('customers')
+                        ->whereIn('id', $customerids)
+                        ->select('id', 'name')
+                        ->get();
+                        @endphp
+                        <option value="" selected>Select</option>
+                        @foreach($customers as $customer)
+                        <option value="{{ $customer->id }}" {{ request('customer_id') == $customer->id ? 'selected' : '' }}>{{ $customer->name }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="form-group col-md-12">
                     <label for="company">Filter by Company</label>
                     <select class="form-control " id="company" name="company">
                         @php

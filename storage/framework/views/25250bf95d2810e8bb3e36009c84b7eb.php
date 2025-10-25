@@ -18,6 +18,7 @@
 <link rel="stylesheet" href="<?php echo e(asset('assets/vendor/libs/spinkit/spinkit.css')); ?>" />
 <link rel="stylesheet" href="<?php echo e(asset('assets/vendor/libs/select2/select2.css')); ?>" />
 <link rel="stylesheet" href="<?php echo e(asset('css/custom.css')); ?>" />
+<link rel="stylesheet" href="<?php echo e(asset('css/fixed-footer.css')); ?>?v=1.3" />
 
 <!-- Vendor Styles -->
 <?php echo $__env->yieldContent('vendor-style'); ?>

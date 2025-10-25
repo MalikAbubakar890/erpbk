@@ -630,15 +630,25 @@ class VoucherService
 
     $data['trans_date'] = $request->trans_date;
     $data['voucher_type'] = $request->voucher_type;
-    $data['payment_type'] = $request->payment_type;
-    $data['payment_from'] = $request->payment_from;
+    $data['payment_type'] = $request->payment_type ?? 0;
+    $data['payment_from'] = $request->account_id[0];
     $data['billing_month'] = $request->billing_month;
-    $data['ref_id'] = @$request->ref_id;
 
-    $data['remarks'] = General::VoucherType($request->voucher_type);
+    $data['remarks'] = General::VoucherType($request->voucher_type) . ' Month of ' . date('M-Y', strtotime($data['billing_month']));
     $data['amount'] = array_sum($request->dr_amount);
-
     $id = $request->v_trans_code;
+
+    // ALLOW duplicate debit/credit for these voucher types:
+    $skipDupAccountTypes = ['AL', 'COD', 'PN', 'PAY', 'VC'];
+    if (!in_array($request->voucher_type, $skipDupAccountTypes)) {
+      $head_account_id = $request->payment_from;
+      $party_accounts = array_filter($request->account_id, fn($id) => !empty($id) && $id != 0);
+      if (!empty($head_account_id) && $head_account_id != 0 && in_array($head_account_id, $party_accounts)) {
+        throw \Illuminate\Validation\ValidationException::withMessages([
+          'account_id' => ['Credit/Head Account must not be the same as any Debit/Party Account.']
+        ]);
+      }
+    }
 
     if ($id) {
       Transactions::where('trans_code', $id)->delete();
@@ -656,47 +666,36 @@ class VoucherService
       $ret = Vouchers::create($data);
     }
 
-    //dr cr to rider
-
+    //dr/cr logic for each party/account: ALLOW both a debit and a credit per account in the same voucher
     foreach ($request->account_id as $key => $val) {
-      if (!empty($request['account_id'][$key]) && $request['dr_amount'][$key] > 0) {
-        //  transaction recording
-        $transactionData = [
-          'account_id' => $request['account_id'][$key],
-          'reference_id' => $ret->id,
-          'reference_type' => 'Voucher',
-          'trans_code' => $trans_code,
-          'trans_date' => $data['trans_date'],
-          'narration' => $request['narration'][$key],
-          'billing_month' => $data['billing_month'] ?? date('Y-m-01'),
-        ];
-        if ($rider_dr_cr == 'debit') {
-          $transactionData['debit'] = $request['dr_amount'][$key] ?? 0;
+      if (!empty($val) && $val != 0) {
+        if (!empty($request->dr_amount[$key]) && $request->dr_amount[$key] > 0) {
+          $transactionData = [
+            'account_id' => $val,
+            'reference_id' => $ret->id,
+            'reference_type' => 'Voucher',
+            'trans_code' => $trans_code,
+            'trans_date' => $data['trans_date'],
+            'narration' => $request->narration[$key],
+            'debit' => $request->dr_amount[$key],
+            'billing_month' => $data['billing_month'] ?? date('Y-m-01'),
+          ];
+          $this->TransactionService->recordTransaction($transactionData);
         }
-        if ($rider_dr_cr == 'credit') {
-          $transactionData['credit'] = $request['dr_amount'][$key] ?? 0;
+        if (!empty($request->cr_amount[$key]) && $request->cr_amount[$key] > 0) {
+          $transactionData = [
+            'account_id' => $val,
+            'reference_id' => $ret->id,
+            'reference_type' => 'Voucher',
+            'trans_code' => $trans_code,
+            'trans_date' => $data['trans_date'],
+            'narration' => $request->narration[$key],
+            'credit' => $request->cr_amount[$key],
+            'billing_month' => $data['billing_month'] ?? date('Y-m-01'),
+          ];
+          $this->TransactionService->recordTransaction($transactionData);
         }
-        $this->TransactionService->recordTransaction($transactionData);
       }
     }
-
-
-    //dr cr to Head Account
-    $transactionData = [
-      'account_id' => $request->payment_from,
-      'reference_id' => $ret->id,
-      'reference_type' => 'Voucher',
-      'trans_code' => $trans_code,
-      'trans_date' => $data['trans_date'],
-      'narration' => $request['narration'][0],
-      'billing_month' => $data['billing_month'] ?? date('Y-m-01'),
-    ];
-    if ($payment_dr_cr == 'debit') {
-      $transactionData['debit'] = $data['amount'] ?? 0;
-    }
-    if ($payment_dr_cr == 'credit') {
-      $transactionData['credit'] = $data['amount'] ?? 0;
-    }
-    $this->TransactionService->recordTransaction($transactionData);
   }
 }

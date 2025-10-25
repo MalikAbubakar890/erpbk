@@ -44,6 +44,7 @@
 <!-- END: Page Vendor JS-->
 <!-- BEGIN: Theme JS-->
 <script src="{{ asset('assets/js/main.js') }}"></script>
+@include('layouts.datatables_js')
 <script src="{{ asset('js/custom.js') }}"></script>
 <script src="{{ asset('js/application.js?id=1') }}"></script>
 {{-- <script src="{{ asset('js/riderDynamicFileds.js') }}"></script> --}}

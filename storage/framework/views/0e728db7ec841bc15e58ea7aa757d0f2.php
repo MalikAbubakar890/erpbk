@@ -1,13 +1,13 @@
-<?php echo Form::open(['route' => 'vouchers.store', 'id'=>'formajax']); ?>
+<?php echo Form::open(['route' => 'vouchers.store', 'id'=>'formajax', 'class' => 'form-with-fixed-footer']); ?>
 
 <input type="hidden" id="reload_page" value="1">
 
-<div class="">
+<div class="card-body card-body-with-footer">
     <?php echo $__env->make('vouchers.fields', \Illuminate\Support\Arr::except(get_defined_vars(), ['__data', '__path']))->render(); ?>
 </div>
 
 
-<div class="card-footer">
+<div class="card-footer fixed-footer">
     <?php echo Form::submit('Save', ['class' => 'btn btn-primary','onclick'=>'getTotal();']); ?>
 
 </div>

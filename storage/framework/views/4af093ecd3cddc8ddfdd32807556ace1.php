@@ -44,6 +44,7 @@
 <!-- END: Page Vendor JS-->
 <!-- BEGIN: Theme JS-->
 <script src="<?php echo e(asset('assets/js/main.js')); ?>"></script>
+<?php echo $__env->make('layouts.datatables_js', \Illuminate\Support\Arr::except(get_defined_vars(), ['__data', '__path']))->render(); ?>
 <script src="<?php echo e(asset('js/custom.js')); ?>"></script>
 <script src="<?php echo e(asset('js/application.js?id=1')); ?>"></script>
 
