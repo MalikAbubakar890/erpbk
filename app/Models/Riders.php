@@ -74,7 +74,8 @@ class Riders extends Model
     'attendance',
     'customer_id',
     'attendance_date',
-    'recuriter'
+    'recuriter',
+    'recruiter_id'
   ];
 
   protected $casts = [
@@ -127,7 +128,8 @@ class Riders extends Model
     'shift' => 'string',
     'attendance' => 'string',
     'policy_no' => 'string',
-    'recuriter' => 'string'
+    'recuriter' => 'string',
+    'recruiter_id' => 'integer'
   ];
 
   public static array $rules = [
@@ -186,7 +188,8 @@ class Riders extends Model
     'insurance' => 'nullable|string|max:100',
     'insurance_expiry' => 'nullable',
     'policy_no' => 'nullable|string|max:255',
-    'recuriter' => 'nullable|string|max:255'
+    'recuriter' => 'nullable|string|max:255',
+    'recruiter_id' => 'nullable|integer|exists:recruiters,id'
   ];
 
   public function items()
@@ -238,5 +241,10 @@ class Riders extends Model
   function activity()
   {
     return $this->hasMany(RiderActivities::class, 'rider_id', 'id')->where(\DB::raw('DATE_FORMAT(date, "%Y-%m")'), '=', date('Y-m'));
+  }
+
+  function recruiter()
+  {
+    return $this->belongsTo(Recruiters::class, 'recruiter_id', 'id');
   }
 }

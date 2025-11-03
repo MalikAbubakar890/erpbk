@@ -240,11 +240,38 @@ class RiderActivitiesController extends AppBaseController
 
       try {
         $this->validate($request, $rules, $message);
-        Excel::import(new \App\Imports\ImportKeetaRiderActivities(), $request->file('file'));
-        Flash::success('Keeta Rider Activities imported successfully.');
+
+        // Get the uploaded file
+        $file = $request->file('file');
+
+        // Log the import attempt
+        \Log::info('Starting Keeta rider activities import: ' . $file->getClientOriginalName());
+
+        // Import the file
+        Excel::import(new \App\Imports\ImportKeetaRiderActivities(), $file);
+
+        // If we get here, import was successful
         return redirect()->back()->with('success', 'Keeta Rider Activities imported successfully');
       } catch (\Exception $e) {
-        Flash::error('Error importing Keeta Rider Activities: ' . $e->getMessage());
+        // Check if the exception contains import errors
+        if (json_decode($e->getMessage(), true) !== null) {
+          // Parse the import errors
+          $importErrors = json_decode($e->getMessage(), true);
+
+          // Prepare detailed error message
+          $errorMessage = "Import completed with " . count($importErrors) . " errors. Riders not found:\n";
+          foreach ($importErrors as $error) {
+            $errorMessage .= "- Courier ID: {$error['courier_id']}, Name: {$error['courier_name']}, Date: {$error['date']}\n";
+          }
+
+          // Return with errors
+          return redirect()->back()->withErrors(['file' => $errorMessage]);
+        }
+
+        // Handle other types of exceptions
+        \Log::error('Keeta import exception: ' . $e->getMessage());
+        \Log::error($e->getTraceAsString());
+
         return redirect()->back()->withErrors(['file' => 'Error importing file: ' . $e->getMessage()]);
       }
     }

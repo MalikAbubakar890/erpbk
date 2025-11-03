@@ -45,70 +45,113 @@ class ImportKeetaRiderActivities implements ToCollection, WithCalculatedFormulas
 
     public function collection(Collection $rows)
     {
-        $i = 0; // Start at 0 since WithHeadingRow already skips header
+        // Track import errors
+        $importErrors = [];
+        $successCount = 0;
+
         foreach ($rows as $row) {
-            $i++;
             try {
                 DB::beginTransaction();
 
-                // Debug the row structure to understand what we're getting
-                \Log::info('Processing row: ' . $i);
-                \Log::info(print_r($row, true));
-
-                // Check if courier_id exists
-                if (!isset($row['courier_id'])) {
-                    \Log::warning('Row ' . $i . ' missing courier_id');
-                    continue; // Skip this row
+                // Skip header or empty rows
+                if (!is_array($row) || empty($row['courier_id'])) {
+                    continue;
                 }
 
-                $rider = Riders::where('courier_id', $row['courier_id'])->first();
+                // Validate courier_id is present and not empty
+                $courierID = trim($row['courier_id']);
+                if (empty($courierID)) {
+                    throw new \Exception('Empty courier ID');
+                }
+                // Try to find the rider by courier_id
+                $rider = Riders::where('courier_id', $courierID)->first();
+
+                // If rider not found, prepare error details
                 if (!$rider) {
-                    \Log::warning('Rider not found for courier_id: ' . $row['courier_id']);
-                    continue; // Skip this row instead of throwing exception
+                    $errorDetails = [
+                        'courier_id' => $courierID,
+                        'date' => $row['date'] ?? 'N/A',
+                        'supervisor' => $row['supervisor'] ?? 'N/A'
+                    ];
+
+                    // Add to import errors
+                    $importErrors[] = $errorDetails;
+
+                    // Log the error
+                    \Log::error('Rider not found in database', [
+                        'message' => 'No rider found with the given courier_id',
+                        'details' => $errorDetails
+                    ]);
+
+                    // Write to separate error log file
+                    $errorLogPath = storage_path('logs/keeta_import_errors.log');
+                    file_put_contents(
+                        $errorLogPath,
+                        date('Y-m-d H:i:s') . " - Rider not found: " . json_encode($errorDetails) . "\n",
+                        FILE_APPEND
+                    );
+
+                    // Rollback and continue to next row
+                    DB::rollBack();
+                    continue;
                 }
 
                 // Process the date from Keeta format
                 try {
                     $activity_date = date('Y-m-d', strtotime($row['date']));
                 } catch (\Exception $e) {
-                    \Log::warning('Invalid date format for row ' . $i . ': ' . ($row['date'] ?? 'null'));
-                    $activity_date = date('Y-m-d'); // Use current date as fallback
+                    $activity_date = date('Y-m-d');
+                    \Log::warning('Invalid date format, using current date: ' . $activity_date);
                 }
 
-                $RID = $rider->id;
-                $d_rider_id = $rider->courier_id;
+                // Prepare activity data
+                $data = [
+                    'rider_id' => $rider->id,
+                    'd_rider_id' => $courierID,
+                    'date' => $activity_date,
+                    'payout_type' => 'Keeta',
+
+                    // Delivered orders - column 13 "Delivered Tasks"
+                    'delivered_orders' => isset($row[13]) ? (int)str_replace('-', '0', $row[13]) : (isset($row['delivered_tasks']) ? (int)str_replace('-', '0', $row['delivered_tasks']) : 0),
+
+                    // On-time percentage - "delivery_experience" or "On-time Rate (D)"
+                    'ontime_orders_percentage' => isset($row['delivery_experience']) ? (float)str_replace('-', '0', $row['delivery_experience']) : (isset($row[21]) ? (float)str_replace('-', '0', $row[21]) : 0),
+
+                    // Rejected orders - column 16 "Rejected Tasks"
+                    'rejected_orders' => isset($row[16]) ? (int)str_replace('-', '0', $row[16]) : (isset($row['rejected_tasks']) ? (int)str_replace('-', '0', $row['rejected_tasks']) : 0),
+
+                    // Login hours - column 10 "Valid Online Time"
+                    'login_hr' => isset($row[10]) ? (float)str_replace('-', '0', $row[10]) : (isset($row['valid_online_time']) ? (float)str_replace('-', '0', $row['valid_online_time']) : 0),
+
+                    // Delivery rating using on-time rate as proxy
+                    'delivery_rating' => isset($row['delivery_experience']) ? (float)str_replace('-', '0', $row['delivery_experience']) / 20 : (isset($row[21]) ? (float)str_replace('-', '0', $row[21]) / 20 : 0),
+                ];
+
+                // Check for existing activity record
                 $activity_exist = RiderActivities::where('rider_id', $rider->id)
                     ->where('date', $activity_date)
                     ->first();
 
-                // Map Keeta data format to our database structure
-                $data = [
-                    'rider_id' => $RID,
-                    'd_rider_id' => $d_rider_id,
-                    'date' => $activity_date,
-                    'payout_type' => 'Keeta', // Mark as Keeta source
-                    'delivered_orders' => isset($row['delivered_orders']) ? (int)$row['delivered_orders'] : 0,
-                    'ontime_orders_percentage' => isset($row['delivery_experience']) ? (float)str_replace('-', '0', $row['delivery_experience']) : 0,
-                    'rejected_orders' => isset($row['rejected_orders']) ? (int)$row['rejected_orders'] : 0,
-                    'login_hr' => isset($row['online_hours']) ? (float)$row['online_hours'] : 0,
-                    'delivery_rating' => isset($row['rating']) ? (float)str_replace('-', '0', $row['rating']) : 0,
-                ];
+                // Create or update activity record
                 if (!$activity_exist) {
-                    $ret = RiderActivities::create($data);
+                    RiderActivities::create($data);
                 } else {
-                    $ret = $activity_exist->update($data); // Update on model instance
+                    $activity_exist->update($data);
                 }
 
+                // Commit transaction and increment success count
                 DB::commit();
-            } catch (QueryException $e) {
-                DB::rollBack();
-                \Log::error('Database error: ' . $e->getMessage());
-                throw $e;
+                $successCount++;
             } catch (\Exception $e) {
+                // Rollback transaction and log any unexpected errors
                 DB::rollBack();
-                \Log::error('General error: ' . $e->getMessage());
-                // Continue processing other rows
+                \Log::error('Unexpected error during import: ' . $e->getMessage());
             }
+        }
+
+        // If there are import errors, throw an exception to be caught by the controller
+        if (!empty($importErrors)) {
+            throw new \Exception(json_encode($importErrors));
         }
 
         return true;

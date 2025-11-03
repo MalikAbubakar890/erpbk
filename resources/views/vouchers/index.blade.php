@@ -106,6 +106,12 @@
                     </a>
                     @endif
                     @endforeach
+
+                    <!-- Add Garage Voucher button -->
+                    <a class="action-btn btn btn-success" style="margin-right:5px;"
+                        href="{{ route('garage-items.create') }}">
+                        <i class="fa fa-plus"></i>&nbsp;Garage Voucher
+                    </a>
                     @endcan
                 </div>
             </div>

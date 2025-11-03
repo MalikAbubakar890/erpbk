@@ -57,11 +57,12 @@
         @php
         $bank = DB::table('accounts')->where('name', 'Bank')->first();
         $cash = DB::table('accounts')->where('name', 'Cash in Hand')->first();
+        $recruiters = DB::table('accounts')->where('name', 'Recruiters')->first();
         @endphp
 
         @foreach(DB::table('accounts')
         ->where('status', 1)
-        ->whereIn('parent_id', [$bank->id, $cash->id])
+        ->whereIn('parent_id', [$bank->id, $cash->id, $recruiters->id])
         ->orderBy('id', 'asc')
         ->get() as $acc)
         <option value="{{ $acc->id }}">

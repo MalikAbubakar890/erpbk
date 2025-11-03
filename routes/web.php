@@ -12,6 +12,7 @@ use App\Http\Controllers\SupplierInvoicesController;
 use App\Http\Controllers\UploadFilesController;
 use App\Http\Controllers\VouchersController;
 use App\Http\Controllers\VisaexpenseController;
+use App\Http\Controllers\VisaStatusController;
 use App\Http\Controllers\SalikController;
 use App\Http\Controllers\riderhiringController;
 use App\Http\Controllers\ActivityLogController;
@@ -21,7 +22,7 @@ use App\Http\Controllers\pages\Page2;
 use App\Http\Controllers\pages\MiscError;
 use App\Http\Controllers\authentications\LoginBasic;
 use App\Http\Controllers\authentications\RegisterBasic;
-
+use App\Http\Controllers\RecruitersController;
 
 
 /*
@@ -48,6 +49,8 @@ Route::middleware(['auth', 'web'])->group(function () {
   Route::get('/home', [App\Http\Controllers\HomeController::class, 'index'])->name('home-dashboard');
 
   Route::resource('items', App\Http\Controllers\ItemsController::class);
+  Route::resource('garage-items', App\Http\Controllers\GarageItemsController::class);
+  Route::get('garage-items/{id}/vouchers', [App\Http\Controllers\GarageItemsController::class, 'vouchers'])->name('garage-items.vouchers');
 
   Route::resource('users', App\Http\Controllers\UserController::class);
   Route::any('/user/profile', [App\Http\Controllers\UserController::class, 'profile'])->name('profile');
@@ -94,6 +97,10 @@ Route::middleware(['auth', 'web'])->group(function () {
 
 
   Route::resource('VisaExpense', App\Http\Controllers\VisaexpenseController::class);
+
+  // Visa Status Management Routes
+  Route::resource('visa-statuses', App\Http\Controllers\VisaStatusController::class);
+  Route::get('visa-statuses/{id}/toggle-active', [App\Http\Controllers\VisaStatusController::class, 'toggleActive'])->name('visa-statuses.toggle-active');
   Route::post('VisaExpense/store', [\App\Http\Controllers\VisaexpenseController::class, 'store'])->name('VisaExpense.store');
   Route::get('VisaExpense/edit/{id}', [\App\Http\Controllers\VisaexpenseController::class, 'edit'])->name('VisaExpense.edit');
   Route::post('VisaExpense/update', [\App\Http\Controllers\VisaexpenseController::class, 'update'])->name('VisaExpense.update');
@@ -253,6 +260,15 @@ Route::middleware(['auth', 'web'])->group(function () {
   Route::resource('vendors', App\Http\Controllers\VendorsController::class);
 
   Route::get('vendors/delete/{id}', [\App\Http\Controllers\VendorsController::class, 'destroy'])->name('vendors.delete');
+
+  Route::resource('recruiters', App\Http\Controllers\RecruitersController::class);
+  Route::get('recruiters/{recruiter}/riders', [RecruitersController::class, 'showRiders'])->name('recruiters.riders');
+  Route::get('recruiters/delete/{id}', [\App\Http\Controllers\RecruitersController::class, 'destroy'])->name('recruiters.delete');
+  Route::get('recruiters', [\App\Http\Controllers\RecruitersController::class, 'index'])->name('recruiters.index');
+  Route::post('recruiters/{recruiter}/assign-riders', [\App\Http\Controllers\RecruitersController::class, 'assignRiders'])->name('recruiters.assign-riders');
+  Route::get('recruiters/unassigned-riders', [\App\Http\Controllers\RecruitersController::class, 'getUnassignedRiders'])->name('recruiters.unassigned-riders');
+  Route::get('recruiters/{recruiter}/assign-riders', [\App\Http\Controllers\RecruitersController::class, 'showAssignRidersView'])->name('recruiters.assign-riders');
+  Route::post('recruiters/{recruiter}/remove-riders', [\App\Http\Controllers\RecruitersController::class, 'removeRiders'])->name('recruiters.remove-riders');
 
   Route::resource('bikeHistories', App\Http\Controllers\BikeHistoryController::class);
 

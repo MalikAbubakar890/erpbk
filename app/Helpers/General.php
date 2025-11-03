@@ -772,6 +772,7 @@ class General
       'PAY' => 'Payment Voucher',
       'VC' => 'Vendor Charges Voucher',
       'RI' => 'Rider Invoice Voucher',
+      'GV' => 'Garage Voucher',
       /* 9 => 'Vendor Voucher',
       10 => 'Bike Rent Voucher',
       11 => 'Fuel Voucher',

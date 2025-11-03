@@ -15,6 +15,7 @@ use App\Models\Vouchers;
 use App\Models\LedgerEntry;
 use App\Models\visa_installment_plan;
 use App\Models\Transactions;
+use App\Models\VisaStatus;
 use App\Repositories\VisaExpensesRepository;
 use App\Services\TransactionService;
 use Carbon\Carbon;
@@ -214,9 +215,12 @@ class VisaexpenseController extends AppBaseController
                 'paginationLinks' => $paginationLinks,
             ]);
         }
+        $visaStatuses = VisaStatus::getActive();
+
         return view('visa_expenses.index', [
             'data' => $data,
             'account' => $account,
+            'visaStatuses' => $visaStatuses,
         ]);
     }
     /**
@@ -225,7 +229,8 @@ class VisaexpenseController extends AppBaseController
     public function create($id)
     {
         $data = Accounts::where('id', $id)->first();
-        return view('visa_expenses.create', compact('data'));
+        $visaStatuses = VisaStatus::getActive();
+        return view('visa_expenses.create', compact('data', 'visaStatuses'));
     }
 
     /**
@@ -1392,7 +1397,8 @@ class VisaexpenseController extends AppBaseController
 
             return redirect(route('visaExpenses.index'));
         }
-        return view('visa_expenses.edit', compact('data', 'visaExpenses'));
+        $visaStatuses = VisaStatus::getActive();
+        return view('visa_expenses.edit', compact('data', 'visaExpenses', 'visaStatuses'));
     }
 
     /**

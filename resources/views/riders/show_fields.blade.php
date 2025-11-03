@@ -74,7 +74,7 @@
             </div>
             <div class="col-md-3 form-group col-3">
                 <label>Recruiter </label>
-                <p>{{@$result['recuriter']}}</p>
+                <p>{{@$rider->recruiter->name}}</p>
             </div>
         </div>
 
@@ -134,10 +134,10 @@
                 </div>
                 <div class="col-md-3 form-group col-3">
                     <label>Recruiter</label>
-                    <select class="form-control form-control-sm select2" name="recuriter">
+                    <select class="form-control form-control-sm select2" name="recruiter_id">
                         <option value="">Select Recruiter</option>
-                        @foreach(Common::Dropdowns('recuriter') as $key => $value)
-                        <option value="{{$key}}" {{$result['recuriter'] == $key ? 'selected' : ''}}>{{$value}}</option>
+                        @foreach(DB::table('recruiters')->where('status', 1)->get() as $key => $value)
+                        <option value="{{$value->id}}" {{$result['recruiter_id'] == $value->id ? 'selected' : ''}}>{{$value->name}}</option>
                         @endforeach
                     </select>
                 </div>

@@ -7,7 +7,7 @@ use App\Traits\LogsActivity;
 
 class Items extends Model
 {
-    use LogsActivity;
+  use LogsActivity;
 
   public $table = 'items';
 
@@ -51,7 +51,6 @@ class Items extends Model
   {
     $query = self::select('id', 'name')->pluck('name', 'id')->prepend('Select', '');
     return $query;
-
   }
   public function customer()
   {
@@ -61,5 +60,4 @@ class Items extends Model
   {
     return $this->belongsTo(Supplier::class, 'supplier_id', 'id');
   }
-
 }

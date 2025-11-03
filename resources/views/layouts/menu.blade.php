@@ -15,11 +15,23 @@
 </li>
 @endcan
 @can('item_view')
-<li class="menu-item {{ Request::is('items*') ? 'active' : '' }}">
-  <a href="{{ route('items.index') }}" class="menu-link">
+<li class="menu-item {{ Request::is('items*') ? 'open' : '' }} {{ Request::is('garage-items*') ? 'open' : '' }}">
+  <a href="javascript:void(0);" class="menu-link menu-toggle ">
     <i class="menu-icon tf-icons ti ti-notes"></i>
-    <div>Items</div>
+    <div data-i18n="Front Pages">Items</div>
   </a>
+  <ul class="menu-sub">
+    <li class="menu-item {{ Request::is('items*') && !Request::is('garage-items*') ? 'active' : '' }}">
+      <a href="{{ route('items.index') }}" class="menu-link">
+        <div>Items List</div>
+      </a>
+    </li>
+    <li class="menu-item {{ Request::is('garage-items*') ? 'active' : '' }}">
+      <a href="{{ route('garage-items.index') }}" class="menu-link">
+        <div>Garage Items</div>
+      </a>
+    </li>
+  </ul>
 </li>
 @endcan
 @can('leads_view')
@@ -46,7 +58,14 @@
   </a>
 </li>
 @endcan
-
+@can('recruiter_view')
+<li class="menu-item {{ Request::is('recruiters*') ? 'active' : '' }}">
+  <a href="{{ route('recruiters.index') }}" class="menu-link">
+    <i class="menu-icon tf-icons ti ti-user-star"></i>
+    <div>Recruiters</div>
+  </a>
+</li>
+@endcan
 
 @can('rider_view')
 <li class="menu-item {{ Request::is('riders*') ? 'open' : '' }}
@@ -140,6 +159,12 @@
   <a href="{{ route('VisaExpense.index') }}" class="menu-link">
     <i class="menu-icon tf-icons ti ti-device-sim"></i>
     <div>Visa Expense</div>
+  </a>
+</li>
+<li class="menu-item {{ Request::is('visa-statuses*') ? 'active' : '' }}">
+  <a href="{{ route('visa-statuses.index') }}" class="menu-link">
+    <i class="menu-icon tf-icons ti ti-list-check"></i>
+    <div>Visa Status Types</div>
   </a>
 </li>
 @endcan

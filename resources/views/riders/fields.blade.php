@@ -138,11 +138,13 @@
                 ['class' => 'form-select', 'required']) !!}
             </div>
             <div class="form-group col-sm-4">
-                {!! Form::label('recuriter', 'Recruiter:',['class'=>'required']) !!}
-                {!! Form::select('recuriter',
-                ['' => 'Select or type a new recruiter'] + Common::Dropdowns('recuriter'),
-                null,
-                ['class' => 'form-select recruiter-select', 'required', 'id' => 'recruiter_select']) !!}
+                <label>Recruiter</label>
+                <select name="recruiter_id" class="form-select">
+                    <option value="">Select Recruiter</option>
+                    @foreach(DB::table('recruiters')->where('status', 1)->get() as $key => $value)
+                    <option value="{{ $value->id }}" {{ isset($riders) && $riders->recruiter_id == $value->id ? 'selected' : '' }}>{{ $value->name }}</option>
+                    @endforeach
+                </select>
             </div>
             <div class="form-group col-sm-4">
                 <label>VAT</label>

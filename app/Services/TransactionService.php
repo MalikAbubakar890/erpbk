@@ -2,125 +2,166 @@
 
 namespace App\Services;
 
-use App\Models\LedgerEntry;
-use App\Models\Transactions;
-use App\Models\Accounts;
-use Carbon\Carbon;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Config;
+use App\Models\GarageItem;
+use App\Models\Supplier;
 
 class TransactionService
 {
-  public function recordTransaction($data)
+  /**
+   * Record a transaction in the transactions table
+   *
+   * @param array $data Transaction data
+   * @return int|bool ID of created transaction or false on failure
+   */
+  public function recordTransaction(array $data)
   {
-    $transactionData = [
-      'account_id' => $data['account_id'],
-      'reference_id' => $data['reference_id'],
-      'reference_type' => $data['reference_type'],
-      'trans_code' => $data['trans_code'],
-      'trans_date' => $data['trans_date'],
-      'narration' => $data['narration'],
-      'debit' => $data['debit'] ?? 0,
-      'credit' => $data['credit'] ?? 0,
-      'billing_month' => Carbon::parse($data['billing_month'] ?? now())->startOfMonth(),
-    ];
+    try {
+      $id = DB::table('transactions')->insertGetId([
+        'account_id' => $data['account_id'],
+        'reference_id' => $data['reference_id'] ?? null,
+        'reference_type' => $data['reference_type'] ?? null,
+        'trans_code' => (int) $data['trans_code'], // Cast to integer
+        'trans_date' => $data['trans_date'],
+        'narration' => $data['narration'] ?? '',
+        'debit' => $data['debit'] ?? 0,
+        'credit' => $data['credit'] ?? 0,
+        'billing_month' => $data['billing_month'] ?? date('Y-m-01'),
+        'created_at' => now(),
+        'updated_at' => now(),
+      ]);
 
-    // Save transaction
-    $transaction = Transactions::create($transactionData);
-
-    // Update ledger balances
-    $this->updateLedger(
-      $transaction->account_id,
-      $transaction->debit,
-      $transaction->credit,
-      $transaction->billing_month
-    );
-
-    return $transaction;
+      Log::info('Transaction recorded successfully: ' . $id);
+      return $id;
+    } catch (\Exception $e) {
+      Log::error('Error recording transaction: ' . $e->getMessage());
+      return false;
+    }
   }
 
-  public function updateLedger($accountId, $debit, $credit, $billing_month)
+  /**
+   * Generate a unique transaction code
+   *
+   * @param string $prefix Prefix for the transaction code
+   * @return string
+   */
+  public function generateTransCode($prefix = 'GV')
   {
-    $billing_month = Carbon::parse($billing_month)->startOfMonth();
+    // Generate a simple numeric transaction code without any prefix
+    return mt_rand(1000000, 9999999);
+  }
 
-    // Find or create this month's ledger
-    $ledger = LedgerEntry::where('account_id', $accountId)
-      ->where('billing_month', $billing_month)
-      ->first();
+  /**
+   * Update transactions for a voucher
+   * 
+   * @param string|int $transCode
+   * @param GarageItem $garageItem
+   * @param float $amount
+   * @return bool
+   */
+  public function updateTransactionsForVoucher($transCode, $garageItem, $amount)
+  {
+    try {
+      Log::debug('Updating transactions for trans_code: ' . $transCode);
 
-    if (!$ledger) {
-      // Get previous month's closing
-      $lastLedger = LedgerEntry::where('account_id', $accountId)
-        ->where('billing_month', '<', $billing_month)
+      // Get supplier information
+      $supplier = Supplier::find($garageItem->supplier_id);
+      if (!$supplier) {
+        throw new \Exception('Supplier not found');
+      }
+
+      // Get garage items account ID
+      $garageItemsAccountId = Config::get('accounts.garage_items_account_id', 2182);
+
+      // Get supplier account ID
+      $supplierAccountId = DB::table('accounts')
+        ->where('ref_id', $supplier->id)
+        ->where('ref_name', 'Supplier')
+        ->value('id');
+
+      if (!$supplierAccountId) {
+        $supplierAccountId = Config::get('accounts.default_supplier_account', 1287);
+      }
+
+      // Set billing month and transaction date
+      $billingMonth = date('Y-m-01');
+      $transDate = $garageItem->purchase_date;
+      $narration = 'Purchase of garage item: ' . $garageItem->name . ' (Qty: ' . $garageItem->qty . ') from Supplier: ' . $supplier->name;
+
+      // Update debit transaction (garage items account)
+      $debitUpdated = DB::table('transactions')
+        ->where('trans_code', $transCode)
+        ->where('account_id', $garageItemsAccountId)
+        ->update([
+          'trans_date' => $transDate,
+          'narration' => $narration,
+          'debit' => $amount,
+          'billing_month' => $billingMonth,
+          'updated_at' => now()
+        ]);
+
+      // Update credit transaction (supplier account)
+      $creditUpdated = DB::table('transactions')
+        ->where('trans_code', $transCode)
+        ->where('account_id', $supplierAccountId)
+        ->update([
+          'trans_date' => $transDate,
+          'narration' => $narration,
+          'credit' => $amount,
+          'billing_month' => $billingMonth,
+          'updated_at' => now()
+        ]);
+
+      // Update ledger entries
+      $this->updateLedger($garageItemsAccountId, $billingMonth, $amount, 1);
+      $this->updateLedger($supplierAccountId, $billingMonth, $amount, 0);
+
+      Log::debug('Updated transactions for trans_code: ' . $transCode . ' - Debit updated: ' . $debitUpdated . ', Credit updated: ' . $creditUpdated);
+
+      return true;
+    } catch (\Exception $e) {
+      Log::error('Error updating transactions for voucher: ' . $e->getMessage());
+      return false;
+    }
+  }
+
+  public function updateLedger($accountId, $billingMonth, $amount, $type = 1)
+  {
+    try {
+      // Get the last ledger entry for this account
+      $lastLedger = DB::table('ledger_entries')
+        ->where('account_id', $accountId)
         ->orderBy('billing_month', 'desc')
         ->first();
 
-      $openingBalance = $lastLedger ? $lastLedger->closing_balance : 0;
+      $openingBalance = $lastLedger ? $lastLedger->closing_balance : 0.00;
+      $debitBalance = $creditBalance = 0.00;
 
-      $ledger = LedgerEntry::create([
-        'account_id' => $accountId,
-        'billing_month' => $billing_month,
-        'debit_balance' => $debit,
-        'credit_balance' => $credit,
-        'opening_balance' => $openingBalance,
-        'closing_balance' => $openingBalance + $debit - $credit,
-      ]);
-    } else {
-      // Update debit/credit
-      $ledger->debit_balance += $debit;
-      $ledger->credit_balance += $credit;
-      // DO NOT recalculate opening balance — just update closing
-      $ledger->closing_balance = $ledger->opening_balance + $ledger->debit_balance - $ledger->credit_balance;
-      $ledger->save();
-    }
-
-    // Recalculate all future ledgers from this point
-    $this->recalculateFromMonth($accountId, $billing_month);
-  }
-
-
-  protected function recalculateFromMonth($accountId, $fromMonth)
-  {
-    $ledgers = LedgerEntry::where('account_id', $accountId)
-      ->where('billing_month', '>=', $fromMonth)
-      ->orderBy('billing_month')
-      ->get();
-
-    $prevClosing = 0;
-
-    foreach ($ledgers as $ledger) {
-      // Set opening from previous month’s closing
-      $ledger->opening_balance = $prevClosing;
-      $ledger->closing_balance = $ledger->opening_balance + $ledger->debit_balance - $ledger->credit_balance;
-      $ledger->save();
-
-      $prevClosing = $ledger->closing_balance;
-    }
-  }
-
-
-  public function deleteTransaction($transactionId)
-  {
-    $transactions = Transactions::where('trans_code', $transactionId)->get();
-
-    foreach ($transactions as $transaction) {
-      if ($transaction) {
-        $ledger = LedgerEntry::where('account_id', $transaction->account_id)
-          ->where('billing_month', $transaction->billing_month)
-          ->first();
-
-        if ($ledger) {
-          // Reverse the transaction
-          $ledger->debit_balance -= $transaction->debit;
-          $ledger->credit_balance -= $transaction->credit;
-          $ledger->closing_balance = $ledger->opening_balance + $ledger->debit_balance - $ledger->credit_balance;
-          $ledger->save();
-
-          // Delete the transaction
-          $transaction->delete();
-
-          // Update future ledgers
-          $this->recalculateFromMonth($ledger->account_id, $ledger->billing_month);
-        }
+      if ($type === 1) { // Debit
+        $debitBalance = $amount;
+        $closingBalance = $openingBalance + $amount;
+      } else { // Credit
+        $creditBalance = $amount;
+        $closingBalance = $openingBalance - $amount;
       }
+
+      DB::table('ledger_entries')->insert([
+        'account_id' => $accountId,
+        'billing_month' => $billingMonth,
+        'opening_balance' => $openingBalance,
+        'debit_balance' => $debitBalance,
+        'credit_balance' => $creditBalance,
+        'closing_balance' => $closingBalance,
+        'created_at' => now(),
+        'updated_at' => now(),
+      ]);
+
+      return true;
+    } catch (\Exception $e) {
+      Log::error('Error updating ledger: ' . $e->getMessage());
+      return false;
     }
   }
 }

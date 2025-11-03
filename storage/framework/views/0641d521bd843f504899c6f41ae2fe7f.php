@@ -15,11 +15,23 @@
 </li>
 <?php endif; ?>
 <?php if (app(\Illuminate\Contracts\Auth\Access\Gate::class)->check('item_view')): ?>
-<li class="menu-item <?php echo e(Request::is('items*') ? 'active' : ''); ?>">
-  <a href="<?php echo e(route('items.index')); ?>" class="menu-link">
+<li class="menu-item <?php echo e(Request::is('items*') ? 'open' : ''); ?> <?php echo e(Request::is('garage-items*') ? 'open' : ''); ?>">
+  <a href="javascript:void(0);" class="menu-link menu-toggle ">
     <i class="menu-icon tf-icons ti ti-notes"></i>
-    <div>Items</div>
+    <div data-i18n="Front Pages">Items</div>
   </a>
+  <ul class="menu-sub">
+    <li class="menu-item <?php echo e(Request::is('items*') && !Request::is('garage-items*') ? 'active' : ''); ?>">
+      <a href="<?php echo e(route('items.index')); ?>" class="menu-link">
+        <div>Items List</div>
+      </a>
+    </li>
+    <li class="menu-item <?php echo e(Request::is('garage-items*') ? 'active' : ''); ?>">
+      <a href="<?php echo e(route('garage-items.index')); ?>" class="menu-link">
+        <div>Garage Items</div>
+      </a>
+    </li>
+  </ul>
 </li>
 <?php endif; ?>
 <?php if (app(\Illuminate\Contracts\Auth\Access\Gate::class)->check('leads_view')): ?>
@@ -46,7 +58,14 @@
   </a>
 </li>
 <?php endif; ?>
-
+<?php if (app(\Illuminate\Contracts\Auth\Access\Gate::class)->check('recruiter_view')): ?>
+<li class="menu-item <?php echo e(Request::is('recruiters*') ? 'active' : ''); ?>">
+  <a href="<?php echo e(route('recruiters.index')); ?>" class="menu-link">
+    <i class="menu-icon tf-icons ti ti-user-star"></i>
+    <div>Recruiters</div>
+  </a>
+</li>
+<?php endif; ?>
 
 <?php if (app(\Illuminate\Contracts\Auth\Access\Gate::class)->check('rider_view')): ?>
 <li class="menu-item <?php echo e(Request::is('riders*') ? 'open' : ''); ?>
@@ -138,6 +157,12 @@
   <a href="<?php echo e(route('VisaExpense.index')); ?>" class="menu-link">
     <i class="menu-icon tf-icons ti ti-device-sim"></i>
     <div>Visa Expense</div>
+  </a>
+</li>
+<li class="menu-item <?php echo e(Request::is('visa-statuses*') ? 'active' : ''); ?>">
+  <a href="<?php echo e(route('visa-statuses.index')); ?>" class="menu-link">
+    <i class="menu-icon tf-icons ti ti-list-check"></i>
+    <div>Visa Status Types</div>
   </a>
 </li>
 <?php endif; ?>
