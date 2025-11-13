@@ -57,4 +57,6 @@
 <?php echo $__env->yieldContent('page-script'); ?>
 <?php echo $__env->yieldPushContent('page-scripts'); ?>
 <?php echo $__env->yieldPushContent('third_party_scripts'); ?>
+<script src="<?php echo e(asset('js/bike-import.js')); ?>"></script>
+<script src="<?php echo e(asset('js/bike-export.js')); ?>"></script>
 <!-- END: Page JS--><?php /**PATH D:\xammp1\htdocs\erpbk\resources\views/layouts/sections/scripts.blade.php ENDPATH**/ ?>

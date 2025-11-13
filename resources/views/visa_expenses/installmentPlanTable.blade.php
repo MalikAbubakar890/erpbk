@@ -4,6 +4,7 @@
     <thead class="text-center">
         <tr role="row">
             <th title="Date" class="sorting" tabindex="0" aria-controls="dataTableBuilder" rowspan="1" colspan="1" aria-label="Date: activate to sort column ascending">Date</th>
+            <th title="Voucher IDs" class="sorting" tabindex="0" aria-controls="dataTableBuilder" rowspan="1" colspan="1" aria-label="Voucher ID: activate to sort column ascending">Voucher ID</th>
             <th title="Billing Month" class="sorting" tabindex="0" aria-controls="dataTableBuilder" rowspan="1" colspan="1" aria-label="Billing Month: activate to sort column ascending">Billing Month</th>
             <th title="Amount" class="sorting" tabindex="0" aria-controls="dataTableBuilder" rowspan="1" colspan="1" aria-label="Amount: activate to sort column ascending">Amount</th>
             <th title="Status" class="sorting" tabindex="0" aria-controls="dataTableBuilder" rowspan="1" colspan="1" aria-label="Status: activate to sort column ascending">Status</th>
@@ -31,6 +32,17 @@
                     class="form-control form-control-sm d-none"
                     onblur="saveDate({{ $installment->id }})"
                     onkeypress="if(event.keyCode==13) saveDate({{ $installment->id }})">
+            </td>
+            <td>
+                <span id="voucher_ids_display_{{ $installment->id }}">
+                    @if($installment->vouchers->isNotEmpty())
+                    @foreach($installment->vouchers as $voucher)
+                    <a href="{{ route('vouchers.show', $voucher->id) }}" target="_blank">{{ $voucher->formatted_id }}</a>@if(!$loop->last), @endif
+                    @endforeach
+                    @else
+                    {{ $installment->voucher_ids }}
+                    @endif
+                </span>
             </td>
             <td>
                 <span id="billing_display_{{ $installment->id }}">{{ \Carbon\Carbon::parse($installment->billing_month)->format('M Y') }}</span>
@@ -132,7 +144,7 @@
                     <small id="current-total-amount-container" class="text-warning">(Current: <span>{{ number_format($currentTotal, 2) }}</span>)</small>
                 </strong>
             </td>
-            <td colspan="4"></td>
+            <td colspan="5"></td>
         </tr>
     </tfoot>
     @endif

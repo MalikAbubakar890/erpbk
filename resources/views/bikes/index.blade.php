@@ -209,7 +209,7 @@
                             <i class="ti ti-chevron-down"></i>
                         </button>
                         <div class="action-dropdown-menu" id="addBikeDropdown">
-                            @can('item_create')
+                            @can('bike_create')
                             <a class="action-dropdown-item show-modal" href="javascript:void(0);" data-size="xl" data-title="Add New Vehicle" data-action="{{ route('bikes.create') }}">
                                 <i class="ti ti-plus"></i>
                                 <div>
@@ -218,22 +218,18 @@
                                 </div>
                             </a>
                             @endcan
-                            @can('item_create')
-                            <a class="action-dropdown-item" href="{{ route('bikes.import') }}">
+                            @can('bike_create')
+                            <a class="action-dropdown-item" href="{{ route('bikes.importbikes') }}">
                                 <i class="ti ti-file-upload"></i>
-                                <div>
-                                    <div class="action-dropdown-item-text">Import Vehicles</div>
-                                    <div class="action-dropdown-item-desc">Import vehicles from Excel file</div>
-                                </div>
+                                <span>Import Vehicles</span>
                             </a>
                             @endcan
-                            <a class="action-dropdown-item" href="{{ route('bikes.download-template') }}">
-                                <i class="ti ti-file-download"></i>
-                                <div>
-                                    <div class="action-dropdown-item-text">Download Template</div>
-                                    <div class="action-dropdown-item-desc">Get Excel template for import</div>
-                                </div>
+                            @can('bike_view')
+                            <a class="action-dropdown-item show-modal" href="javascript:void(0);" data-size="xl" data-title="Export Vehicles" data-action="{{ route('bikes.export') }}">
+                                <i class="ti ti-file-export"></i>
+                                <span>Export Vehicles</span>
                             </a>
+                            @endcan
                         </div>
                     </div>
                 </div>

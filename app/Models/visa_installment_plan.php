@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use App\Traits\LogsActivity;
+use App\Models\Vouchers;
 
 class visa_installment_plan extends Model
 {
@@ -36,6 +37,29 @@ class visa_installment_plan extends Model
     public function account()
     {
         return $this->belongsTo(Accounts::class, 'rider_id', 'id');
+    }
+
+    public function vouchers()
+    {
+        return $this->hasMany(Vouchers::class, 'ref_id', 'id')
+            ->where('voucher_type', 'VL');
+    }
+
+    public function getVoucherIdsAttribute()
+    {
+        if (!$this->relationLoaded('vouchers')) {
+            $this->loadMissing('vouchers');
+        }
+
+        if ($this->vouchers->isEmpty()) {
+            return '';
+        }
+
+        return $this->vouchers->map(function ($voucher) {
+            $prefix = $voucher->voucher_type ?: 'V';
+            $number = str_pad($voucher->id, 4, '0', STR_PAD_LEFT);
+            return "{$prefix}-{$number}";
+        })->implode(', ');
     }
 
     // Scopes

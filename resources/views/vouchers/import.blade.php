@@ -7,7 +7,7 @@
     </div>
     <div class="col-12 mt-3">
       <label for="exampleInputEmail1">Credit Account</label>
-      {!! Form::select('payment_from',App\Models\Accounts::customDropdown([1042,1118,1238,1005,1135,2172]),null ,['class' => 'form-control form-select ','id'=>'payment_type']) !!}
+      {!! Form::select('payment_from',App\Models\Accounts::customDropdown([1042,1118,1238,1005,1135,2172,1719]),null ,['class' => 'form-control form-select ','id'=>'payment_type']) !!}
       <b>Note: </b>Select credit account carefully.
     </div>
     <div class="col-12 mt-3 mb-3">

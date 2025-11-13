@@ -57,4 +57,6 @@
 @yield('page-script')
 @stack('page-scripts')
 @stack('third_party_scripts')
+<script src="{{ asset('js/bike-import.js') }}"></script>
+<script src="{{ asset('js/bike-export.js') }}"></script>
 <!-- END: Page JS-->

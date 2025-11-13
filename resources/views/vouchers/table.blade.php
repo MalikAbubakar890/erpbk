@@ -88,7 +88,7 @@
                         @endif
                         @endcan
                         @can('voucher_delete')
-                        @if(in_array($voucher->voucher_type, ['AL', 'COD', 'PN', 'PAY', 'VC', 'JV']))
+                        @if(in_array($voucher->voucher_type, ['AL', 'COD', 'PN', 'PAY', 'VC', 'JV', 'LV']))
                         <li><a href="javascript:void(0);" onclick="deleteVoucher('{{ $voucher->trans_code }}')" class='dropdown-item waves-effect text-danger'>
                                 <i class="fa fa-trash my-1"></i> Delete
                             </a></li>

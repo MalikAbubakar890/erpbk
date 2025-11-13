@@ -102,4 +102,11 @@ class Vouchers extends Model
   {
     return $this->hasMany(Transactions::class, 'trans_code', 'trans_code');
   }
+
+  public function getFormattedIdAttribute()
+  {
+    $prefix = $this->voucher_type ?: 'V';
+    $number = str_pad($this->id, 4, '0', STR_PAD_LEFT);
+    return "{$prefix}-{$number}";
+  }
 }

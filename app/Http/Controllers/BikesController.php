@@ -673,15 +673,37 @@ class BikesController extends AppBaseController
     return view('bikes.contract-modal', compact('contract'));
   }
 
+
   /**
-   * Export bikes to Excel with customizable columns
+   * Show export bikes form
+   */
+  public function exportBikes(Request $request)
+  {
+    if (!auth()->user()->hasPermissionTo('bike_view')) {
+      abort(403, 'Unauthorized action.');
+    }
+
+    if ($request->ajax()) {
+      return response()->view('bikes.export_modal');
+    }
+
+    return redirect()->route('bikes.index');
+  }
+
+  /**
+   * Export bikes to Excel/CSV/PDF with customizable columns
    */
   public function exportCustomizableBikes(Request $request)
   {
+    if (!auth()->user()->hasPermissionTo('bike_view')) {
+      abort(403, 'Unauthorized action.');
+    }
+
     // Get column configuration from request or user settings
     $visibleColumns = $request->input('visible_columns');
     $columnOrder = $request->input('column_order');
     $format = $request->input('format', 'excel');
+    $applyFilters = $request->input('apply_filters', true);
 
     // Parse JSON strings if they exist
     if (is_string($visibleColumns)) {
@@ -701,20 +723,23 @@ class BikesController extends AppBaseController
       }
     }
 
-    // Get current filters from session or request
-    $filters = [
-      'bike_code' => $request->input('bike_code') ?: session('bikes_filter.bike_code'),
-      'plate' => $request->input('plate') ?: session('bikes_filter.plate'),
-      'rider_id' => $request->input('rider_id') ?: session('bikes_filter.rider_id'),
-      'rider' => $request->input('rider') ?: session('bikes_filter.rider'),
-      'company' => $request->input('company') ?: session('bikes_filter.company'),
-      'emirates' => $request->input('emirates') ?: session('bikes_filter.emirates'),
-      'warehouse' => $request->input('warehouse') ?: session('bikes_filter.warehouse'),
-      'status' => $request->input('status') ?: session('bikes_filter.status'),
-      'expiry_date_from' => $request->input('expiry_date_from') ?: session('bikes_filter.expiry_date_from'),
-      'expiry_date_to' => $request->input('expiry_date_to') ?: session('bikes_filter.expiry_date_to'),
-      'quick_search' => $request->input('quick_search') ?: session('bikes_filter.quick_search'),
-    ];
+    // Get current filters from session or request if apply_filters is true
+    $filters = [];
+    if ($applyFilters) {
+      $filters = [
+        'bike_code' => $request->input('bike_code') ?: session('bikes_filter.bike_code'),
+        'plate' => $request->input('plate') ?: session('bikes_filter.plate'),
+        'rider_id' => $request->input('rider_id') ?: session('bikes_filter.rider_id'),
+        'rider' => $request->input('rider') ?: session('bikes_filter.rider'),
+        'company' => $request->input('company') ?: session('bikes_filter.company'),
+        'emirates' => $request->input('emirates') ?: session('bikes_filter.emirates'),
+        'warehouse' => $request->input('warehouse') ?: session('bikes_filter.warehouse'),
+        'status' => $request->input('status') ?: session('bikes_filter.status'),
+        'expiry_date_from' => $request->input('expiry_date_from') ?: session('bikes_filter.expiry_date_from'),
+        'expiry_date_to' => $request->input('expiry_date_to') ?: session('bikes_filter.expiry_date_to'),
+        'quick_search' => $request->input('quick_search') ?: session('bikes_filter.quick_search'),
+      ];
+    }
 
     // Create customizable export
     $export = new CustomizableBikeExport($visibleColumns, $columnOrder, $filters);
@@ -740,119 +765,234 @@ class BikesController extends AppBaseController
   /**
    * Show import bikes form
    */
-  public function import(Request $request)
+  public function importbikes()
   {
-    if (!auth()->user()->hasPermissionTo('bike_create')) {
-      abort(403, 'Unauthorized action.');
-    }
-
-    if ($request->isMethod('post')) {
-      $rules = [
-        'file' => 'required|max:50000|mimes:xlsx,xls'
-      ];
-      $message = [
-        'file.required' => 'Excel File Required',
-        'file.mimes' => 'File must be an Excel file (.xlsx or .xls)',
-        'file.max' => 'File size must not exceed 50MB'
-      ];
-      $this->validate($request, $rules, $message);
-
-      try {
-        $import = new ImportBikes();
-        Excel::import($import, $request->file('file'));
-
-        $results = $import->getResults();
-
-        if ($import->hasErrors()) {
-          $errorMessage = "Import completed with errors. Success: {$results['success_count']}, Errors: {$results['error_count']}";
-          Flash::warning($errorMessage);
-
-          // Store errors in session for display
-          session()->flash('import_errors', $results['errors']);
-        } else {
-          Flash::success("Bikes imported successfully. {$results['success_count']} records processed.");
-        }
-      } catch (\Exception $e) {
-        Flash::error('Error importing bikes: ' . $e->getMessage());
-      }
-
-      return redirect()->back();
-    }
-
     return view('bikes.import');
   }
 
   /**
-   * Download sample Excel template for bike import
+   * Process bike import from Excel file
+   */
+  public function processImport(Request $request)
+  {
+    if (!auth()->user()->hasPermissionTo('bike_view')) {
+      abort(403, 'Unauthorized action.');
+    }
+
+    // Validate the request
+    $request->validate([
+      'file' => 'required|file|mimes:xlsx,xls,csv|max:51200', // Max 50MB
+    ]);
+
+    try {
+      // Handle data reset if requested (admin only)
+      $reset = false;
+      if (auth()->user()->hasRole('admin') && $request->has('reset_data')) {
+        DB::beginTransaction();
+        try {
+          // Delete all bike history first
+          BikeHistory::truncate();
+          // Then delete all bikes
+          Bikes::truncate();
+          DB::commit();
+          $reset = true;
+        } catch (\Exception $e) {
+          DB::rollBack();
+          return response()->json([
+            'success' => false,
+            'message' => 'Error resetting data: ' . $e->getMessage()
+          ], 500);
+        }
+      }
+
+      // Process the import
+      $import = new ImportBikes();
+      Excel::import($import, $request->file('file'));
+
+      // Get import results
+      $results = $import->getResults();
+
+      // Prepare response message
+      $message = "Successfully imported {$results['success_count']} bikes.";
+      if ($results['error_count'] > 0) {
+        $message .= " {$results['error_count']} rows had errors.";
+      }
+
+      // Check if there were any errors
+      if ($import->hasErrors()) {
+        return response()->json([
+          'success' => false,
+          'message' => $message,
+          'errors' => $import->getErrors(),
+          'success_count' => $results['success_count'],
+          'error_count' => $results['error_count'],
+          'reset' => $reset
+        ]);
+      }
+
+      return response()->json([
+        'success' => true,
+        'message' => $message,
+        'success_count' => $results['success_count'],
+        'error_count' => $results['error_count'],
+        'reset' => $reset
+      ]);
+    } catch (\Exception $e) {
+      return response()->json([
+        'success' => false,
+        'message' => 'Import failed: ' . $e->getMessage()
+      ], 500);
+    }
+  }
+
+  /**
+   * Download sample template for bike import
    */
   public function downloadSampleTemplate()
   {
-    $sampleData = [
-      [
-        'Plate Number',
-        'Vehicle Type',
-        'Chassis Number',
-        'Color',
-        'Model',
-        'Model Type',
-        'Engine',
-        'Bike Code',
-        'Emirates',
-        'Warehouse',
-        'Status',
-        'Registration Date',
-        'Expiry Date',
-        'Insurance Expiry',
-        'Insurance Company',
-        'Policy Number',
-        'Contract Number',
-        'Traffic File Number',
-        'Rider Name',
-        'Company Name',
-        'Customer Name',
-        'Notes'
-      ],
-      [
-        'ABC-123',
-        'Motorcycle',
-        'CH123456789',
-        'Red',
-        'Honda',
-        'CBR',
-        '150cc',
-        'BK001',
-        'Dubai',
-        'Active',
-        '1',
-        '2024-01-15',
-        '2025-01-15',
-        '2025-01-15',
-        'Insurance Co',
-        'POL001',
-        'CON001',
-        'TF001',
-        'John Doe',
-        'Leasing Company',
-        'Customer Name',
-        'Sample bike'
-      ]
+    if (!auth()->user()->hasPermissionTo('bike_view')) {
+      abort(403, 'Unauthorized action.');
+    }
+
+    $headers = [
+      'plate',
+      'vehicle_type',
+      'chassis_number',
+      'color',
+      'model',
+      'model_type',
+      'engine',
+      'company_name',
+      'rider_name',
+      'notes',
+      'warehouse',
+      'traffic_file_number',
+      'emirates',
+      'bike_code',
+      'registration_date',
+      'expiry_date',
+      'insurance_expiry',
+      'insurance_co',
+      'policy_no',
+      'status',
+      'contract_number',
+      'customer_name'
     ];
 
-    // Create a simple collection export for the template
-    $export = new class($sampleData) implements FromCollection {
-      protected $data;
+    $sampleData = [
+      [
+        '1',
+        'HONDA UNICORN',
+        'ME4KC20F0NA015779',
+        'BLACK',
+        '2022',
+        'UNICORN',
+        'KC20EA0035034',
+        'Leasing Company Name',
+        '',
+        'Sample notes for bike 1',
+        'Active',
+        '50527229',
+        'DXB',
+        '',
+        '2023-01-15',
+        '2024-01-15',
+        '2024-06-30',
+        'Insurance Company',
+        'POL001',
+        '1',
+        'CNT001',
+        'Customer Name'
+      ],
+      [
+        '1',
+        'HONDA UNICORN',
+        'ME4KC20F7NA010241',
+        'BLACK',
+        '2022',
+        'UNICORN',
+        'KC20EA0029505',
+        'Leasing Company Name',
+        '',
+        'Sample notes for bike 2',
+        'Active',
+        '50527229',
+        'DXB',
+        '',
+        '2023-02-20',
+        '2024-02-20',
+        '2024-07-15',
+        'Insurance Company',
+        'POL002',
+        '1',
+        'CNT002',
+        'Customer Name'
+      ],
+      [
+        '1',
+        'HONDA UNICORN',
+        'ME4KC20F9NA015781',
+        'BLACK',
+        '2022',
+        'UNICORN',
+        'KC20EA0035037',
+        'Leasing Company Name',
+        '',
+        'Sample notes for bike 3',
+        'Active',
+        '50527229',
+        'DXB',
+        '',
+        '2023-03-10',
+        '2024-03-10',
+        '2024-08-10',
+        'Insurance Company',
+        'POL003',
+        '1',
+        'CNT003',
+        'Customer Name'
+      ],
+    ];
 
-      public function __construct($data)
-      {
-        $this->data = $data;
+    $spreadsheet = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
+    $sheet = $spreadsheet->getActiveSheet();
+
+    // Set headers
+    $col = 'A';
+    foreach ($headers as $header) {
+      $sheet->setCellValue($col . '1', $header);
+      $sheet->getStyle($col . '1')->getFont()->setBold(true);
+      $sheet->getStyle($col . '1')->getFill()
+        ->setFillType(\PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID)
+        ->getStartColor()->setARGB('FFD3D3D3');
+      $col++;
+    }
+
+    // Add sample data
+    $row = 2;
+    foreach ($sampleData as $data) {
+      $col = 'A';
+      foreach ($data as $value) {
+        $sheet->setCellValue($col . $row, $value);
+        $col++;
       }
+      $row++;
+    }
 
-      public function collection()
-      {
-        return collect($this->data);
-      }
-    };
+    // Auto-size columns
+    foreach (range('A', 'V') as $col) {
+      $sheet->getColumnDimension($col)->setAutoSize(true);
+    }
 
-    return Excel::download($export, 'bikes_import_template.xlsx');
+    // Create writer and download
+    $writer = new \PhpOffice\PhpSpreadsheet\Writer\Xlsx($spreadsheet);
+    $filename = 'bikes_import_template_' . date('Y-m-d') . '.xlsx';
+
+    header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    header('Content-Disposition: attachment;filename="' . $filename . '"');
+    header('Cache-Control: max-age=0');
+
+    $writer->save('php://output');
+    exit;
   }
 }

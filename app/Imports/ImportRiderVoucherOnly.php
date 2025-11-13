@@ -57,7 +57,7 @@ class ImportRiderVoucherOnly implements ToCollection
                 } elseif ($voucherType == 'Penalty') {
                     $voucherType = 'PN';
                 } else {
-                    $voucherType = 'JV';
+                    $voucherType = 'Voucher';
                 }
                 $accountId = isset($row[5]) && $row[5] !== '' ? (int) $row[5] : null;
 

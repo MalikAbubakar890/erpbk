@@ -183,6 +183,7 @@ class VisaexpenseController extends AppBaseController
         // Use global pagination trait
         $paginationParams = $this->getPaginationParams($request, $this->getDefaultPerPage());
         $query = visa_expenses::query()
+            ->with('vouchers')
             ->orderBy('id', 'asc')->where('rider_id', $id);
         if ($request->has('trans_date') && !empty($request->trans_date)) {
             $fromDate = \Carbon\Carbon::createFromFormat('Y-m-d', $request->trans_date);
@@ -316,6 +317,7 @@ class VisaexpenseController extends AppBaseController
         $paginationParams = $this->getPaginationParams($request, $this->getDefaultPerPage());
 
         $query = visa_installment_plan::query()
+            ->with('vouchers')
             ->where('rider_id', $id)
             ->orderBy('date', 'asc');
 

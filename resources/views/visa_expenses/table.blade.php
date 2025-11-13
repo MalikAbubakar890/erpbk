@@ -5,6 +5,7 @@
       <tr role="row">
          <th title="Transation Date" class="sorting" tabindex="0" aria-controls="dataTableBuilder" rowspan="1" colspan="1" aria-label="Transation Date: activate to sort column ascending">Billing Month</th>
          <th title="Date" class="sorting" tabindex="0" aria-controls="dataTableBuilder" rowspan="1" colspan="1" aria-label="Date: activate to sort column ascending">Date</th>
+         <th title="Voucher IDs" class="sorting" tabindex="0" aria-controls="dataTableBuilder" rowspan="1" colspan="1" aria-label="Voucher ID: activate to sort column ascending">Voucher ID</th>
          <th title="Amount" class="sorting" tabindex="0" aria-controls="dataTableBuilder" rowspan="1" colspan="1" aria-label="Rider: activate to sort column ascending">Amount</th>
          <th title="Visa Status" class="sorting" tabindex="0" aria-controls="dataTableBuilder" rowspan="1" colspan="1" aria-label="Visa Status: activate to sort column ascending" aria-sort="descending">Visa Status</th>
          <th title="Payment Status" class="sorting" tabindex="0" aria-controls="dataTableBuilder" rowspan="1" colspan="1" aria-label="Payment Status: activate to sort column ascending" aria-sort="descending">Payment Status</th>
@@ -19,6 +20,24 @@
       <tr class="text-center">
          <td>{{ \Carbon\Carbon::parse($r->billing_month)->format('M Y') }}</td>
          <td>{{ \Carbon\Carbon::parse($r->date)->format('d M Y') }}</td>
+         <td>
+            <span id="voucher_ids_display_{{ $r->id }}">
+               @if($r->payment_status === 'paid')
+               @if($r->vouchers->isNotEmpty())
+               @foreach($r->vouchers as $voucher)
+               @php
+               $voucherNumber = $voucher->voucher_type . '-' . str_pad($voucher->id, 4, '0', STR_PAD_LEFT);
+               @endphp
+               <a href="{{ route('vouchers.show', $voucher->id) }}" target="_blank">{{ $voucherNumber }}</a>@if(!$loop->last), @endif
+               @endforeach
+               @else
+               <span class="text-muted">No voucher</span>
+               @endif
+               @else
+               <span class="text-muted">-</span>
+               @endif
+            </span>
+         </td>
          <td>{{ number_format($r->amount, 2) }}</td>
          <td>
             <span class="badge bg-primary">{{ $r->visa_status }}</span>

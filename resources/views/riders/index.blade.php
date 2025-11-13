@@ -103,7 +103,7 @@
                                     </div>
                                 </a>
                                 <a class="action-dropdown-item show-modal" href="javascript:void(0);" data-size="sm" data-title="Import Keeta Rider Activities" data-action="{{ route('rider.keeta_activities_import') }}">
-                                    <i class="ti ti-brand-telegram"></i>
+                                    <i class="ti ti-activity"></i>
                                     <div>
                                         <div class="action-dropdown-item-text">Import Keeta Activities</div>
                                         <div class="action-dropdown-item-desc">Import Keeta rider activity data</div>
@@ -629,7 +629,7 @@ $tableColumns = $columns;
                 <input type="text" id="quickSearch" name="quick_search" class="form-control" placeholder="Quick Search..." value="{{ request('quick_search') }}">
             </div>
         </div>
-        <div class="card-body table-responsive px-2 py-0" id="table-data">
+        <div class="card-body table-responsive px-2 py-0">
             <div class="riders-table-container">
                 @include('riders.table', ['data' => $data, 'tableColumns' => $tableColumns])
             </div>
@@ -646,7 +646,6 @@ $tableColumns = $columns;
 </div>
 @endsection
 @section('page-script')
-<script src="{{ asset('js/riders-table-fix.js') }}"></script>
 <script type="text/javascript">
     // Make filter tabs section sticky on scroll
     $(document).ready(function() {

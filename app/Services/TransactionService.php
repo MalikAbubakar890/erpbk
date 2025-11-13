@@ -42,6 +42,60 @@ class TransactionService
   }
 
   /**
+   * Delete transaction records using a given identifier.
+   *
+   * @param  mixed       $identifier     Single identifier or array of identifiers.
+   * @param  string      $column         Column to match against (defaults to trans_code).
+   * @param  string|null $referenceType  Optional reference type filter when deleting by reference.
+   * @return bool                        True when at least one row is deleted, false otherwise.
+   */
+  public function deleteTransaction($identifier, string $column = 'trans_code', ?string $referenceType = null)
+  {
+    $allowedColumns = ['id', 'trans_code', 'reference_id', 'account_id'];
+
+    if (!in_array($column, $allowedColumns, true)) {
+      $column = 'trans_code';
+    }
+
+    $identifiers = is_array($identifier) ? $identifier : [$identifier];
+    $identifiers = array_values(array_filter($identifiers, function ($value) {
+      return !is_null($value) && $value !== '';
+    }));
+
+    if (empty($identifiers)) {
+      Log::warning('deleteTransaction called with empty identifier set.');
+      return false;
+    }
+
+    try {
+      $query = DB::table('transactions')->whereIn($column, $identifiers);
+
+      if ($column === 'reference_id' && $referenceType !== null) {
+        $query->where('reference_type', $referenceType);
+      }
+
+      $deleted = $query->delete();
+
+      Log::info('Transactions deleted', [
+        'column' => $column,
+        'identifiers' => $identifiers,
+        'reference_type' => $referenceType,
+        'deleted_rows' => $deleted,
+      ]);
+
+      return $deleted > 0;
+    } catch (\Exception $e) {
+      Log::error('Error deleting transactions: ' . $e->getMessage(), [
+        'column' => $column,
+        'identifiers' => $identifiers,
+        'reference_type' => $referenceType,
+      ]);
+
+      return false;
+    }
+  }
+
+  /**
    * Generate a unique transaction code
    *
    * @param string $prefix Prefix for the transaction code

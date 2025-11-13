@@ -64,7 +64,7 @@ class ImportBikes implements ToCollection, WithHeadingRow
             'model' => 'nullable|string|max:100',
             'model_type' => 'nullable|string|max:100',
             'engine' => 'nullable|string|max:100',
-            'bike_code' => 'nullable|string|max:100|unique:bikes,bike_code',
+            'bike_code' => 'nullable|string|max:100',
             'emirates' => 'nullable|string|max:100',
             'warehouse' => 'nullable|string|max:50',
             'status' => 'nullable|in:1,0',
@@ -80,14 +80,42 @@ class ImportBikes implements ToCollection, WithHeadingRow
 
         $messages = [
             'plate.required' => 'Plate number is required',
-            'bike_code.unique' => 'Bike code already exists',
             'status.in' => 'Status must be 1 (Active) or 0 (Inactive)',
             'registration_date.date' => 'Registration date must be a valid date',
             'expiry_date.date' => 'Expiry date must be a valid date',
             'insurance_expiry.date' => 'Insurance expiry date must be a valid date',
         ];
 
-        return Validator::make($row->toArray(), $rules, $messages);
+        $validator = Validator::make($row->toArray(), $rules, $messages);
+
+        // Add custom validation for duplicate checking
+        $validator->after(function ($validator) use ($row) {
+            // Check for duplicate plate number
+            if (!empty($row['plate'])) {
+                $existingPlate = Bikes::where('plate', $row['plate'])->first();
+                if ($existingPlate) {
+                    $validator->errors()->add('plate', 'Plate number "' . $row['plate'] . '" already exists in the database');
+                }
+            }
+
+            // Check for duplicate chassis number
+            if (!empty($row['chassis_number'])) {
+                $existingChassis = Bikes::where('chassis_number', $row['chassis_number'])->first();
+                if ($existingChassis) {
+                    $validator->errors()->add('chassis_number', 'Chassis number "' . $row['chassis_number'] . '" already exists in the database');
+                }
+            }
+
+            // Check for duplicate engine number
+            if (!empty($row['engine'])) {
+                $existingEngine = Bikes::where('engine', $row['engine'])->first();
+                if ($existingEngine) {
+                    $validator->errors()->add('engine', 'Engine number "' . $row['engine'] . '" already exists in the database');
+                }
+            }
+        });
+
+        return $validator;
     }
 
     protected function prepareBikeData($row)
@@ -147,20 +175,8 @@ class ImportBikes implements ToCollection, WithHeadingRow
 
     protected function createOrUpdateBike($data)
     {
-        // Check if bike already exists by plate or bike_code
-        $existingBike = Bikes::where('plate', $data['plate'])
-            ->when(!empty($data['bike_code']), function ($query) use ($data) {
-                return $query->orWhere('bike_code', $data['bike_code']);
-            })
-            ->first();
-
-        if ($existingBike) {
-            // Update existing bike
-            $existingBike->update($data);
-        } else {
-            // Create new bike
-            Bikes::create($data);
-        }
+        // Create new bike (duplicates are already prevented by validation)
+        Bikes::create($data);
     }
 
     protected function parseDate($value)

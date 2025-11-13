@@ -1,4 +1,0 @@
-date,courier_id,courier_first_name,courier_last_name,supervisor,vehicle_type,shift,On-Shift?,Valid Day?,Courier App Online Time,Valid Online Time,Peak Online Hours,task_volumes,Delivered Tasks,Large Order Tasks Completed,Cancelled Tasks,Rejected Tasks,Rejected Tasks (Courier),Rejected Tasks (Auto),Cancellation Rate from Delivery Issues,Order completion rate (non-delivery related),delivery_experience,Large order on-time rate,Avg Delivery Time of Delivered Orders,Delivered Orders Prop. (Over 55min),Overdue Order Tasks,Severely Overdue Order Tasks
-10/22/2025,1760539517518103,John,Doe,Manager1,Bike,Morning,Yes,Yes,10.5,8.5,4.2,20,15,3,0,2,1,1,0,95.5,95.5,100,25,0,0,0
-10/22/2025,1760539517518104,Jane,Smith,Manager2,Bike,Evening,Yes,Yes,9.0,7.2,3.5,15,12,2,1,1,0,1,5.5,92.3,92.3,95,28,1,1,0
-10/22/2025,1760539517518105,Mike,Johnson,Manager1,Bike,Morning,Yes,Yes,10.2,9.0,4.5,20,18,4,0,0,0,0,0,98.2,98.2,100,22,0,0,0
