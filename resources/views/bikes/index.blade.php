@@ -1,132 +1,235 @@
 ﻿@extends('layouts.app')
 
-@section('title','Vehicals')
+@section('title','Vehicles')
+
+@push('third_party_stylesheets')
+<style>
+    .filter-sidebar {
+        position: fixed;
+        top: 0;
+        right: -420px;
+        width: 420px;
+        height: 100%;
+        background: #ffffff;
+        box-shadow: -2px 0 8px rgba(0, 0, 0, .1);
+        z-index: 1051;
+        transition: right .3s ease;
+        overflow-y: auto;
+        border-left: 1px solid #dee2e6;
+    }
+
+    .filter-sidebar.open {
+        right: 0;
+    }
+
+    .filter-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, .4);
+        z-index: 1050;
+        display: none;
+    }
+
+    .filter-overlay.show {
+        display: block;
+    }
+
+    .filter-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 1rem;
+        border-bottom: 1px solid #eee;
+        background: #f8f9fa;
+    }
+
+    .filter-body {
+        padding: 1rem;
+        height: calc(100vh - 70px);
+        overflow-y: auto;
+    }
+
+    .filter-sidebar .btn-close {
+        box-shadow: none;
+    }
+
+    .card-search input {
+        border-radius: 8px;
+        border: 1px solid #dee2e6;
+        padding: 8px 12px;
+    }
+
+    .card-search input:focus {
+        border-color: #0d6efd;
+        box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
+    }
+
+    @media (max-width: 576px) {
+        .filter-sidebar {
+            width: 100%;
+            right: -100%;
+        }
+    }
+
+    /* Action Dropdown Styles */
+    .action-buttons {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .action-dropdown-container {
+        position: relative;
+        display: inline-block;
+    }
+
+    .action-dropdown-btn {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+        padding: 12px 20px;
+        border-radius: 12px;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+        min-width: 140px;
+        justify-content: space-between;
+    }
+
+    .action-dropdown-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+    }
+
+    .action-dropdown-btn:active {
+        transform: translateY(0);
+    }
+
+    .action-dropdown-menu {
+        position: absolute;
+        top: 100%;
+        right: 0;
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+        border: 1px solid rgba(0, 0, 0, 0.08);
+        min-width: 280px;
+        z-index: 1000;
+        opacity: 0;
+        visibility: hidden;
+        transform: translateY(-10px);
+        transition: all 0.3s ease;
+        margin-top: 8px;
+        overflow: hidden;
+    }
+
+    .action-dropdown-menu.show {
+        opacity: 1;
+        visibility: visible;
+        transform: translateY(0);
+    }
+
+    .action-dropdown-item {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 16px 20px;
+        color: #333;
+        text-decoration: none;
+        transition: all 0.2s ease;
+        border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+    }
+
+    .action-dropdown-item:last-child {
+        border-bottom: none;
+    }
+
+    .action-dropdown-item:hover {
+        background: linear-gradient(135deg, #f8f9ff 0%, #f0f2ff 100%);
+        color: #667eea;
+        text-decoration: none;
+    }
+
+    .action-dropdown-item i {
+        font-size: 18px;
+        width: 24px;
+        text-align: center;
+        color: #667eea;
+    }
+
+    .action-dropdown-item-text {
+        font-weight: 600;
+        font-size: 14px;
+        margin-bottom: 2px;
+    }
+
+    .action-dropdown-item-desc {
+        font-size: 12px;
+        color: #666;
+        line-height: 1.3;
+    }
+
+    /* Responsive adjustments */
+    @media (max-width: 768px) {
+        .action-dropdown-menu {
+            right: -20px;
+            min-width: 260px;
+        }
+
+        .action-dropdown-btn {
+            min-width: 120px;
+            padding: 10px 16px;
+            font-size: 13px;
+        }
+    }
+</style>
+@endpush
+
 @section('content')
 <section class="content-header">
     <div class="container-fluid">
         <div class="row mb-2">
             <div class="col-sm-6">
-                <h3>Vehicals</h3>
+                <h3>Vehicles</h3>
             </div>
             <div class="col-sm-6">
-                @can('item_create')
-                <a class="btn btn-primary action-btn show-modal"
-                    href="javascript:void(0);" data-size="xl" data-title="Add New Vehical" data-action="{{ route('bikes.create') }}">
-                    Add New
-                </a>
-                @endcan
-                <div class="modal modal-default filtetmodal fade" id="searchModal" tabindex="-1" data-bs-backdrop="static" role="dialog" aria-hidden="true">
-                    <div class="modal-dialog modal-lg modal-slide-top modal-full-top">
-                        <div class="modal-content">
-                            <div class="modal-header">
-                                <h5 class="modal-title">Filter Vehicals</h5>
-                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                            </div>
-                            <div class="modal-body" id="searchTopbody">
-                                <form id="filterForm" action="{{ route('bikes.index') }}" method="GET">
-                                    <div class="row">
-                                        <div class="form-group col-md-4">
-                                            <label for="bike_code">Filter by Code</label>
-                                            <select class="form-control " id="bike_code" name="bike_code">
-                                                @php
-                                                $bikecode = DB::table('bikes')
-                                                ->whereNotNull('bike_code')
-                                                ->where('bike_code', '!=', '')
-                                                ->pluck('bike_code')
-                                                ->unique();
-                                                @endphp
-                                                <option value="" selected>Select</option>
-                                                @foreach($bikecode as $code)
-                                                <option value="{{ $code }}" {{ request('bike_code') == $code ? 'selected' : '' }}>{{ $code }}</option>
-                                                @endforeach
-                                            </select>
-                                        </div>
-                                        <div class="form-group col-md-4">
-                                            <label for="name">Plate</label>
-                                            <input type="text" name="plate" class="form-control" placeholder="Filter By Plate" value="{{ request('plate') }}">
-                                        </div>
-                                        <div class="form-group col-md-4">
-                                            <label for="name">Rider ID</label>
-                                            <input type="text" name="rider_id" class="form-control" placeholder="Filter By Rider ID" value="{{ request('rider_id') }}">
-                                        </div>
-                                        <div class="form-group col-md-4">
-                                            <label for="rider">Filter by Rider</label>
-                                            <select class="form-control " id="rider" name="rider">
-                                                @php
-                                                $riderid = DB::table('bikes')
-                                                ->whereNotNull('rider_id')
-                                                ->where('rider_id', '!=', '')
-                                                ->pluck('rider_id')
-                                                ->unique();
-                                                $riders = DB::table('riders')
-                                                ->whereIn('id', $riderid)
-                                                ->select('rider_id','id', 'name')
-                                                ->get();
-                                                @endphp
-                                                <option value="" selected>Select</option>
-                                                @foreach($riders as $rider)
-                                                <option value="{{ $rider->id }}" {{ request('rider_id') == $rider->rider_id ? 'selected' : '' }}>{{ $rider->name}}</option>
-                                                @endforeach
-                                            </select>
-                                        </div>
-                                        <div class="form-group col-md-4">
-                                            <label for="company">Filter by Company</label>
-                                            <select class="form-control " id="company" name="company">
-                                                @php
-                                                $companiesid = DB::table('bikes')
-                                                ->whereNotNull('company')
-                                                ->where('company', '!=', '')
-                                                ->pluck('company')
-                                                ->unique();
-                                                $companies = DB::table('leasing_companies')
-                                                ->whereIn('id', $companiesid)
-                                                ->select('id', 'name')
-                                                ->get();
-                                                @endphp
-                                                <option value="" selected>Select</option>
-                                                @foreach($companies as $company)
-                                                <option value="{{ $company->id }}" {{ request('company') == $company->id ? 'selected' : '' }}>{{ $company->name }}</option>
-                                                @endforeach
-                                            </select>
-                                        </div>
-                                        <div class="form-group col-md-4">
-                                            <label for="emirates">Filter by Emirates</label>
-                                            <select class="form-control " id="emirates" name="emirates">
-                                                @php
-                                                $emirates = DB::table('bikes')
-                                                ->whereNotNull('emirates')
-                                                ->where('emirates', '!=', '')
-                                                ->pluck('emirates')
-                                                ->unique();
-                                                @endphp
-                                                <option value="" selected>Select</option>
-                                                @foreach($emirates as $emirate)
-                                                <option value="{{ $emirate }}" {{ request('emirates') == $emirate ? 'selected' : '' }}>{{ $emirate }}</option>
-                                                @endforeach
-                                            </select>
-                                        </div>
-                                        <div class="form-group col-md-4">
-                                            <label for="expiry_date_from">Expiry Date From</label>
-                                            <input type="date" name="expiry_date_from" class="form-control" placeholder="Filter By Expiry Date From" value="{{ request('expiry_date_from') }}">
-                                        </div>
-                                        <div class="form-group col-md-4">
-                                            <label for="expiry_date_to">Expiry Date To</label>
-                                            <input type="date" name="expiry_date_to" class="form-control" placeholder="Filter By Expiry Date To" value="{{ request('expiry_date_to') }}">
-                                        </div>
-                                        <div class="form-group col-md-4">
-                                            <label for="status">Filter by Status</label>
-                                            <select class="form-control " id="status" name="status">
-                                                <option value="" selected>Select</option>
-                                                <option value="1" {{ request('status') == 1 ? 'selected' : '' }}>Active</option>
-                                                <option value="3" {{ request('status') == 3 ? 'selected' : '' }}>In Active</option>
-                                            </select>
-                                        </div>
-                                        <div class="col-md-12 form-group text-center">
-                                            <button type="submit" class="btn btn-primary pull-right mt-3"><i class="fa fa-filter mx-2"></i> Filter Data</button>
-                                        </div>
-                                    </div>
-                                </form>
-                            </div>
+                <div class="action-buttons d-flex justify-content-end">
+                    <div class="action-dropdown-container">
+                        <button class="action-dropdown-btn" id="addBikeDropdownBtn">
+                            <i class="ti ti-plus"></i>
+                            <span>Add Vehicle</span>
+                            <i class="ti ti-chevron-down"></i>
+                        </button>
+                        <div class="action-dropdown-menu" id="addBikeDropdown">
+                            @can('bike_create')
+                            <a class="action-dropdown-item show-modal" href="javascript:void(0);" data-size="xl" data-title="Add New Vehicle" data-action="{{ route('bikes.create') }}">
+                                <i class="ti ti-plus"></i>
+                                <div>
+                                    <div class="action-dropdown-item-text">Create New Vehicle</div>
+                                    <div class="action-dropdown-item-desc">Add a new vehicle to the system</div>
+                                </div>
+                            </a>
+                            @endcan
+                            @can('bike_create')
+                            <a class="action-dropdown-item" href="{{ route('bikes.importbikes') }}">
+                                <i class="ti ti-file-upload"></i>
+                                <span>Import Vehicles</span>
+                            </a>
+                            @endcan
+                            @can('bike_view')
+                            <a class="action-dropdown-item show-modal" href="javascript:void(0);" data-size="xl" data-title="Export Vehicles" data-action="{{ route('bikes.export') }}">
+                                <i class="ti ti-file-export"></i>
+                                <span>Export Vehicles</span>
+                            </a>
+                            @endcan
                         </div>
                     </div>
                 </div>
@@ -134,12 +237,188 @@
         </div>
     </div>
 </section>
-<div class="content px-3">
+
+<!-- Filter Sidebar -->
+<div id="filterSidebar" class="filter-sidebar" style="z-index: 1111;">
+    <div class="filter-header">
+        <h5>Filter Vehicles</h5>
+        <button type="button" class="btn-close" id="closeSidebar"></button>
+    </div>
+    <div class="filter-body" id="searchTopbody">
+        <form id="filterForm" action="{{ route('bikes.index') }}" method="GET">
+            <div class="row">
+                <div class="form-group col-md-12">
+                    <label for="bike_code">Filter by Code</label>
+                    <select class="form-control " id="bike_code" name="bike_code">
+                        @php
+                        $bikecode = DB::table('bikes')
+                        ->whereNotNull('bike_code')
+                        ->where('bike_code', '!=', '')
+                        ->pluck('bike_code')
+                        ->unique();
+                        @endphp
+                        <option value="" selected>Select</option>
+                        @foreach($bikecode as $code)
+                        <option value="{{ $code }}" {{ request('bike_code') == $code ? 'selected' : '' }}>{{ $code }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="form-group col-md-12">
+                    <label for="plate">Plate</label>
+                    <input type="text" name="plate" class="form-control" placeholder="Filter By Plate" value="{{ request('plate') }}">
+                </div>
+                <div class="form-group col-md-12">
+                    <label for="rider_id">Rider ID</label>
+                    <input type="text" name="rider_id" class="form-control" placeholder="Filter By Rider ID" value="{{ request('rider_id') }}">
+                </div>
+                <div class="form-group col-md-12">
+                    <label for="rider">Filter by Rider</label>
+                    <select class="form-control " id="rider" name="rider">
+                        @php
+                        $riderid = DB::table('bikes')
+                        ->whereNotNull('rider_id')
+                        ->where('rider_id', '!=', '')
+                        ->pluck('rider_id')
+                        ->unique();
+                        $riders = DB::table('riders')
+                        ->whereIn('id', $riderid)
+                        ->select('rider_id','id', 'name')
+                        ->get();
+                        @endphp
+                        <option value="" selected>Select</option>
+                        @foreach($riders as $rider)
+                        <option value="{{ $rider->id }}" {{ request('rider_id') == $rider->rider_id ? 'selected' : '' }}>{{ $rider->name}}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="form-group col-md-12">
+                    <label for="customer_id">Filter by Customer</label>
+                    <select class="form-control " id="customer_id" name="customer_id">
+                        @php
+                        $customerids = DB::table('bikes')
+                        ->whereNotNull('customer_id')
+                        ->where('customer_id', '!=', '')
+                        ->pluck('customer_id')
+                        ->unique();
+                        $customers = DB::table('customers')
+                        ->whereIn('id', $customerids)
+                        ->select('id', 'name')
+                        ->get();
+                        @endphp
+                        <option value="" selected>Select</option>
+                        @foreach($customers as $customer)
+                        <option value="{{ $customer->id }}" {{ request('customer_id') == $customer->id ? 'selected' : '' }}>{{ $customer->name }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="form-group col-md-12">
+                    <label for="company">Filter by Company</label>
+                    <select class="form-control " id="company" name="company">
+                        @php
+                        $companiesid = DB::table('bikes')
+                        ->whereNotNull('company')
+                        ->where('company', '!=', '')
+                        ->pluck('company')
+                        ->unique();
+                        $companies = DB::table('leasing_companies')
+                        ->whereIn('id', $companiesid)
+                        ->select('id', 'name')
+                        ->get();
+                        @endphp
+                        <option value="" selected>Select</option>
+                        @foreach($companies as $company)
+                        <option value="{{ $company->id }}" {{ request('company') == $company->id ? 'selected' : '' }}>{{ $company->name }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="form-group col-md-12">
+                    <label for="emirates">Filter by Emirates</label>
+                    <select class="form-control " id="emirates" name="emirates">
+                        @php
+                        $emirates = DB::table('bikes')
+                        ->whereNotNull('emirates')
+                        ->where('emirates', '!=', '')
+                        ->pluck('emirates')
+                        ->unique();
+                        @endphp
+                        <option value="" selected>Select</option>
+                        @foreach($emirates as $emirate)
+                        <option value="{{ $emirate }}" {{ request('emirates') == $emirate ? 'selected' : '' }}>{{ $emirate }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="form-group col-md-12">
+                    <label for="warehouse">Filter by Warehouse</label>
+                    <select class="form-control " id="warehouse" name="warehouse">
+                        @php
+                        $warehouses = DB::table('bikes')
+                        ->whereNotNull('warehouse')
+                        ->where('warehouse', '!=', '')
+                        ->pluck('warehouse')
+                        ->unique();
+                        @endphp
+                        <option value="" selected>Select</option>
+                        @foreach($warehouses as $warehouse)
+                        <option value="{{ $warehouse }}" {{ request('warehouse') == $warehouse ? 'selected' : '' }}>{{ $warehouse }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="form-group col-md-12">
+                    <label for="expiry_date_from">Expiry Date From</label>
+                    <input type="date" name="expiry_date_from" class="form-control" placeholder="Filter By Expiry Date From" value="{{ request('expiry_date_from') }}">
+                </div>
+                <div class="form-group col-md-12">
+                    <label for="expiry_date_to">Expiry Date To</label>
+                    <input type="date" name="expiry_date_to" class="form-control" placeholder="Filter By Expiry Date To" value="{{ request('expiry_date_to') }}">
+                </div>
+                <div class="form-group col-md-12">
+                    <label for="status">Filter by Status</label>
+                    <select class="form-control " id="status" name="status">
+                        <option value="" selected>Select</option>
+                        <option value="1" {{ request('status') == 1 ? 'selected' : '' }}>Active</option>
+                        <option value="3" {{ request('status') == 3 ? 'selected' : '' }}>Inactive</option>
+                    </select>
+                </div>
+                <div class="col-md-12 form-group text-center">
+                    <button type="submit" class="btn btn-primary pull-right mt-3"><i class="fa fa-filter mx-2"></i> Filter Data</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+<!-- Filter Overlay -->
+<div id="filterOverlay" class="filter-overlay"></div>
+</section>
+{{-- Include Column Control Panel --}}
+@include('components.column-control-panel', [
+'tableColumns' => $tableColumns,
+'exportRoute' => 'bikes.export',
+'tableIdentifier' => 'bikes_table'
+])
+
+<div class="content container-fluid">
     @include('flash::message')
-    <div class="clearfix"></div>
     <div class="card">
+        <div class="card-header d-flex justify-content-between">
+            <div class="card-title">
+                <h3>Vehicles</h3>
+            </div>
+            <div class="card-search">
+                <input type="text" id="quickSearch" name="quick_search" class="form-control" placeholder="Quick Search..." value="{{ request('quick_search') }}">
+            </div>
+        </div>
         <div class="card-body table-responsive px-2 py-0" id="table-data">
-            @include('bikes.table', ['data' => $data])
+            <div class="bikes-table-container">
+                @include('bikes.table', ['data' => $data, 'tableColumns' => $tableColumns])
+            </div>
+            <div class="filter-loading-overlay" style="display: none;">
+                <div class="filter-loading-content">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <p class="mt-2">Applying filters...</p>
+                </div>
+            </div>
         </div>
     </div>
 </div>
@@ -171,12 +450,27 @@
         });
         $('#rider').select2({
             dropdownParent: $('#searchTopbody'),
-            placeholder: "Filter By Name",
+            placeholder: "Filter By Rider",
             allowClear: true
         });
-        $('#rider').select2({
+        $('#company').select2({
             dropdownParent: $('#searchTopbody'),
-            placeholder: "Filter By Name",
+            placeholder: "Filter By Company",
+            allowClear: true
+        });
+        $('#emirates').select2({
+            dropdownParent: $('#searchTopbody'),
+            placeholder: "Filter By Emirates",
+            allowClear: true
+        });
+        $('#warehouse').select2({
+            dropdownParent: $('#searchTopbody'),
+            placeholder: "Filter By Warehouse",
+            allowClear: true
+        });
+        $('#status').select2({
+            dropdownParent: $('#searchTopbody'),
+            placeholder: "Filter By Status",
             allowClear: true
         });
     });
@@ -184,43 +478,85 @@
 
 <script type="text/javascript">
     $(document).ready(function() {
-        $('#filterForm').on('submit', function(e) {
+        // Filter sidebar functionality
+        $(document).on('click', '#openFilterSidebar, .openFilterSidebar', function(e) {
             e.preventDefault();
+            console.log('Filter button clicked!'); // Debug line
+            $('#filterSidebar').addClass('open');
+            $('#filterOverlay').addClass('show');
+            return false;
+        });
 
-            $('#loading-overlay').show();
-            $('#searchModal').modal('hide');
+        $('#closeSidebar, #filterOverlay').on('click', function() {
+            $('#filterSidebar').removeClass('open');
+            $('#filterOverlay').removeClass('show');
+        });
 
-            const loaderStartTime = Date.now();
+        $('#filterForm').on('submit', function(e) {
+            // Let the form submit naturally - no need to prevent default
+            $('#filterSidebar').removeClass('open');
+            $('#filterOverlay').removeClass('show');
+        });
 
-            // Exclude _token and empty fields
-            let filteredFields = $(this).serializeArray().filter(field => field.name !== '_token' && field.value.trim() !== '');
-            let formData = $.param(filteredFields);
+        // Quick search input (main) - redirect to URL with search parameter
+        $('#quickSearch').on('keyup', function(e) {
+            if (e.keyCode === 13 || $(this).val().length === 0) {
+                const searchValue = $(this).val();
+                const url = new URL(window.location);
 
-            $.ajax({
-                url: "{{ route('bikes.index') }}",
-                type: "GET",
-                data: formData,
-                success: function(data) {
-                    $('#table-data').html(data.tableData);
-
-                    // Update URL
-                    let newUrl = "{{ route('bikes.index') }}" + (formData ? '?' + formData : '');
-                    history.pushState(null, '', newUrl);
-
-
-                    // Ensure loader is visible at least 3s
-                    const elapsed = Date.now() - loaderStartTime;
-                    const remaining = 1000 - elapsed;
-                    setTimeout(() => $('#loading-overlay').hide(), remaining > 0 ? remaining : 0);
-                },
-                error: function(xhr, status, error) {
-                    console.error(error);
-
-                    const elapsed = Date.now() - loaderStartTime;
-                    const remaining = 1000 - elapsed;
-                    setTimeout(() => $('#loading-overlay').hide(), remaining > 0 ? remaining : 0);
+                if (searchValue) {
+                    url.searchParams.set('quick_search', searchValue);
+                } else {
+                    url.searchParams.delete('quick_search');
                 }
-            });
+
+                window.location.href = url.toString();
+            }
+        });
+
+        // Quick search input (sidebar) - redirect to URL with search parameter
+        $('#quickSearchSidebar').on('keyup', function(e) {
+            if (e.keyCode === 13 || $(this).val().length === 0) {
+                const searchValue = $(this).val();
+                const url = new URL(window.location);
+
+                if (searchValue) {
+                    url.searchParams.set('quick_search', searchValue);
+                } else {
+                    url.searchParams.delete('quick_search');
+                }
+
+                window.location.href = url.toString();
+            }
+        });
+
+        // Handle delete bike functionality
+        $(document).on('click', '.delete-bike', function(e) {
+            e.preventDefault();
+            const url = $(this).data('url');
+            confirmDelete(url);
+        });
+
+        // Action dropdown functionality
+        $(document).on('click', '#addBikeDropdownBtn', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            const dropdown = $('#addBikeDropdown');
+            dropdown.toggleClass('show');
+        });
+
+        // Close dropdown when clicking outside
+        $(document).on('click', function(e) {
+            if (!$(e.target).closest('.action-dropdown-container').length) {
+                $('#addBikeDropdown').removeClass('show');
+            }
+        });
+
+        // Close dropdown when pressing escape
+        $(document).on('keydown', function(e) {
+            if (e.key === 'Escape') {
+                $('#addBikeDropdown').removeClass('show');
+            }
         });
     });
 </script>

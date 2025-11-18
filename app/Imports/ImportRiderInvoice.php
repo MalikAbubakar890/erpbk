@@ -16,8 +16,8 @@ use Illuminate\Support\Collection;
 use Illuminate\Validation\ValidationException;
 use Maatwebsite\Excel\Concerns\ToCollection;
 use Maatwebsite\Excel\Concerns\ToModel;
-use DB;
-use Auth;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Auth;
 use PhpOffice\PhpSpreadsheet\Shared\Date;
 use Carbon\Carbon;
 
@@ -79,10 +79,19 @@ class ImportRiderInvoice implements ToCollection
             $VID = $rider->VID;
             //$VID = AssignVendorRider::where('RID', $RID)->value('VID');
             if (isset($row[21])) {
+              // Check for duplicate invoice for same rider and billing month
+              $existingInvoice = RiderInvoices::where('rider_id', $RID)
+                ->where('billing_month', $billing_month)
+                ->first();
+
+              if ($existingInvoice) {
+                throw ValidationException::withMessages(['file' => 'Row(' . $i . ') - An invoice for rider ' . $row[1] . ' has already been generated for the selected billing month.']);
+              }
+
               // Map status from Excel: allow 'unpaid'/'paid' or 0/1
               $excelStatus = strtolower(trim($row[30] ?? ''));
               if ($excelStatus === 'paid' || $excelStatus === '1') {
-                $status = '1'; // Paid
+                $status = 1; // Paid
               } else {
                 $status = 0; // Unpaid (default)
               }
@@ -108,10 +117,13 @@ class ImportRiderInvoice implements ToCollection
                 $itemId = Items::where('name', $item)->value('id');
                 if ($itemId) {
                   $riderPrice = General::riderItemPrice($RID, $itemId);
+                  $qtyRaw = $row[$j] ?? 0;
+                  $qty = is_numeric($qtyRaw) ? (float)$qtyRaw : 0.0;
+                  $rate = is_numeric($riderPrice) ? (float)$riderPrice : 0.0;
                   $dta['item_id'] = $itemId;
-                  $dta['qty'] = $row[$j] ?? 0;
-                  $dta['rate'] = $riderPrice;
-                  $dta['amount'] = ($riderPrice) * ($row[$j]);
+                  $dta['qty'] = $qty;
+                  $dta['rate'] = $rate;
+                  $dta['amount'] = $rate * $qty;
                   $dta['inv_id'] = $ret->id;
                   RiderInvoiceItem::create($dta);
                 }
@@ -222,24 +234,35 @@ class ImportRiderInvoice implements ToCollection
       }
     }
     if (!empty($importedInvoiceIds)) {
-      $account = DB::table('accounts')->where('id', 1)->first();
-      $totalPayable = RiderInvoices::whereIn('id', $importedInvoiceIds)->sum('total_amount');
-      $firstInvoice = RiderInvoices::find($importedInvoiceIds[0]);
       $transactionService = new TransactionService();
-      $trans_code = Account::trans_code();
       $salary_account = DB::table('accounts')->where('id', 1103)->first();
-      $transactionDataDebit = [
-        'account_id' => $salary_account->id,
-        'reference_id' => $firstInvoice ? $firstInvoice->id : 0,
-        'reference_type' => 'InvoiceBatch',
-        'trans_code' => $trans_code,
-        'trans_date' => $firstInvoice ? $firstInvoice->inv_date : now(),
-        'narration' => 'Rider Invoices Batch Salary Debit',
-        'debit' => $totalPayable,
-        'credit' => 0,
-        'billing_month' => $firstInvoice ? $firstInvoice->billing_month : now()->format('Y-m-01'),
-      ];
-      $transactionService->recordTransaction($transactionDataDebit);
+      foreach ($importedInvoiceIds as $invoiceId) {
+        $invoice = RiderInvoices::find($invoiceId);
+        if (!$invoice || !$salary_account) {
+          continue;
+        }
+        // Skip if a salary debit already exists for this invoice to avoid duplicates
+        $alreadyExists = DB::table('transactions')
+          ->where('reference_type', 'Invoice')
+          ->where('reference_id', $invoice->id)
+          ->where('account_id', $salary_account->id)
+          ->exists();
+        if ($alreadyExists) {
+          continue;
+        }
+        $transactionDataDebit = [
+          'account_id' => $salary_account->id,
+          'reference_id' => $invoice->id,
+          'reference_type' => 'Invoice',
+          'trans_code' => Account::trans_code(),
+          'trans_date' => $invoice->inv_date,
+          'narration' => 'Rider Invoice #' . $invoice->id . ' Salary Debit',
+          'debit' => $invoice->total_amount,
+          'credit' => 0,
+          'billing_month' => $invoice->billing_month,
+        ];
+        $transactionService->recordTransaction($transactionDataDebit);
+      }
     }
   }
 }

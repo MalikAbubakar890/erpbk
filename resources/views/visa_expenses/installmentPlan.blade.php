@@ -9,10 +9,12 @@
                     href="{{ route('VisaExpense.generatentries' , $account->id) }}" data-size="lg" data-title="Visa Expense">
                     <i class="fa fa-arrow-left me-2"></i>Back
                 </a>
+                @can('visaloan_create')
                 <a class="btn btn-success action-btn show-modal"
                     href="javascript:void(0);" data-action="{{ route('VisaExpense.createInstallmentPlanForm', $account->id) }}" data-size="lg" data-title="Create Installment Entry">
                     <i class="fa fa-plus me-2"></i>Installment Plan
                 </a>
+                @endcan
                 @if($data->count() > 0)
                 <a href="{{ route('VisaExpense.generateInstallmentInvoice', $account->id) }}"
                     class="btn btn-info action-btn mx-2 " target="_blank">
@@ -197,4 +199,5 @@
         });
     });
 </script>
+
 @endsection

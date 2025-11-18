@@ -3,9 +3,12 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use App\Traits\LogsActivity;
 
 class Items extends Model
 {
+  use LogsActivity;
+
   public $table = 'items';
 
   public $fillable = [
@@ -48,7 +51,6 @@ class Items extends Model
   {
     $query = self::select('id', 'name')->pluck('name', 'id')->prepend('Select', '');
     return $query;
-
   }
   public function customer()
   {
@@ -58,5 +60,4 @@ class Items extends Model
   {
     return $this->belongsTo(Supplier::class, 'supplier_id', 'id');
   }
-
 }

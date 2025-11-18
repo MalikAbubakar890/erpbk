@@ -343,19 +343,14 @@
             // Check if there's already a plan for the current month
             const currentMonth = new Date().toISOString().slice(0, 7); // YYYY-MM format
             if (billingMonth === currentMonth) {
-                const hasExistingPlan = {
-                    {
-                        $existingCurrentMonthPlan ? 'true' : 'false'
-                    }
-                };
-                if (hasExistingPlan) {
-                    e.preventDefault();
-                    alert('An installment plan already exists for this rider in ' + new Date().toLocaleDateString('en-US', {
-                        year: 'numeric',
-                        month: 'long'
-                    }) + '. Please select a different starting month.');
-                    return false;
-                }
+                @if($existingCurrentMonthPlan)
+                e.preventDefault();
+                alert('An installment plan already exists for this rider in ' + new Date().toLocaleDateString('en-US', {
+                    year: 'numeric',
+                    month: 'long'
+                }) + '. Please select a different starting month.');
+                return false;
+                @endif
             }
 
             // Validate that all installments sum to total amount

@@ -9,11 +9,13 @@ use App\Http\Controllers\AppBaseController;
 use App\Models\Items;
 use App\Models\RiderItemPrice;
 use App\Repositories\ItemsRepository;
+use App\Traits\GlobalPagination;
 use Illuminate\Http\Request;
 use Flash;
 
 class ItemsController extends AppBaseController
 {
+  use GlobalPagination;
   /** @var ItemsRepository $itemsRepository*/
   private $itemsRepository;
 
@@ -31,39 +33,50 @@ class ItemsController extends AppBaseController
     if (!auth()->user()->hasPermissionTo('item_view')) {
       abort(403, 'Unauthorized action.');
     }
-    $perPage = request()->input('per_page', 50);
-    $perPage = is_numeric($perPage) ? (int) $perPage : 50;
-    $perPage = $perPage > 0 ? $perPage : 50;
+    // Use global pagination trait
+    $paginationParams = $this->getPaginationParams($request, $this->getDefaultPerPage());
     $query = Items::query()
-        ->orderBy('id', 'desc');
+      ->orderBy('id', 'desc');
     if ($request->has('name') && !empty($request->name)) {
-        $query->where('name', 'like', '%' . $request->name . '%');
+      $query->where('name', 'like', '%' . $request->name . '%');
     }
     if ($request->has('code') && !empty($request->code)) {
-        $query->where('code',$request->code);
+      $query->where('code', $request->code);
     }
     if ($request->has('customer_id') && !empty($request->customer_id)) {
-        $query->where('customer_id',$request->customer_id);
+      $query->where('customer_id', $request->customer_id);
     }
     if ($request->has('supplier_id') && !empty($request->supplier_id)) {
-        $query->where('supplier_id',$request->supplier_id);
+      $query->where('supplier_id', $request->supplier_id);
     }
     if ($request->has('status') && !empty($request->status)) {
-        $query->where('status', $request->status);
+      $query->where('status', $request->status);
     }
-    $data = $query->paginate($perPage);
+    // Apply pagination using the trait
+    $data = $this->applyPagination($query, $paginationParams);
+
     if ($request->ajax()) {
-        $tableData = view('items.table', [
-            'data' => $data,
-        ])->render();
-        $paginationLinks = $data->links('pagination')->render();
-        return response()->json([
-            'tableData' => $tableData,
-            'paginationLinks' => $paginationLinks,
-        ]);
-    }
-    return view('items.index', [
+      $tableData = view('items.table', [
         'data' => $data,
+      ])->render();
+
+      // Use global pagination component
+      if (method_exists($data, 'links')) {
+        $paginationLinks = $data->links('components.global-pagination')->render();
+      } else {
+        $paginationLinks = '';
+      }
+
+      return response()->json([
+        'tableData' => $tableData,
+        'paginationLinks' => $paginationLinks,
+        'total' => method_exists($data, 'total') ? $data->total() : $data->count(),
+        'per_page' => method_exists($data, 'perPage') ? $data->perPage() : $data->count(),
+      ]);
+    }
+
+    return view('items.index', [
+      'data' => $data,
     ]);
   }
 
@@ -134,7 +147,6 @@ class ItemsController extends AppBaseController
     $items = $this->itemsRepository->update($request->all(), $id);
     Flash::success('Item updated successfully.');
     return redirect()->back();
-
   }
 
   /**
@@ -148,7 +160,6 @@ class ItemsController extends AppBaseController
 
     if (empty($items)) {
       Flash::error('Item not found!');
-
     }
 
     $this->itemsRepository->delete($id);
@@ -171,6 +182,5 @@ class ItemsController extends AppBaseController
 
     $result = Items::where('id', $item_id)->first();
     return $result;
-
   }
 }

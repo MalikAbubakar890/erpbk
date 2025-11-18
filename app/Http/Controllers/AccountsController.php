@@ -15,10 +15,12 @@ use App\Models\Riders;
 use App\Models\Transactions;
 use App\Repositories\AccountsRepository;
 use Illuminate\Http\Request;
+use App\Traits\GlobalPagination;
 use Flash;
 
 class AccountsController extends AppBaseController
 {
+  use GlobalPagination;
   /** @var AccountsRepository $accountsRepository*/
   private $accountsRepository;
 
@@ -66,12 +68,11 @@ class AccountsController extends AppBaseController
   {
     $input = $request->all();
     // Set is_locked=1 if parent_id is not set (root account)
-    if (empty($input['parent_id'])) {
-      $input['is_locked'] = 0;
-    }
+
 
     $accounts = $this->accountsRepository->create($input);
     $accounts->account_code = str_pad($accounts->id, 4, "0", STR_PAD_LEFT);
+    $accounts->is_locked = 0;
     $accounts->save();
 
     return response()->json(['message' => 'Account added successfully.']);

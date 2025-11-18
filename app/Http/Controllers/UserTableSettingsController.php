@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\UserTableSettings;
 use Illuminate\Http\Request;
+use App\Traits\GlobalPagination;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
 

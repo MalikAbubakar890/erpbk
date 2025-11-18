@@ -10,10 +10,12 @@ use App\Models\Bikes;
 use App\Models\bikeHistory;
 use App\Repositories\BikeHistoryRepository;
 use Illuminate\Http\Request;
+use App\Traits\GlobalPagination;
 use Flash;
 
 class BikeHistoryController extends AppBaseController
 {
+    use GlobalPagination;
   /** @var BikeHistoryRepository $bikeHistoryRepository*/
   private $bikeHistoryRepository;
 

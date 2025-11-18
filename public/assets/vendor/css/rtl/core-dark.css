@@ -10823,6 +10823,7 @@ form select.selectpicker.is-invalid ~ .btn {
   padding: 0.44rem;
   box-shadow: 0 0.125rem 0.25rem rgba(15, 20, 34, 0.4);
   transition: all 0.23s ease 0.1s;
+  background-size: contain;
 }
 html:not([dir=rtl]) .modal .btn-close {
   -webkit-transform: translate(23px, -25px);

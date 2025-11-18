@@ -48,11 +48,6 @@ class FortifyServiceProvider extends ServiceProvider
             return $user;
           }
         }
-
-
-
-
-
       } else {
         if ($user && !$user?->status) {
           $error['email'] = 'Your account bas been deactivated. Please contact the administrator. Thank you';

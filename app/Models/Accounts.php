@@ -3,9 +3,13 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use App\Traits\LogsActivity;
+use App\Traits\HasActiveStatus;
 
 class Accounts extends Model
 {
+  use LogsActivity, HasActiveStatus;
+
   public $table = 'accounts';
 
   public $fillable = [
@@ -85,5 +89,14 @@ class Accounts extends Model
 
 
     return $query;
+  }
+
+  public static function bankAccountsDropdown()
+  {
+    return self::select('id', \DB::raw("CONCAT(account_code, '-', name) as full_name"))
+      ->where('account_type', 'Asset')
+      ->whereIn('parent_id', [994, 1643])
+      ->pluck('full_name', 'id')
+      ->prepend('Select', '');
   }
 }

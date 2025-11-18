@@ -59,21 +59,29 @@ class CloudwaysSessionFix
      */
     protected function ensureSessionConfiguration()
     {
-        // Extend session lifetime if needed
-        if (config('cloudways.session_fixes.extend_session_lifetime')) {
-            ini_set('session.gc_maxlifetime', 86400); // 24 hours
-            ini_set('session.cookie_lifetime', 86400);
-        }
+        // Only configure if not already configured to avoid conflicts
+        if (!session()->isStarted()) {
+            // Extend session lifetime if needed
+            if (config('cloudways.session_fixes.extend_session_lifetime')) {
+                ini_set('session.gc_maxlifetime', 86400); // 24 hours
+                ini_set('session.cookie_lifetime', 86400);
+            }
 
-        // Force secure cookies if HTTPS
-        if (config('cloudways.session_fixes.force_secure_cookies') && request()->isSecure()) {
-            ini_set('session.cookie_secure', '1');
-        }
+            // Determine secure cookie setting based on environment
+            $isSecure = request()->isSecure() && app()->environment('production');
+            ini_set('session.cookie_secure', $isSecure ? '1' : '0');
 
-        // Set proper session path
-        ini_set('session.cookie_path', '/');
-        ini_set('session.cookie_httponly', '1');
-        ini_set('session.cookie_samesite', 'Lax');
+            // Set proper session path and attributes
+            ini_set('session.cookie_path', '/');
+            ini_set('session.cookie_httponly', '1');
+            ini_set('session.cookie_samesite', 'Lax');
+
+            // Ensure session domain is properly set
+            $domain = config('session.domain') ?: null;
+            if ($domain) {
+                ini_set('session.cookie_domain', $domain);
+            }
+        }
     }
 
     /**

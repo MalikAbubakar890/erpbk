@@ -1,20 +1,26 @@
-{!! Form::open(['route' => 'vouchers.store', 'id'=>'formajax']) !!}
+{!! Form::open(['route' => 'vouchers.store', 'id'=>'formajax', 'class' => 'form-with-fixed-footer']) !!}
 <input type="hidden" id="reload_page" value="1">
 
-<div class="">
+<div class="card-body card-body-with-footer">
     @include('vouchers.fields')
 </div>
 
 
-<div class="card-footer">
+<div class="card-footer fixed-footer">
     {!! Form::submit('Save', ['class' => 'btn btn-primary','onclick'=>'getTotal();']) !!}
 </div>
 
 {!! Form::close() !!}
 <script>
-    $(document).ready(function() {
-        getTotal();
+    // Wait for jQuery to be available
+    (function() {
+        if (typeof jQuery === 'undefined') {
+            setTimeout(arguments.callee, 50);
+            return;
+        }
 
-
-    });
+        $(document).ready(function() {
+            getTotal();
+        });
+    })();
 </script>

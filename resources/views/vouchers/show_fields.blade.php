@@ -73,18 +73,29 @@
             }
 
         }
+
+        @media print {
+            .print-footer {
+                position: fixed;
+                bottom: 0;
+                left: 0;
+                width: 100%;
+                font-size: 12px;
+                border-top: 1px solid #000;
+                padding-top: 5px;
+                display: flex;
+                justify-content: space-between;
+            }
+        }
     </style>
 </head>
 
 
 <body style="">
     <div style="position: relative;min-height: 100%;height: 100%;">
-
         @include('_partials.header')
-
         @isset($voucher)
         <table width="100%" style="font-family: sans-serif; margin-top: 20px;font-size: 12px">
-
             <tr>
                 <td style="padding: 3px;width: 65%;text-align: left;"><strong>Voucher No</strong>: {{ $voucher->voucher_type . '-' . str_pad($voucher->id, '4', '0', STR_PAD_LEFT) }}</td>
                 <th style="padding: 3px;width: 15%;text-align: left;">Voucher Date:</th>
@@ -98,8 +109,12 @@
                 @endisset
             </tr>
             <tr>
+                <td style="padding: 3px;width: 65%;text-align: left;"><strong>Created By</strong>: {{ Auth::user()->where('id', $voucher->Created_By)->first()->name ?? 'N/A' }}</td>
+                <th style="padding: 3px;width: 15%;text-align: left;">Creation Date:</th>
+                <td style="padding: 3px;width: 20%;text-align: left;">{{ Illuminate\Support\Carbon::parse($voucher->created_at)->format('d-M-Y ') }}</td>
+            </tr>
+            <tr>
                 <td style="padding: 3px;width: 65%;text-align: left;">&nbsp;</td>
-
             </tr>
         </table>
         <table style="width: 100%; font-family: sans-serif;text-align: left;border: 1px solid #000; border-collapse: collapse; margin-top: 20px;font-size: 12px;">
@@ -119,7 +134,6 @@
                 $fin_detail = DB::Table('rta_fines')->where('id' , $voucher->ref_id)->first();
                 @endphp
                 @foreach($voucher->transactions as $item)
-
                 <tr>
                     <td style="padding: 5px;border:1px solid;text-align:center;">{{ $i+=1 }}</td>
                     <td style="padding: 5px;border:1px solid">
@@ -142,7 +156,6 @@
                 @endforeach
             </tbody>
             <tfoot>
-
                 <tr style="border-top: 1px solid #000;">
                     <td colspan="2" style="padding: 10px;text-align: center;"></td>
                     <th style="padding: 10px;text-align: right;">Sub Total:</th>
@@ -163,6 +176,12 @@
         @else
         <div class="text-danger">No Voucher found</div>
         @endisset
+        <div class="print-footer">
+            <span class="left">Printed date: {{ now()->format('d-M-Y') }}</span>
+            <span class="right">Printed by: {{ auth()->user()->name ?? 'System' }}</span>
+        </div>
+
+
     </div>
 </body>
 

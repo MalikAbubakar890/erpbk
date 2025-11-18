@@ -2,9 +2,12 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use App\Traits\LogsActivity;
 
 class LedgerEntry extends Model
 {
+    use LogsActivity;
+
   protected $fillable = [
     'account_id',
     'billing_month',

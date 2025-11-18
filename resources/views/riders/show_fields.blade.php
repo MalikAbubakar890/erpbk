@@ -18,6 +18,11 @@
             </div>
             <!--col-->
             <div class="col-md-3 form-group col-3">
+                <label>Courier ID </label>
+                <p>{{@$result['courier_id']}}</p>
+            </div>
+            <!--col-->
+            <div class="col-md-3 form-group col-3">
                 <label>Rider Name </label>
                 <p>{{@$result['name']}}</p>
             </div>
@@ -67,6 +72,10 @@
                 <label>Customer </label>
                 <p>{{@$rider->customer->name}}</p>
             </div>
+            <div class="col-md-3 form-group col-3">
+                <label>Recruiter </label>
+                <p>{{@$rider->recruiter->name}}</p>
+            </div>
         </div>
 
     </div>
@@ -78,6 +87,10 @@
                 <div class="col-md-3 form-group col-3">
                     <label class="required">Rider ID</label>
                     <input type="text" class="form-control form-control-sm" name="rider_id" value="{{$result['rider_id']}}" readonly>
+                </div>
+                <div class="col-md-3 form-group col-3">
+                    <label>Courier ID</label>
+                    <input type="text" class="form-control form-control-sm" name="courier_id" value="{{@$result['courier_id']}}">
                 </div>
                 <div class="col-md-3 form-group col-3">
                     <label>Rider Name</label>
@@ -120,10 +133,11 @@
                     </select>
                 </div>
                 <div class="col-md-3 form-group col-3">
-                    <label>Customer</label>
-                    <select class="form-control form-control-sm select2" name="customer_id">
-                        @foreach($customers as $id => $name)
-                        <option value="{{$id}}" {{$result['customer_id'] == $id ? 'selected' : ''}}>{{$name}}</option>
+                    <label>Recruiter</label>
+                    <select class="form-control form-control-sm select2" name="recruiter_id">
+                        <option value="">Select Recruiter</option>
+                        @foreach(DB::table('recruiters')->where('status', 1)->get() as $key => $value)
+                        <option value="{{$value->id}}" {{$result['recruiter_id'] == $value->id ? 'selected' : ''}}>{{$value->name}}</option>
                         @endforeach
                     </select>
                 </div>
@@ -158,7 +172,7 @@
             </div>
             <div class="col-md-3 form-group col-3">
                 <label>Project </label>
-                <p>{{@$rider->project->name}}</p>
+                <p>{{@$rider->customer->name}}</p>
 
             </div>
             <div class="col-md-3 form-group col-3">

@@ -4,10 +4,11 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use App\Traits\LogsActivity;
 
 class Countries extends Model
 {
-  use HasFactory;
+  use HasFactory, LogsActivity;
   public $table = 'countries';
 
   public static function list()
@@ -18,5 +19,4 @@ class Countries extends Model
   {
     return self::all()->pluck('code', 'id');
   }
-
 }

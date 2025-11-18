@@ -22,6 +22,10 @@ class CustomizableRiderExport implements FromCollection, WithHeadings, WithMappi
             'title' => 'Rider ID',
             'data' => 'rider_id'
         ],
+        'courier_id' => [
+            'title' => 'Courier ID',
+            'data' => 'courier_id'
+        ],
         'name' => [
             'title' => 'Name',
             'data' => 'name'
@@ -217,6 +221,9 @@ class CustomizableRiderExport implements FromCollection, WithHeadings, WithMappi
         switch ($columnKey) {
             case 'rider_id':
                 return $rider->rider_id;
+
+            case 'courier_id':
+                return $rider->courier_id;
 
             case 'name':
                 return $rider->name ?? '';

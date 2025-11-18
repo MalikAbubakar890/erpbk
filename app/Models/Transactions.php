@@ -3,9 +3,12 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use App\Traits\LogsActivity;
 
 class Transactions extends Model
 {
+    use LogsActivity;
+
   protected $fillable = [
     'trans_code',
     'trans_date',
@@ -26,15 +29,9 @@ class Transactions extends Model
   {
     return $this->hasOne(Vouchers::class, 'trans_code', 'trans_code');
   }
-  
-public function supplierInvoice()
-{
+
+  public function supplierInvoice()
+  {
     return $this->hasOne(SupplierInvoices::class, 'voucher_id');
+  }
 }
-
-
-
-
-
-}
-

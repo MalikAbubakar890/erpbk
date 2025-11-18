@@ -5,10 +5,12 @@ namespace App\Http\Controllers;
 use App\Repositories\ReceiptsRepository;
 use App\Models\Receipt;
 use Illuminate\Http\Request;
+use App\Traits\GlobalPagination;
 use Flash;
 
 class ReceiptController extends Controller
 {
+    use GlobalPagination;
     private $receiptsRepository;
 
     public function __construct(ReceiptsRepository $receiptsRepo)
@@ -18,11 +20,11 @@ class ReceiptController extends Controller
 
     public function index(Request $request)
     {
-        $perPage = $request->input('per_page', 50);
-        $perPage = is_numeric($perPage) ? (int) $perPage : 50;
-        $perPage = $perPage > 0 ? $perPage : 50;
+        // Use global pagination trait
+        $paginationParams = $this->getPaginationParams($request, $this->getDefaultPerPage());
         $query = Receipt::query()->orderBy('id', 'asc');
-        $data = $query->paginate($perPage);
+        // Apply pagination using the trait
+        $data = $this->applyPagination($query, $paginationParams);
         return view('receipts.index', ['data' => $data]);
     }
 

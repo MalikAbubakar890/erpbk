@@ -21,6 +21,12 @@
   block();
 });
 
+function reloadDataTable() {
+  if ($.fn.DataTable.isDataTable('#dataTableBuilder')) {
+    $('#dataTableBuilder').DataTable().ajax.reload(null, false);
+  }
+}
+
 $(document).on('submit', '#formajax', function (e) {
   e.preventDefault();
   block();
@@ -74,31 +80,54 @@ $(document).on('submit', '#formajax', function (e) {
         window.location = $('#redirect_url').val();
       }
       $('#modalTop').modal('hide');
-      $('#dataTableBuilder').DataTable().ajax.reload(null, false);
+      reloadDataTable();
     },
     error: function (ajaxcontent) {
       unblock();
-      if (ajaxcontent.responseJSON.success == 'false') {
-        //toastr.error(ajaxcontent.responseJSON.errors);
+      
+      // Handle custom error messages (e.g., inactive entity validation)
+      if (ajaxcontent.responseJSON && ajaxcontent.responseJSON.message) {
+        toastr.error(ajaxcontent.responseJSON.message, 'Error', {
+          timeOut: 8000,
+          extendedTimeOut: 2000,
+          closeButton: true,
+          progressBar: true,
+          positionClass: 'toast-top-right'
+        });
         return false;
       }
-      vali = ajaxcontent.responseJSON.errors;
-      $('#' + formID + ' input').css('border', '1px solid #dfdfdf');
-      $('#' + formID + ' input')
-        .next('span')
-        .remove();
+      
+      // Handle success false response
+      if (ajaxcontent.responseJSON && ajaxcontent.responseJSON.success == 'false') {
+        if (ajaxcontent.responseJSON.errors) {
+          toastr.error(ajaxcontent.responseJSON.errors);
+        }
+        return false;
+      }
+      
+      // Handle Laravel validation errors
+      if (ajaxcontent.responseJSON && ajaxcontent.responseJSON.errors) {
+        vali = ajaxcontent.responseJSON.errors;
+        $('#' + formID + ' input').css('border', '1px solid #dfdfdf');
+        $('#' + formID + ' input')
+          .next('span')
+          .remove();
 
-      $.each(vali, function (index, value) {
-        $('#' + formID + " input[name~='" + index + "']").css('border', '1px solid red');
-        //$('#' + formID + " input[name~='" + index + "']").after('<span style="color:red;">' + value + '</span>');
-        $('#' + formID + " select[name~='" + index + "']")
-          .parent()
-          .find('.select2-container--default .select2-selection--single')
-          .css('border', '1px solid red');
-        toastr.error(value);
-      });
+        $.each(vali, function (index, value) {
+          $('#' + formID + " input[name~='" + index + "']").css('border', '1px solid red');
+          //$('#' + formID + " input[name~='" + index + "']").after('<span style="color:red;">' + value + '</span>');
+          $('#' + formID + " select[name~='" + index + "']")
+            .parent()
+            .find('.select2-container--default .select2-selection--single')
+            .css('border', '1px solid red');
+          toastr.error(value);
+        });
+      } else {
+        // Generic error message if no specific error found
+        toastr.error('An error occurred. Please try again.');
+      }
 
-      $('#dataTableBuilder').DataTable().ajax.reload(null, false);
+      reloadDataTable();
     },
     complete: function () {
       $('#' + formID)
@@ -134,7 +163,7 @@ $(document).on('submit', '#formajax2', function (e) {
         });
       } else {
         $('#modalTopbody').html(data);
-        $('#dataTableBuilder').DataTable().ajax.reload(null, false);
+        reloadDataTable();
       }
 
       unblock();
@@ -146,25 +175,48 @@ $(document).on('submit', '#formajax2', function (e) {
     },
     error: function (ajaxcontent) {
       unblock();
-      if (ajaxcontent.responseJSON.success == 'false') {
-        toastr.error(ajaxcontent.responseJSON.errors);
+      
+      // Handle custom error messages (e.g., inactive entity validation)
+      if (ajaxcontent.responseJSON && ajaxcontent.responseJSON.message) {
+        toastr.error(ajaxcontent.responseJSON.message, 'Error', {
+          timeOut: 8000,
+          extendedTimeOut: 2000,
+          closeButton: true,
+          progressBar: true,
+          positionClass: 'toast-top-right'
+        });
         return false;
       }
-      vali = ajaxcontent.responseJSON.errors;
-      $('#' + formID + ' input').css('border', '1px solid #dfdfdf');
-      $('#' + formID + ' input')
-        .next('span')
-        .remove();
+      
+      // Handle success false response
+      if (ajaxcontent.responseJSON && ajaxcontent.responseJSON.success == 'false') {
+        if (ajaxcontent.responseJSON.errors) {
+          toastr.error(ajaxcontent.responseJSON.errors);
+        }
+        return false;
+      }
+      
+      // Handle Laravel validation errors
+      if (ajaxcontent.responseJSON && ajaxcontent.responseJSON.errors) {
+        vali = ajaxcontent.responseJSON.errors;
+        $('#' + formID + ' input').css('border', '1px solid #dfdfdf');
+        $('#' + formID + ' input')
+          .next('span')
+          .remove();
 
-      $.each(vali, function (index, value) {
-        $('#' + formID + " input[name~='" + index + "']").css('border', '1px solid red');
-        $('#' + formID + " input[name~='" + index + "']").after('<span style="color:red;">' + value + '</span>');
-        $('#' + formID + " select[name~='" + index + "']")
-          .parent()
-          .find('.select2-container--default .select2-selection--single')
-          .css('border', '1px solid red');
-        toastr.error(value);
-      });
+        $.each(vali, function (index, value) {
+          $('#' + formID + " input[name~='" + index + "']").css('border', '1px solid red');
+          $('#' + formID + " input[name~='" + index + "']").after('<span style="color:red;">' + value + '</span>');
+          $('#' + formID + " select[name~='" + index + "']")
+            .parent()
+            .find('.select2-container--default .select2-selection--single')
+            .css('border', '1px solid red');
+          toastr.error(value);
+        });
+      } else {
+        // Generic error message if no specific error found
+        toastr.error('An error occurred. Please try again.');
+      }
     }
   });
 });
@@ -340,4 +392,7 @@ function bodyunblock() {
 $('#edit-icon').on('click', function() {
     $('#photo-upload-form').fadeToggle('fast');
 });
+
+
+
 

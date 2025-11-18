@@ -4,10 +4,16 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use App\Traits\LogsActivity;
+use App\Models\Vouchers;
 
 class visa_expenses extends Model
 {
+    use LogsActivity;
+
     protected $table = 'visa_expenses';
+
+    protected $with = ['vouchers'];
 
     protected $fillable = [
         'trans_date',
@@ -44,5 +50,34 @@ class visa_expenses extends Model
     function transactions()
     {
         return $this->hasMany(Transactions::class, 'trans_code', 'trans_code');
+    }
+    public function vouchers()
+    {
+        return $this->hasMany(Vouchers::class, 'ref_id', 'id')
+            ->where('voucher_type', 'LV');
+    }
+
+
+    public function getVoucherIdsAttribute()
+    {
+        if ($this->vouchers->isEmpty()) {
+            if ($this->trans_code) {
+                $fallback = Vouchers::where('trans_code', $this->trans_code)->get();
+
+                if ($fallback->isEmpty()) {
+                    return '';
+                }
+
+                return $fallback->map(function ($voucher) {
+                    return $voucher->formatted_id;
+                })->implode(', ');
+            }
+
+            return '';
+        }
+
+        return $this->vouchers->map(function ($voucher) {
+            return $voucher->formatted_id;
+        })->implode(', ');
     }
 }

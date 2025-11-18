@@ -273,6 +273,7 @@
                     <th>Date</th>
                     <th>Billing Month</th>
                     <th colspan="2">Narration</th>
+                    <th>Status</th>
                     <th>Amount</th>
                 </tr>
             </thead>
@@ -283,6 +284,7 @@
                     <td>{{ \Carbon\Carbon::parse($installment->date)->format('d M, Y') }}</td>
                     <td>{{ \Carbon\Carbon::parse($installment->billing_month)->format('F Y') }}</td>
                     <td colspan="2">Installment {{ $index + 1 }}</td>
+                    <td>{{ $installment->status === 'paid' ? 'Paid' : 'Pending' }}</td>
                     <td class="">AED {{ number_format($installment->amount, 2) }}</td>
                 </tr>
                 @endforeach
@@ -291,6 +293,7 @@
                     <td style="font-weight: bold;">Total Installments:{{ $installments->count() }}</td>
                     <td></td>
                     <td colspan="2" style="text-align: center; font-weight: bold;">Total Amount:</td>
+                    <td></td>
                     <td style="font-weight: bold;">AED {{ number_format($installments->sum('amount'), 2) }}</td>
                 </tr>
             </tbody>

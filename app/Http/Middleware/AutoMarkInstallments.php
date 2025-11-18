@@ -19,9 +19,14 @@ class AutoMarkInstallments
      */
     public function handle(Request $request, Closure $next): Response
     {
-        // Only run auto-marking on visa expense related routes
-        if ($this->shouldAutoMark($request)) {
-            $this->autoMarkOverdueInstallments();
+        // Only run auto-marking on visa expense related routes and if user is authenticated
+        if (auth()->check() && $this->shouldAutoMark($request)) {
+            try {
+                $this->autoMarkOverdueInstallments();
+            } catch (\Exception $e) {
+                // Log error but don't break the request
+                Log::error('AutoMarkInstallments middleware failed: ' . $e->getMessage());
+            }
         }
 
         return $next($request);

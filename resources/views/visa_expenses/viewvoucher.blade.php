@@ -6,7 +6,7 @@
     <div class="container-fluid">
         <div class="row mb-2">
             <div class="col-sm-6">
-                <h3>Visa Staus  #{{ $data->visa_status }}</h3>
+                <h3>Visa Staus #{{ $data->visa_status }}</h3>
             </div>
             <!-- <div class="col-sm-6">
                 <div class="modal modal-default filtetmodal fade" id="createaccount" tabindex="-1" data-bs-backdrop="static"role="dialog" aria-hidden="true">
@@ -65,8 +65,8 @@
                                 </li>
                                 <li class="list-group-item pb-1">
                                     <b>Status:</b> <span class="float-right">
-                                    @if($accounts->status == '1')
-                                    <span class="badge  bg-success">Active</span></span>
+                                        @if($accounts->status == '1')
+                                        <span class="badge  bg-success">Active</span></span>
                                     @else
                                     <span class="badge  bg-danger">In Active</span></span>
                                     @endif
@@ -74,14 +74,14 @@
                             </ul>
                         </ul>
                     </div>
-              </div>
+                </div>
             </div>
         </div>
         <div class="col-xl-9 col-md-9 col-lg-7 order-0 order-md-1">
             <div class="nav-align-top">
                 <ul class="nav nav-pills flex-column flex-md-row flex-wrap mb-3 row-gap-2">
                     <li class="nav-item"><a class="nav-link  active  " href="javascript:void(0)"><i class="ti ti-file-upload ti-sm me-1_5"></i>Files</a></li>
-              </ul>
+                </ul>
             </div>
             <div class="card">
                 <div class="card-body">
@@ -116,7 +116,7 @@
                                 <tr>
                                     <th></th>
                                     @if($data->payment_status == 'paid')
-                                    <td class="text-end"><a href="javascript:void(0);"class="btn btn-action btn-success">Paid</a> </td>
+                                    <td class="text-end"><a href="javascript:void(0);" class="btn btn-action btn-success">Paid</a> </td>
                                     @else
                                     <td class="text-end"><a href="javascript:void(0);" data-bs-toggle="modal" data-bs-target="#payfine" class="btn btn-action btn-primary">Proceed to Pay</a> </td>
                                     @endif
@@ -129,7 +129,7 @@
         </div>
     </div>
 </div>
-<div class="modal modal-default filtetmodal fade" id="payfine" tabindex="-1" data-bs-backdrop="static"role="dialog" aria-hidden="true">
+<div class="modal modal-default filtetmodal fade" id="payfine" tabindex="-1" data-bs-backdrop="static" role="dialog" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-slide-top modal-full-top">
         <div class="modal-content">
             <div class="modal-header">
@@ -164,27 +164,27 @@
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
 <script type="text/javascript">
-function confirmDelete(url) {
-    Swal.fire({
-        title: 'Are you sure?',
-        text: "You won't be able to revert this!",
-        icon: 'warning',
-        showCancelButton: true,
-        confirmButtonColor: '#3085d6',
-        cancelButtonColor: '#d33',
-        confirmButtonText: 'Yes, delete it!'
-    }).then((result) => {
-        if (result.isConfirmed) {
-            window.location.href = url;
-        }
-    })
-}
-$(document).ready(function () {
-    $('#account_id').select2({
-        dropdownParent: $('#searchTopbody'),
-        placeholder: "Select Bank Account",
+    function confirmDelete(url) {
+        Swal.fire({
+            title: 'Are you sure?',
+            text: "You won't be able to revert this!",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#3085d6',
+            cancelButtonColor: '#d33',
+            confirmButtonText: 'Yes, delete it!'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                window.location.href = url;
+            }
+        })
+    }
+    $(document).ready(function() {
+        $('#account_id').select2({
+            dropdownParent: $('#searchTopbody'),
+            placeholder: "Select Bank Account",
             allowClear: true
+        });
     });
-});
 </script>
 @endsection

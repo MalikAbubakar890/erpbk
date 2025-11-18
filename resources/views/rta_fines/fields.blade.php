@@ -49,7 +49,7 @@
         $rider = $bikes ? DB::table('riders')->where('id', $rtaFines->rider_id)->first() : null;
         @endphp
 
-        @foreach(DB::table('riders')->get() as $r)
+        @foreach(DB::table('riders')->where('status' , 1)->get() as $r)
         @php
         $account = DB::table('accounts')
         ->where('ref_id', $r->id)
@@ -96,7 +96,7 @@
 <!-- Amount Field -->
 <div class="form-group col-sm-6">
     {!! Form::label('service_charges', 'Service Charges:', ['class' => '']) !!}
-    {!! Form::number('service_charges', $rtaFines->service_charges ?? $data->account_tax, ['class' => 'form-control','step'=>'any', 'readonly']) !!}
+    {!! Form::number('service_charges', $rtaFines->service_charges ?? $data->account_tax, ['class' => 'form-control','step'=>'any']) !!}
 </div>
 <!-- Amount Field -->
 <div class="form-group col-sm-6">

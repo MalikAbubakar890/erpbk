@@ -17,6 +17,7 @@ use App\Models\Transactions;
 use App\Repositories\SupplierInvoicesRepository;
 use App\Services\TransactionService;
 use Illuminate\Http\Request;
+use App\Traits\GlobalPagination;
 use Flash; 
 use Illuminate\Support\Facades\Mail;
 use Maatwebsite\Excel\Facades\Excel;
@@ -27,6 +28,7 @@ use App\DataTables\LedgerDataTable;
 
 class SupplierInvoicesController extends AppBaseController
 {
+    use GlobalPagination;
     /** @var SupplierInvoicesRepository $supplierInvoicesRepository */
     private $supplierInvoicesRepository;
 
@@ -40,9 +42,8 @@ class SupplierInvoicesController extends AppBaseController
      */
     public function index(Request $request)
     {
-        $perPage = request()->input('per_page', 50);
-        $perPage = is_numeric($perPage) ? (int) $perPage : 50;
-        $perPage = $perPage > 0 ? $perPage : 50;
+        // Use global pagination trait
+        $paginationParams = $this->getPaginationParams($request, $this->getDefaultPerPage());
         $query = SupplierInvoices::query()
             ->orderBy('id', 'asc');
         if ($request->has('inv_id') && !empty($request->inv_id)) {
@@ -66,12 +67,13 @@ class SupplierInvoicesController extends AppBaseController
             $query->whereYear('billing_month', $billingMonth->year)
                   ->whereMonth('billing_month', $billingMonth->month);
         }
-        $data = $query->paginate($perPage);
+        // Apply pagination using the trait
+        $data = $this->applyPagination($query, $paginationParams);
         if ($request->ajax()) {
             $tableData = view('supplier_invoices.table', [
                 'data' => $data,
             ])->render();
-            $paginationLinks = $data->links('pagination')->render();
+            $paginationLinks = $data->links('components.global-pagination')->render();
             return response()->json([
                 'tableData' => $tableData,
                 'paginationLinks' => $paginationLinks,

@@ -1,5 +1,5 @@
 @php
-$settings = App\Helpers\Common::settings();
+$settings = DB::table('settings')->pluck('value', 'name')->toArray();
 @endphp
 <table width="100%" style="font-family: sans-serif;">
     <tr>

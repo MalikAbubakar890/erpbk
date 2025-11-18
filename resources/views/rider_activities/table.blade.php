@@ -37,7 +37,9 @@
       @endforeach
    </tbody>
 </table>
-{!! $data->links('pagination') !!}
+@if(method_exists($data, 'links'))
+    {!! $data->links('components.global-pagination') !!}
+@endif
 <div class="modal modal-default filtetmodal fade" id="customoizecolmn" tabindex="-1" data-bs-backdrop="static" role="dialog" aria-hidden="true">
    <div class="modal-dialog modal-lg modal-slide-top modal-full-top">
       <div class="modal-content">

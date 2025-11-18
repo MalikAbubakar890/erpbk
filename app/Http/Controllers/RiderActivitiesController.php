@@ -2,225 +2,329 @@
 
 namespace App\Http\Controllers;
 
-use App\DataTables\RiderActivitiesDataTable;
 use App\Http\Requests\CreateRiderActivitiesRequest;
 use App\Http\Requests\UpdateRiderActivitiesRequest;
-use App\Http\Controllers\AppBaseController;
+use App\Imports\ImportKeetaRiderActivities;
 use App\Imports\ImportRiderActivities;
-use App\Repositories\RiderActivitiesRepository;
 use App\Models\RiderActivities;
+use App\Models\Riders;
+use App\Repositories\RiderActivitiesRepository;
+use App\Traits\GlobalPagination;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
-use Flash;
-use DB;
+use Illuminate\Support\Facades\Log;
 use Maatwebsite\Excel\Facades\Excel;
+use Maatwebsite\Excel\Validators\ValidationException;
 
 class RiderActivitiesController extends AppBaseController
 {
-  /** @var RiderActivitiesRepository $riderActivitiesRepository*/
-  private $riderActivitiesRepository;
+    use GlobalPagination;
 
-  public function __construct(RiderActivitiesRepository $riderActivitiesRepo)
-  {
-    $this->riderActivitiesRepository = $riderActivitiesRepo;
-  }
+    /** @var RiderActivitiesRepository */
+    private $riderActivitiesRepository;
 
-  /**
-   * Display a listing of the RiderActivities.
-   */
-  public function index(Request $request)
-  {
-    $perPage = (int) $request->input('per_page', 50);
-    $perPage = $perPage > 0 ? $perPage : 50;
-
-    $query = RiderActivities::query()
-      ->orderBy('id', 'desc');
-
-    // ID Filter
-    if ($request->filled('id')) {
-      $query->where('d_rider_id', 'like', '%' . $request->id . '%');
+    public function __construct(RiderActivitiesRepository $riderActivitiesRepo)
+    {
+        $this->riderActivitiesRepository = $riderActivitiesRepo;
     }
 
-    // Rider ID Filter
-    if ($request->filled('rider_id')) {
-      $query->where('rider_id', $request->rider_id);
+    /**
+     * Display a listing of the RiderActivities.
+     */
+    public function index(Request $request)
+    {
+        $paginationParams = $this->getPaginationParams($request, $this->getDefaultPerPage());
+
+        $query = RiderActivities::query()
+            ->with('rider')
+            ->orderByDesc('date');
+
+        if ($request->filled('id')) {
+            $query->where('id', (int) $request->id);
+        }
+
+        if ($request->filled('rider_id')) {
+            $rider = Riders::where('rider_id', trim($request->rider_id))->first();
+            if ($rider) {
+                $query->where('rider_id', $rider->id);
+            } else {
+                $query->whereRaw('1 = 0');
+            }
+        }
+
+        if ($request->filled('from_date')) {
+            $query->whereDate('date', '>=', $request->from_date);
+        }
+
+        if ($request->filled('to_date')) {
+            $query->whereDate('date', '<=', $request->to_date);
+        }
+
+        if ($request->filled('billing_month_from')) {
+            try {
+                $from = Carbon::parse($request->billing_month_from)->startOfDay();
+                $query->whereDate('date', '>=', $from);
+            } catch (\Throwable $th) {
+                Log::warning('Invalid billing_month_from supplied for rider activities filter', [
+                    'value' => $request->billing_month_from,
+                    'error' => $th->getMessage(),
+                ]);
+            }
+        }
+
+        if ($request->filled('billing_month_to')) {
+            try {
+                $to = Carbon::parse($request->billing_month_to)->endOfDay();
+                $query->whereDate('date', '<=', $to);
+            } catch (\Throwable $th) {
+                Log::warning('Invalid billing_month_to supplied for rider activities filter', [
+                    'value' => $request->billing_month_to,
+                    'error' => $th->getMessage(),
+                ]);
+            }
+        }
+
+        if ($request->filled('fleet_supervisor')) {
+            $query->whereHas('rider', function ($q) use ($request) {
+                $q->where('fleet_supervisor', $request->fleet_supervisor);
+            });
+        }
+
+        if ($request->filled('payout_type')) {
+            $query->where('payout_type', $request->payout_type);
+        }
+
+        $data = $this->applyPagination($query, $paginationParams);
+
+        if (method_exists($data, 'appends')) {
+            $data->appends($request->query());
+        }
+
+        $riders = Riders::select('id', 'name', 'rider_id')
+            ->orderBy('name')
+            ->get();
+
+        $fleetSupervisors = Riders::query()
+            ->whereNotNull('fleet_supervisor')
+            ->where('fleet_supervisor', '!=', '')
+            ->distinct()
+            ->orderBy('fleet_supervisor')
+            ->pluck('fleet_supervisor');
+
+        $payoutTypes = RiderActivities::query()
+            ->whereNotNull('payout_type')
+            ->where('payout_type', '!=', '')
+            ->distinct()
+            ->orderBy('payout_type')
+            ->pluck('payout_type');
+
+        if ($request->ajax()) {
+            $tableData = view('rider_activities.table', ['data' => $data])->render();
+            $paginationLinks = method_exists($data, 'links')
+                ? $data->links('components.global-pagination')->render()
+                : '';
+
+            return response()->json([
+                'tableData' => $tableData,
+                'paginationLinks' => $paginationLinks,
+            ]);
+        }
+
+        return view('rider_activities.index', compact('data', 'riders', 'fleetSupervisors', 'payoutTypes'));
     }
 
-    // NEW Date Range Filter
-    if ($request->filled('from_date')) {
-      $fromDate = \Carbon\Carbon::parse($request->from_date)->startOfDay();
-      $query->where('date', '>=', $fromDate);
+    /**
+     * Show the form for creating a new RiderActivities.
+     */
+    public function create()
+    {
+        return view('rider_activities.create');
     }
 
-    if ($request->filled('to_date')) {
-      $toDate = \Carbon\Carbon::parse($request->to_date)->endOfDay();
-      $query->where('date', '<=', $toDate);
+    /**
+     * Store a newly created RiderActivities in storage.
+     */
+    public function store(CreateRiderActivitiesRequest $request)
+    {
+        $input = $request->all();
+
+        $this->riderActivitiesRepository->create($input);
+
+        flash('Rider Activities saved successfully.')->success();
+
+        return redirect(route('riderActivities.index'));
     }
 
-    // OLD Billing Month Filter
-    if ($request->filled('billing_month_from')) {
-      $fromMonth = \Carbon\Carbon::parse($request->billing_month_from)->startOfMonth();
-      $query->where('date', '>=', $fromMonth);
+    /**
+     * Display the specified RiderActivities.
+     */
+    public function show($id)
+    {
+        $riderActivities = $this->riderActivitiesRepository->find($id);
+
+        if (empty($riderActivities)) {
+            flash('Rider Activities not found.')->error();
+
+            return redirect(route('riderActivities.index'));
+        }
+
+        return view('rider_activities.show')->with('riderActivities', $riderActivities);
     }
 
-    if ($request->filled('billing_month_to')) {
-      $toMonth = \Carbon\Carbon::parse($request->billing_month_to)->endOfMonth();
-      $query->where('date', '<=', $toMonth);
+    /**
+     * Show the form for editing the specified RiderActivities.
+     */
+    public function edit($id)
+    {
+        $riderActivities = $this->riderActivitiesRepository->find($id);
+
+        if (empty($riderActivities)) {
+            flash('Rider Activities not found.')->error();
+
+            return redirect(route('riderActivities.index'));
+        }
+
+        return view('rider_activities.edit')->with('riderActivities', $riderActivities);
     }
 
-    // Fleet Supervisor Filter
-    if ($request->filled('fleet_supervisor')) {
-      $query->whereHas('rider', function ($q) use ($request) {
-        $q->where('fleet_supervisor', $request->fleet_supervisor);
-      });
+    /**
+     * Update the specified RiderActivities in storage.
+     */
+    public function update($id, UpdateRiderActivitiesRequest $request)
+    {
+        $riderActivities = $this->riderActivitiesRepository->find($id);
+
+        if (empty($riderActivities)) {
+            flash('Rider Activities not found.')->error();
+
+            return redirect(route('riderActivities.index'));
+        }
+
+        $this->riderActivitiesRepository->update($request->all(), $id);
+
+        flash('Rider Activities updated successfully.')->success();
+
+        return redirect(route('riderActivities.index'));
     }
 
-    // Payout Type
-    if ($request->filled('payout_type')) {
-      $query->where('payout_type', $request->payout_type);
+    /**
+     * Remove the specified RiderActivities from storage.
+     *
+     * @throws \Exception
+     */
+    public function destroy($id)
+    {
+        $riderActivities = $this->riderActivitiesRepository->find($id);
+
+        if (empty($riderActivities)) {
+            flash('Rider Activities not found.')->error();
+
+            return redirect(route('riderActivities.index'));
+        }
+
+        $this->riderActivitiesRepository->delete($id);
+
+        flash('Rider Activities deleted successfully.')->success();
+
+        return redirect(route('riderActivities.index'));
     }
 
-    $data = $query->paginate($perPage);
-
-    // Dropdown data
-    $riders = DB::table('riders')
-      ->select('rider_id', 'name')
-      ->whereIn('id', DB::table('rider_activities')->pluck('rider_id')->unique())
-      ->get();
-
-    $fleetSupervisors = DB::table('riders')
-      ->whereNotNull('fleet_supervisor')
-      ->distinct()
-      ->pluck('fleet_supervisor');
-
-    $payoutTypes = DB::table('rider_activities')
-      ->whereNotNull('payout_type')
-      ->distinct()
-      ->pluck('payout_type');
-
-    if ($request->ajax()) {
-      $tableData = view('rider_activities.table', compact('data', 'riders', 'fleetSupervisors', 'payoutTypes'))->render();
-      $paginationLinks = $data->links('pagination')->render();
-      return response()->json([
-        'tableData' => $tableData,
-        'paginationLinks' => $paginationLinks,
-      ]);
+    /**
+     * Handle Noon rider activities import.
+     */
+    public function import(Request $request)
+    {
+        return $this->handleImport($request, new ImportRiderActivities(), [
+            'formAction' => route('rider.activities_import'),
+            'importTypeLabel' => 'Noon Rider Activities',
+            'sampleDownloadUrl' => url('sample/noon_activity_sample.csv'),
+            'sampleDownloadLabel' => 'Download Noon Sample File',
+            'errorsRoute' => route('rider.activities_import_errors', ['type' => 'noon']),
+            'successMessage' => 'Noon rider activities imported successfully.',
+            'redirectRoute' => 'rider.activities_import',
+        ]);
     }
 
-    return view('rider_activities.index', compact('data', 'riders', 'fleetSupervisors', 'payoutTypes'));
-  }
-
-
-
-
-  /**
-   * Show the form for creating a new RiderActivities.
-   */
-  public function create()
-  {
-    return view('rider_activities.create');
-  }
-
-  /**
-   * Store a newly created RiderActivities in storage.
-   */
-  public function store(CreateRiderActivitiesRequest $request)
-  {
-    $input = $request->all();
-
-    $riderActivities = $this->riderActivitiesRepository->create($input);
-
-    Flash::success('Rider Activities saved successfully.');
-
-    return redirect(route('riderActivities.index'));
-  }
-
-  /**
-   * Display the specified RiderActivities.
-   */
-  public function show($id)
-  {
-    $riderActivities = $this->riderActivitiesRepository->find($id);
-
-    if (empty($riderActivities)) {
-      Flash::error('Rider Activities not found');
-
-      return redirect(route('riderActivities.index'));
+    /**
+     * Handle Keeta rider activities import.
+     */
+    public function importKeeta(Request $request)
+    {
+        return $this->handleImport($request, new ImportKeetaRiderActivities(), [
+            'formAction' => route('rider.keeta_activities_import'),
+            'importTypeLabel' => 'Keeta Rider Activities',
+            'sampleDownloadUrl' => url('sample/noon_activity_sample.csv'),
+            'sampleDownloadLabel' => 'Download Keeta Sample File',
+            'errorsRoute' => route('rider.activities_import_errors', ['type' => 'keeta']),
+            'successMessage' => 'Keeta rider activities imported successfully.',
+            'redirectRoute' => 'rider.keeta_activities_import',
+        ]);
     }
 
-    return view('rider_activities.show')->with('riderActivities', $riderActivities);
-  }
+    /**
+     * Display last import errors.
+     */
+    public function importErrors(Request $request)
+    {
+        $summary = session('activities_import_summary', []);
+        $errors = $summary['errors'] ?? [];
+        $type = strtolower($request->get('type', 'noon'));
+        $isKeeta = $type === 'keeta';
 
-  /**
-   * Show the form for editing the specified RiderActivities.
-   */
-  public function edit($id)
-  {
-    $riderActivities = $this->riderActivitiesRepository->find($id);
-
-    if (empty($riderActivities)) {
-      Flash::error('Rider Activities not found');
-
-      return redirect(route('riderActivities.index'));
+        return view('rider_activities.import_errors', [
+            'summary' => $summary,
+            'errors' => $errors,
+            'importRoute' => $isKeeta ? route('rider.keeta_activities_import') : route('rider.activities_import'),
+            'importType' => $isKeeta ? 'Keeta Rider Activities' : 'Noon Rider Activities',
+        ]);
     }
 
-    return view('rider_activities.edit')->with('riderActivities', $riderActivities);
-  }
+    /**
+     * Shared handler for rider activity imports.
+     */
+    private function handleImport(Request $request, ImportRiderActivities $importer, array $config)
+    {
+        if ($request->isMethod('post')) {
+            $request->validate([
+                'file' => 'required|file|mimes:csv,xlsx,xls|max:51200',
+            ], [
+                'file.required' => 'Please select a file to upload.',
+                'file.mimes' => 'The file must be a CSV or Excel document.',
+            ]);
 
-  /**
-   * Update the specified RiderActivities in storage.
-   */
-  public function update($id, UpdateRiderActivitiesRequest $request)
-  {
-    $riderActivities = $this->riderActivitiesRepository->find($id);
+            session()->forget('activities_import_summary');
 
-    if (empty($riderActivities)) {
-      Flash::error('Rider Activities not found');
+            try {
+                Excel::import($importer, $request->file('file'));
+                $successMessage = $config['successMessage'] ?? 'Rider activities imported successfully.';
+                flash($successMessage)->success();
+                session()->flash('success', $successMessage);
+            } catch (ValidationException $validationException) {
+                $failures = collect($validationException->failures())->map(function ($failure) {
+                    return $failure->getMessage();
+                })->unique()->implode(', ');
 
-      return redirect(route('riderActivities.index'));
+                $message = 'Import failed due to validation errors: ' . $failures;
+                flash($message)->error();
+                session()->flash('error', $message);
+            } catch (\Throwable $th) {
+                $warning = $th->getMessage();
+                flash($warning)->warning();
+                session()->flash('warning', $warning);
+            }
+
+            return redirect()->route($config['redirectRoute'], $config['redirectRouteParams'] ?? []);
+        }
+
+        $summary = session('activities_import_summary');
+
+        return view('rider_activities.import', [
+            'summary' => $summary,
+            'formAction' => $config['formAction'],
+            'importTypeLabel' => $config['importTypeLabel'],
+            'sampleDownloadUrl' => $config['sampleDownloadUrl'] ?? null,
+            'sampleDownloadLabel' => $config['sampleDownloadLabel'] ?? null,
+            'errorsRoute' => $config['errorsRoute'],
+        ]);
     }
-
-    $riderActivities = $this->riderActivitiesRepository->update($request->all(), $id);
-
-    Flash::success('Rider Activities updated successfully.');
-
-    return redirect(route('riderActivities.index'));
-  }
-
-  /**
-   * Remove the specified RiderActivities from storage.
-   *
-   * @throws \Exception
-   */
-  public function destroy($id)
-  {
-    $riderActivities = $this->riderActivitiesRepository->find($id);
-
-    if (empty($riderActivities)) {
-      Flash::error('Rider Activities not found');
-
-      return redirect(route('riderActivities.index'));
-    }
-
-    $this->riderActivitiesRepository->delete($id);
-
-    Flash::success('Rider Activities deleted successfully.');
-
-    return redirect(route('riderActivities.index'));
-  }
-
-  public function import(Request $request)
-  {
-    if ($request->isMethod('post')) {
-      $rules = [
-        'file' => 'required|max:50000|mimes:xlsx,csv'
-      ];
-      $message = [
-        'file.required' => 'Excel File Required'
-      ];
-      $this->validate($request, $rules, $message);
-      Excel::import(new ImportRiderActivities(), $request->file('file'));
-    }
-
-    return view('rider_activities.import');
-  }
 }

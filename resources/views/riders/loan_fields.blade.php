@@ -3,7 +3,8 @@
 if(isset($vouchers->voucher_type)){
 $voucherType = $vouchers->voucher_type;
 }else{
-$voucherType = request("vt");
+// Prefer explicitly provided $vt from parent include/view, fallback to request('vt')
+$voucherType = isset($vt) ? $vt : request('vt');
 }
 @endphp
 <input type="hidden" name="v_trans_code" value="{{@$vouchers->trans_code??0}}">
@@ -22,45 +23,69 @@ $voucherType = request("vt");
                 <input  name="posting_date" class="form-control  date" placeholder="Posting Date" value="{{ date('Y-m-d') }}">
 </div> --}}
 
-{{-- @if(in_array($voucherType,['LV']))
-            <div class="form-group col-md-3">
-                <label for="exampleInputEmail1">Bank/Cash A/C</label>
-                {!! Form::select('payment_from',\App\Models\Accounts::dropdown(\App\Helpers\HeadAccount::BANK),null ,['class' => 'form-control  select2 ','id'=>'payment_from']) !!}
-            </div>
-            @endif --}}
+@if(in_array($voucherType,['LV']))
+<div class="form-group col-md-3">
+    <label for="exampleInputEmail1">Bank/Cash A/C</label>
+    {!! Form::select('payment_from',\App\Models\Accounts::dropdown(\App\Helpers\HeadAccount::BANK),null ,['class' => 'form-control select2 ','id'=>'payment_from']) !!}
+</div>
+@endif
 {{-- @if($voucherType==9)
             <input type="hidden" name="payment_from" value="811" /><!--Sim Bike and Vendor Charges Account ID-->
             @endif
            --}}
+@if($voucherType != 'AL')
 <div class="form-group col-md-2">
     <label for="exampleInputEmail1">Payment Type</label>
     {!! Form::select('payment_type',App\Helpers\Account::payment_type_list(),null ,['class' => 'form-select form-select-sm select2 ','id'=>'payment_type']) !!}
 
 
 </div>
+@endif
 <div class="form-group col-md-2">
     <label for="exampleInputEmail1">Billing Month</label>
-    {{-- {!! Form::select('billing_month',App\Helpers\CommonHelper::BillingMonth(),null ,['class' => 'form-control  select2 ','id'=>'billing_month']) !!}
- --}} <input type="month" name="billing_month" class="form-control " value="@isset($vouchers->billing_month){{date('Y-m',strtotime($vouchers->billing_month)) }}@endisset" required>
+    <input type="month" name="billing_month" class="form-control " required>
 </div>
 
 </div>
 <div class="scrollbar">
 
-    <h5>{{\App\Helpers\General::voucherType($voucherType)}}</h5>
+    @php
+    $vtLabel = \App\Helpers\General::VoucherType($voucherType);
+    if (is_array($vtLabel)) {
+    // Try common keys; fallback to JSON string to avoid htmlspecialchars on array
+    $vtLabel = $vtLabel['label'] ?? ($vtLabel['name'] ?? json_encode($vtLabel));
+    }
+    @endphp
+    <h5>{{ $vtLabel }}</h5>
+
     @if($voucherType == 'JV' || $voucherType == 'RFV')
     @php($accounts = \App\Models\Accounts::dropdown(null))
     @include("vouchers.default_fields")
     @endif
 
-    @if($voucherType == 'LV')
+    @if($voucherType == 'AL')
     @php($accounts = \App\Models\Accounts::dropdown(null))
-    @include("vouchers.loan_fields")
+    @include("vouchers.loan_fields", ['bank_accounts' => $bank_accounts ?? \App\Models\Accounts::bankAccountsDropdown()])
+    @endif
+
+    @if($voucherType == 'COD')
+    @php($accounts = \App\Models\Accounts::dropdown(null))
+    @include("vouchers.cod_fields", ['bank_accounts' => $bank_accounts ?? \App\Models\Accounts::bankAccountsDropdown()])
+    @endif
+
+    @if($voucherType == 'PENALTY')
+    @php($accounts = \App\Models\Accounts::dropdown(null))
+    @include("vouchers.penalty_fields", ['bank_accounts' => $bank_accounts ?? \App\Models\Accounts::bankAccountsDropdown()])
     @endif
 
     @if($voucherType == 'VL')
     @php($accounts = \App\Models\Accounts::dropdown(null))
-    @include("vouchers.visaloan_fields")
+    @include("vouchers.visaloan_fields", ['bank_accounts' => $bank_accounts ?? \App\Models\Accounts::bankAccountsDropdown()])
+    @endif
+
+    @if($voucherType == 'PAYMENT')
+    @php($accounts = \App\Models\Accounts::dropdown(null))
+    @include("vouchers.payment_fields", ['bank_accounts' => $bank_accounts ?? \App\Models\Accounts::bankAccountsDropdown()])
     @endif
 
     {{-- @if($voucherType == 5)
@@ -99,9 +124,6 @@ $voucherType = request("vt");
     <div class="col-md-2 content-right mt-1">Total:&nbsp;<a href="javascript:void(0);" onclick="getTotal();" class="btn btn-default btn-sm"><i class="fa fa-refresh"></i></a></div>
     <div class="form-group col-md-2">
         <input type="number" class="form-control " id="total_dr" readonly placeholder="Total Dr">
-    </div>
-    <div class="form-group col-md-2">
-        <input type="number" class="form-control " id="total_cr" readonly placeholder="Total Cr">
     </div>
 </div>
 

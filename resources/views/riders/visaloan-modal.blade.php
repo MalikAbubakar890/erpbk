@@ -3,7 +3,7 @@
 
 <input type="hidden" id="reload_page" value="1">
 <div class="row">
-    @include('riders.loan_fields')
+    @include('riders.loan_fields', ['rider' => $rider, 'vt' => 'VL' , 'account' => $account, 'bank_accounts' => $bank_accounts])
 </div>
 
 
@@ -15,7 +15,5 @@
 <script>
     $(document).ready(function() {
         getTotal();
-
-
     });
 </script>

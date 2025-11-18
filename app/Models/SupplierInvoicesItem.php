@@ -3,9 +3,12 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use App\Traits\LogsActivity;
 
 class SupplierInvoicesItem extends Model
 {
+    use LogsActivity;
+
     protected $table = 'supplier_invoice_items';
     protected $fillable = [
         'inv_id', 'item_id', 'item_des', 'qty', 'rate', 'discount', 'tax', 'amount',

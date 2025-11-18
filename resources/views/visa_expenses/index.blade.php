@@ -8,14 +8,18 @@
         <h3>{{ $account->name }} | Visa Expense </h3>
       </div>
       <div class="col-sm-6">
+        @can('visaloan_view')
         <a class="btn btn-primary action-btn show-modal mx-2"
           href="{{ route('VisaExpense.installmentPlan' , $account->id) }}" data-size="lg" data-title="Installment Plan">
           Installment Plan
         </a>
+        @endcan
+        @can('visaexpense_create')
         <a class="btn btn-primary action-btn show-modal"
           href="javascript:void(0);" data-action="{{ route('VisaExpense.create' , $account->id) }}" data-size="lg" data-title="New expense Ticket">
           Add New
         </a>
+        @endcan
         <div class="modal modal-default filtetmodal fade" id="searchModal" tabindex="-1" data-bs-backdrop="static" role="dialog" aria-hidden="true">
           <div class="modal-dialog modal-lg modal-slide-top modal-full-top">
             <div class="modal-content">
@@ -42,15 +46,9 @@
                       <label for="visa_status">Filter by Visa Status</label>
                       <select class="form-control " id="visa_status" name="visa_status">
                         <option value="" selected>Select</option>
-                        <option value="Job offer Letter" {{ request('visa_status') === 'Job offer Letter' ? 'selected' : '' }}>Job offer Letter</option>
-                        <option value="Labor Insurance" {{ request('visa_status') === 'Labor Insurance' ? 'selected' : '' }}>Labor Insurance</option>
-                        <option value="Work Permit" {{ request('visa_status') === 'Work Permit' ? 'selected' : '' }}>Work Permit</option>
-                        <option value="Entry Permit (Inside)" {{ request('visa_status') === 'Entry Permit (Inside)' ? 'selected' : '' }}>Entry Permit (Inside)</option>
-                        <option value="Entry Permit (Outside)" {{ request('visa_status') === 'Entry Permit (Outside)' ? 'selected' : '' }}>Entry Permit (Outside)</option>
-                        <option value="Status Change" {{ request('visa_status') === 'Status Change' ? 'selected' : '' }}>Status Change</option>
-                        <option value="Medical" {{ request('visa_status') === 'Medical' ? 'selected' : '' }}>Medical</option>
-                        <option value="Emirates ID + Residency" {{ request('visa_status') === 'Emirates ID + Residency' ? 'selected' : '' }}>Emirates ID + Residency</option>
-                        <option value="Violation" {{ request('visa_status') === 'Violation' ? 'selected' : '' }}>Violation</option>
+                        @foreach($visaStatuses as $status)
+                        <option value="{{ $status->name }}" {{ request('visa_status') === $status->name ? 'selected' : '' }}>{{ $status->name }}</option>
+                        @endforeach
                       </select>
                     </div>
                     <div class="form-group col-md-4">
@@ -248,4 +246,5 @@
     });
   });
 </script>
+
 @endsection

@@ -6,6 +6,7 @@ use App\DataTables\SuppliersDataTable;
 use App\DataTables\FilesDataTable;
 use App\Models\Supplier;
 use Illuminate\Http\Request;
+use App\Traits\GlobalPagination;
 use App\Models\Accounts;
 use App\Repositories\SuppliersRepository;
 use App\Http\Controllers\AppBaseController;
@@ -20,11 +21,11 @@ use Flash;
 
 class SupplierController extends AppBaseController
 {
+    use GlobalPagination;
   public function index(Request $request)
   {
-    $perPage = request()->input('per_page', 50);
-    $perPage = is_numeric($perPage) ? (int) $perPage : 50;
-    $perPage = $perPage > 0 ? $perPage : 50;
+    // Use global pagination trait
+        $paginationParams = $this->getPaginationParams($request, $this->getDefaultPerPage());
     $query = Supplier::query()
         ->orderBy('id', 'asc');
     if ($request->has('name') && !empty($request->name)) {
@@ -36,12 +37,13 @@ class SupplierController extends AppBaseController
     if ($request->has('status') && !empty($request->status)) {
         $query->where('status',$request->status);
     }
-    $data = $query->paginate($perPage);
+    // Apply pagination using the trait
+        $data = $this->applyPagination($query, $paginationParams);
     if ($request->ajax()) {
         $tableData = view('Suppliers.table', [
             'data' => $data,
         ])->render();
-        $paginationLinks = $data->links('pagination')->render();
+        $paginationLinks = $data->links('components.global-pagination')->render();
         return response()->json([
             'tableData' => $tableData,
             'paginationLinks' => $paginationLinks,

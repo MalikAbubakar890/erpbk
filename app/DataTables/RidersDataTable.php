@@ -7,6 +7,7 @@ use App\Models\Riders;
 use Yajra\DataTables\Services\DataTable;
 use Yajra\DataTables\EloquentDataTable;
 use Carbon\Carbon;
+
 class RidersDataTable extends DataTable
 {
   public function dataTable($query)
@@ -141,6 +142,7 @@ class RidersDataTable extends DataTable
       ->select([
         'riders.id',
         'riders.rider_id',
+        'riders.courier_id',
         'riders.name',
         'riders.company_contact',
         'riders.fleet_supervisor',
@@ -159,6 +161,7 @@ class RidersDataTable extends DataTable
     $query->groupBy([
       'riders.id',
       'riders.rider_id',
+      'riders.courier_id',
       'riders.name',
       'riders.company_contact',
       'riders.fleet_supervisor',
@@ -170,7 +173,6 @@ class RidersDataTable extends DataTable
       'riders.attendance'
     ]);
     return $query;
-
   }
 
   public function html()
@@ -185,7 +187,7 @@ class RidersDataTable extends DataTable
         'order' => [[0, 'desc']],
         'pageLength' => 50,
         'responsive' => true,
-        'buttons' => [// Enable Buttons as per your need
+        'buttons' => [ // Enable Buttons as per your need
           //                    ['extend' => 'create', 'className' => 'btn btn-default btn-sm no-corner',],
           // ['extend' => 'export', 'className' => 'btn btn-default btn-sm no-corner',],
           //['extend' => 'excel', 'className' => 'btn btn-success btn-sm no-corner'],
@@ -218,6 +220,12 @@ class RidersDataTable extends DataTable
       [
         'data' => 'rider_id',
         'title' => 'Rider ID',
+        'searchable' => true,
+        'orderable' => true
+      ],
+      [
+        'data' => 'courier_id',
+        'title' => 'Courier ID',
         'searchable' => true,
         'orderable' => true
       ],

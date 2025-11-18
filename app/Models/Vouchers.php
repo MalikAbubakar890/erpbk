@@ -5,6 +5,7 @@ namespace App\Models;
 use Eloquent as Model;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use App\Traits\LogsActivity;
 
 /**
  * Class Vouchers
@@ -18,7 +19,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
  * @property integer $payment_to
  * @property integer $payment_from
  * @property boolean $payment_type
- * @property boolean $voucher_type
+ * @  boolean $voucher_type
  * @property string $reason
  * @property number $amount
  * @property string $remarks
@@ -29,8 +30,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
  */
 class Vouchers extends Model
 {
-
-  use HasFactory;
+  use HasFactory, LogsActivity;
 
   public $table = 'vouchers';
 
@@ -103,4 +103,10 @@ class Vouchers extends Model
     return $this->hasMany(Transactions::class, 'trans_code', 'trans_code');
   }
 
+  public function getFormattedIdAttribute()
+  {
+    $prefix = $this->voucher_type ?: 'V';
+    $number = str_pad($this->id, 4, '0', STR_PAD_LEFT);
+    return "{$prefix}-{$number}";
+  }
 }

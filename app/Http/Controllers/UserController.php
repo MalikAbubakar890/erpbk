@@ -12,6 +12,7 @@ use App\Repositories\UserRepository;
 use App\Services\ImageService;
 use App\Services\ActivityLogger;
 use Illuminate\Http\Request;
+use App\Traits\GlobalPagination;
 use Flash;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
@@ -21,6 +22,7 @@ use App\Models\Activity;
 
 class UserController extends AppBaseController
 {
+    use GlobalPagination;
   /** @var UserRepository $userRepository*/
   private $userRepository;
 

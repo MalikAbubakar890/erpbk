@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use App\Traits\GlobalPagination;
 use App\Helpers\Account;
 use App\Helpers\Common;
 use App\Http\Controllers\AppBaseController;
@@ -27,6 +28,7 @@ use Maatwebsite\Excel\Facades\Excel;
 
 class SalikController extends AppBaseController
 {
+    use GlobalPagination;
     /** @var SalikRepository $salikRepository*/
     private $salikRepository;
 
@@ -109,9 +111,8 @@ class SalikController extends AppBaseController
             abort(403, 'Unauthorized action.');
         }
         $parent = Accounts::where('id', 1237)->first();
-        $perPage = request()->input('per_page', 50);
-        $perPage = is_numeric($perPage) ? (int) $perPage : 50;
-        $perPage = $perPage > 0 ? $perPage : 50;
+        // Use global pagination trait
+        $paginationParams = $this->getPaginationParams($request, $this->getDefaultPerPage());
         $query = Accounts::query()
             ->orderBy('id', 'asc')->where('parent_id', $parent->id);
         if ($request->has('account_code') && !empty($request->account_code)) {
@@ -120,12 +121,13 @@ class SalikController extends AppBaseController
         if ($request->has('name') && !empty($request->name)) {
             $query->where('name', 'like', '%' . $request->name . '%');
         }
-        $data = $query->paginate($perPage);
+        // Apply pagination using the trait
+        $data = $this->applyPagination($query, $paginationParams);
         if ($request->ajax()) {
             $tableData = view('salik.account_table', [
                 'data' => $data,
             ])->render();
-            $paginationLinks = $data->links('pagination')->render();
+            $paginationLinks = $data->links('components.global-pagination')->render();
             return response()->json([
                 'tableData' => $tableData,
                 'paginationLinks' => $paginationLinks,
@@ -140,9 +142,8 @@ class SalikController extends AppBaseController
         if (!auth()->user()->hasPermissionTo('salik_view')) {
             abort(403, 'Unauthorized action.');
         }
-        $perPage = request()->input('per_page', 50);
-        $perPage = is_numeric($perPage) ? (int) $perPage : 50;
-        $perPage = $perPage > 0 ? $perPage : 50;
+        // Use global pagination trait
+        $paginationParams = $this->getPaginationParams($request, $this->getDefaultPerPage());
         $query = salik::query()
             ->orderBy('id', 'asc')
             ->where('salik_account_id', $id);
@@ -170,7 +171,8 @@ class SalikController extends AppBaseController
             $query->where('plate', 'like', '%' . $request->plate . '%');
         }
         // Paginated data
-        $data = $query->paginate($perPage);
+        // Apply pagination using the trait
+        $data = $this->applyPagination($query, $paginationParams);
         // All matching (filtered) data to calculate totals
         $filteredData = $query->get();
         // Calculate totals
@@ -184,7 +186,7 @@ class SalikController extends AppBaseController
                 'data' => $data,
                 'account' => $account,
             ])->render();
-            $paginationLinks = $data->links('pagination')->render();
+            $paginationLinks = $data->links('components.global-pagination')->render();
             return response()->json([
                 'tableData' => $tableData,
                 'paginationLinks' => $paginationLinks,

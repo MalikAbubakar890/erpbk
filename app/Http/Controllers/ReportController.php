@@ -9,7 +9,9 @@ use App\Models\Rider;
 use App\Models\Riders;
 use App\Models\Transactions;
 use Illuminate\Http\Request;
+use App\Traits\GlobalPagination;
 use Illuminate\Support\Facades\DB;
+use Carbon\Carbon;
 
 class ReportController extends Controller
 {
@@ -31,8 +33,15 @@ class ReportController extends Controller
     $riders = []; //Rider::all()->sortBy('rider_id');
     return view('reports.rider_report', compact('riders'));
   }
+  public function rider_monthly_report()
+  {
+    return view('reports.rider_monthly_report');
+  }
   public function rider_report_data(Request $request)
   {
+    // Increase execution time for large datasets (e.g., "Show All")
+    set_time_limit(300); // 5 minutes max execution time
+
     $data = '';
     $total = 0;
     $ob_total = 0;
@@ -50,7 +59,9 @@ class ReportController extends Controller
       }
     }
 
-    $result = new Riders();
+    // Optimize query with eager loading to reduce database queries
+    $result = Riders::with(['vendor', 'bikes']);
+
     if ($request->status && $request->status !== '') {
       $result = $result->where('status', $request->status);
     }
@@ -60,7 +71,29 @@ class ReportController extends Controller
     if ($request->designation && $request->designation !== '') {
       $result = $result->where('designation', $request->designation);
     }
-    $result = $result->get();
+
+    // Global pagination
+    $perPage = $request->get('per_page', 25);
+
+    // Handle 'all' and -1 options (show all records)
+    if ($perPage === 'all' || $perPage === '-1' || $perPage == -1) {
+      $perPage = $result->count(); // Get all records
+    } else {
+      $perPage = (int) $perPage;
+      if ($perPage <= 0) $perPage = 25;
+    }
+
+    $page = (int) ($request->get('page') ?: 1);
+    $totalCount = $result->count();
+    $result = $result->orderBy('rider_id')->forPage($page, $perPage)->get();
+
+    // Pre-load active bikes status for all riders in one query
+    $riderIds = $result->pluck('id')->toArray();
+    $activeBikeRiders = DB::table('bikes')
+      ->whereIn('rider_id', $riderIds)
+      ->where('warehouse', 'Active')
+      ->pluck('rider_id')
+      ->toArray();
 
 
 
@@ -118,13 +151,9 @@ class ReportController extends Controller
       $data .= '<td >' . @$rider->labor_card_number . '</td>';
       $data .= '<td  >' . @$rider->bikes->plate . '</td>';
       $data .= '<td  >' . $rider->wps . '</td>';
-      $hasActiveBike = DB::table('bikes')
-        ->where('rider_id', @$rider->id)
-        ->where('warehouse', 'Active')
-        ->exists();
 
-      // Determine status based on bike assignment
-      $isActive = $hasActiveBike;
+      // Use pre-loaded active bike status (optimized - no database query per rider)
+      $isActive = in_array($rider->id, $activeBikeRiders);
       $badgeClass = $isActive ? 'bg-label-success' : 'bg-label-danger';
       $statusText = $isActive ? 'Active' : 'Inactive';
       $data .= '<td>
@@ -161,6 +190,199 @@ class ReportController extends Controller
     $data .= '<th style="text-align: right">' . number_format($total_credit_sum, 2) . '</th>';
     $data .= '</tr>';
 
-    return compact('data', 'opening_balance_total', 'total', 'b_total', 'total_debit_sum', 'total_credit_sum');
+    // Render pagination links (global component) for consistency with riders
+    $paginationLinks = view('components.global-pagination', [
+      'paginator' => new \Illuminate\Pagination\LengthAwarePaginator([], $totalCount, $perPage, $page, ['path' => url()->current()]),
+      'perPageOptions' => [20, 50, 100, -1]
+    ])->render();
+
+    return [
+      'data' => $data,
+      'opening_balance_total' => $opening_balance_total,
+      'total' => $total,
+      'b_total' => $b_total,
+      'total_debit_sum' => $total_debit_sum,
+      'total_credit_sum' => $total_credit_sum,
+      'paginationLinks' => $paginationLinks,
+      'totalCount' => $totalCount,
+      'perPage' => $perPage,
+      'page' => $page,
+    ];
+  }
+
+  public function rider_monthly_report_data(Request $request)
+  {
+    set_time_limit(300);
+
+    $validated = $request->validate([
+      'billing_month' => ['required', 'date_format:Y-m'],
+    ]);
+
+    $billingMonthInput = $validated['billing_month'];
+    $billingMonth = str_ends_with($billingMonthInput, '-01') ? $billingMonthInput : $billingMonthInput . '-01';
+    $billingMonthLabel = Carbon::parse($billingMonth)->format('F Y');
+
+    $result = Riders::with(['vendor', 'bikes']);
+
+    if ($request->status && $request->status !== '') {
+      $result = $result->where('status', $request->status);
+    }
+    if ($request->VID && $request->VID !== '') {
+      $result = $result->where('VID', $request->VID);
+    }
+    if ($request->designation && $request->designation !== '') {
+      $result = $result->where('designation', $request->designation);
+    }
+    if ($quickSearch = trim((string) $request->quick_search)) {
+      $result = $result->where(function ($query) use ($quickSearch) {
+        $query->where('name', 'like', '%' . $quickSearch . '%')
+          ->orWhere('rider_id', 'like', '%' . $quickSearch . '%')
+          ->orWhere('person_code', 'like', '%' . $quickSearch . '%')
+          ->orWhere('labor_card_number', 'like', '%' . $quickSearch . '%');
+      });
+    }
+
+    $perPage = $request->get('per_page', 25);
+    if ($perPage === 'all' || $perPage === '-1' || $perPage == -1) {
+      $perPage = $result->count();
+    } else {
+      $perPage = (int) $perPage;
+      if ($perPage <= 0) {
+        $perPage = 25;
+      }
+    }
+
+    $page = (int) ($request->get('page') ?: 1);
+    $totalCount = $result->count();
+    $result = $result->orderBy('rider_id')->forPage($page, $perPage)->get();
+
+    $riderIds = $result->pluck('id')->filter()->all();
+    $activeBikeRiders = [];
+    if (!empty($riderIds)) {
+      $activeBikeRiders = DB::table('bikes')
+        ->whereIn('rider_id', $riderIds)
+        ->where('warehouse', 'Active')
+        ->pluck('rider_id')
+        ->toArray();
+    }
+
+    $accountIds = $result->pluck('account_id')->filter()->unique()->values()->all();
+
+    $monthlySums = collect();
+    $openingSums = collect();
+
+    if (!empty($accountIds)) {
+      $monthlySums = Transactions::select(
+        'account_id',
+        DB::raw('SUM(debit) as debit_sum'),
+        DB::raw('SUM(credit) as credit_sum')
+      )
+        ->whereIn('account_id', $accountIds)
+        ->whereDate('billing_month', $billingMonth)
+        ->groupBy('account_id')
+        ->get()
+        ->keyBy('account_id');
+
+      $openingSums = Transactions::select(
+        'account_id',
+        DB::raw('SUM(debit) as debit_sum'),
+        DB::raw('SUM(credit) as credit_sum')
+      )
+        ->whereIn('account_id', $accountIds)
+        ->whereDate('billing_month', '<', $billingMonth)
+        ->groupBy('account_id')
+        ->get()
+        ->keyBy('account_id');
+    }
+
+    $data = '';
+    $openingTotal = 0;
+    $monthlyDebitTotal = 0;
+    $monthlyCreditTotal = 0;
+    $netActivityTotal = 0;
+    $closingTotal = 0;
+
+    foreach ($result as $rider) {
+      $accountId = $rider->account_id;
+      $openingBalance = 0.00;
+      $monthDebit = 0.00;
+      $monthCredit = 0.00;
+
+      if ($accountId) {
+        $openingRecord = $openingSums->get($accountId);
+        if ($openingRecord) {
+          $openingBalance = (float) $openingRecord->debit_sum - (float) $openingRecord->credit_sum;
+        }
+
+        $monthlyRecord = $monthlySums->get($accountId);
+        if ($monthlyRecord) {
+          $monthDebit = (float) $monthlyRecord->debit_sum;
+          $monthCredit = (float) $monthlyRecord->credit_sum;
+        }
+      }
+
+      $netActivity = $monthDebit - $monthCredit;
+      $closingBalance = $openingBalance + $netActivity;
+
+      $isActive = in_array($rider->id, $activeBikeRiders);
+      $badgeClass = $isActive ? 'bg-label-success' : 'bg-label-danger';
+      $statusText = $isActive ? 'Active' : 'Inactive';
+
+      $data .= '<tr>';
+      $data .= '<td>' . e($rider->rider_id) . '</td>';
+      $data .= '<td>' . e($rider->name) . '</td>';
+      $data .= '<td>' . e(optional($rider->vendor)->name) . '</td>';
+      $data .= '<td>' . e($rider->designation) . '</td>';
+      $data .= '<td>' . e($rider->person_code) . '</td>';
+      $data .= '<td>' . e($rider->labor_card_number) . '</td>';
+      $data .= '<td>' . e(optional($rider->bikes)->plate) . '</td>';
+      $data .= '<td>' . e($rider->wps) . '</td>';
+      $data .= '<td><span class="badge ' . $badgeClass . '">' . $statusText . '</span></td>';
+      $data .= '<td>' . e($billingMonthLabel) . '</td>';
+      $data .= '<td align="right">' . number_format($openingBalance, 2) . '</td>';
+      $data .= '<td align="right">' . number_format($monthDebit, 2) . '</td>';
+      $data .= '<td align="right">' . number_format($monthCredit, 2) . '</td>';
+      $data .= '<td align="right">' . number_format($netActivity, 2) . '</td>';
+      $data .= '<td align="right">' . number_format($closingBalance, 2) . '</td>';
+      $data .= '<td></td>';
+      $data .= '<td></td>';
+      $data .= '</tr>';
+
+      $openingTotal += $openingBalance;
+      $monthlyDebitTotal += $monthDebit;
+      $monthlyCreditTotal += $monthCredit;
+      $netActivityTotal += $netActivity;
+      $closingTotal += $closingBalance;
+    }
+
+    if ($result->count() > 0) {
+      $data .= '<tr class="font-weight-bold total-row">';
+      $data .= '<td colspan="10" style="text-align:right">Totals</td>';
+      $data .= '<th style="text-align:right">' . number_format($openingTotal, 2) . '</th>';
+      $data .= '<th style="text-align:right">' . number_format($monthlyDebitTotal, 2) . '</th>';
+      $data .= '<th style="text-align:right">' . number_format($monthlyCreditTotal, 2) . '</th>';
+      $data .= '<th style="text-align:right">' . number_format($netActivityTotal, 2) . '</th>';
+      $data .= '<th style="text-align:right">' . number_format($closingTotal, 2) . '</th>';
+      $data .= '<td colspan="2"></td>';
+      $data .= '</tr>';
+    }
+
+    $paginationLinks = view('components.global-pagination', [
+      'paginator' => new \Illuminate\Pagination\LengthAwarePaginator([], $totalCount, $perPage, $page, ['path' => url()->current()]),
+      'perPageOptions' => [20, 50, 100, -1]
+    ])->render();
+
+    return [
+      'data' => $data,
+      'opening_balance_total' => $openingTotal,
+      'monthly_debit_total' => $monthlyDebitTotal,
+      'monthly_credit_total' => $monthlyCreditTotal,
+      'net_activity_total' => $netActivityTotal,
+      'closing_balance_total' => $closingTotal,
+      'paginationLinks' => $paginationLinks,
+      'totalCount' => $totalCount,
+      'perPage' => $perPage,
+      'page' => $page,
+    ];
   }
 }

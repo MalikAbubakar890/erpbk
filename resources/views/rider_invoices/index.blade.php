@@ -17,6 +17,11 @@
                     Import Invoices
                 </a>
 
+                <a class="btn btn-warning action-btn show-modal mx-2"
+                    href="javascript:void(0);" data-size="sm" data-title="Import Paid Invoices" data-action="{{ route('riderInvoices.importPaid') }}">
+                    Import Paid Invoices
+                </a>
+
                 <a class="btn btn-primary action-btn show-modal"
                     href="javascript:void(0);" data-size="xl" data-title="Create Rider Invoice" data-action="{{ route('riderInvoices.create') }}">
                     Create Invoice
@@ -115,7 +120,7 @@
                                         <div class="form-group col-md-4">
                                             <label for="status">Filter by Status</label>
                                             <select class="form-control " id="status" name="status">
-                                                <option value="" selected>Select</option>
+                                                <option value="">Select</option>
                                                 <option value="1" {{ request('status') == 1 ? 'selected' : '' }}>Paid</option>
                                                 <option value="0" {{ request('status') == 0 ? 'selected' : '' }}>Unpaid</option>
                                             </select>
@@ -149,6 +154,21 @@
 @endsection
 @section('page-script')
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<style>
+    .invoice-checkbox {
+        transform: scale(1.2);
+        cursor: pointer;
+    }
+
+    #selectAllCheckbox {
+        transform: scale(1.2);
+        cursor: pointer;
+    }
+
+    #deleteSelectedBtn {
+        transition: all 0.3s ease;
+    }
+</style>
 <script type="text/javascript">
     function confirmDelete(url) {
         Swal.fire({
@@ -280,5 +300,104 @@
             });
         });
     });
+
+    // Bulk delete functionality
+    function toggleSelectAll(selectAllCheckbox) {
+        const checkboxes = document.querySelectorAll('.invoice-checkbox');
+        checkboxes.forEach(checkbox => {
+            checkbox.checked = selectAllCheckbox.checked;
+        });
+        updateDeleteButton();
+    }
+
+    function updateDeleteButton() {
+        const selectedCheckboxes = document.querySelectorAll('.invoice-checkbox:checked');
+        const deleteBtn = document.getElementById('deleteSelectedBtn');
+        const selectAllCheckbox = document.getElementById('selectAllCheckbox');
+
+        if (selectedCheckboxes.length > 0) {
+            deleteBtn.style.display = 'inline-block';
+            deleteBtn.textContent = `Delete Selected (${selectedCheckboxes.length})`;
+        } else {
+            deleteBtn.style.display = 'none';
+        }
+
+        // Update select all checkbox state
+        const allCheckboxes = document.querySelectorAll('.invoice-checkbox');
+        if (selectedCheckboxes.length === 0) {
+            selectAllCheckbox.indeterminate = false;
+            selectAllCheckbox.checked = false;
+        } else if (selectedCheckboxes.length === allCheckboxes.length) {
+            selectAllCheckbox.indeterminate = false;
+            selectAllCheckbox.checked = true;
+        } else {
+            selectAllCheckbox.indeterminate = true;
+        }
+    }
+
+    function deleteSelectedInvoices() {
+        const selectedCheckboxes = document.querySelectorAll('.invoice-checkbox:checked');
+        const selectedIds = Array.from(selectedCheckboxes).map(cb => cb.value);
+
+        if (selectedIds.length === 0) {
+            Swal.fire('Error', 'Please select invoices to delete', 'error');
+            return;
+        }
+
+        Swal.fire({
+            title: 'Are you sure?',
+            text: `You are about to delete ${selectedIds.length} invoice(s). This action cannot be undone!`,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#d33',
+            cancelButtonColor: '#3085d6',
+            confirmButtonText: 'Yes, delete them!'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                // Show loading
+                Swal.fire({
+                    title: 'Deleting...',
+                    text: 'Please wait while we delete the selected invoices.',
+                    allowOutsideClick: false,
+                    didOpen: () => {
+                        Swal.showLoading();
+                    }
+                });
+
+                // Make AJAX request
+                $.ajax({
+                    url: '{{ route("riderInvoices.bulkDelete") }}',
+                    type: 'POST',
+                    data: {
+                        _token: '{{ csrf_token() }}',
+                        invoice_ids: selectedIds
+                    },
+                    success: function(response) {
+                        Swal.fire({
+                            title: 'Success!',
+                            text: response.message,
+                            icon: 'success',
+                            confirmButtonText: 'OK'
+                        }).then(() => {
+                            // Reload the page or refresh the table
+                            location.reload();
+                        });
+                    },
+                    error: function(xhr) {
+                        let errorMessage = 'An error occurred while deleting invoices.';
+                        if (xhr.responseJSON && xhr.responseJSON.message) {
+                            errorMessage = xhr.responseJSON.message;
+                        }
+                        Swal.fire({
+                            title: 'Error!',
+                            text: errorMessage,
+                            icon: 'error',
+                            confirmButtonText: 'OK'
+                        });
+                    }
+                });
+            }
+        });
+    }
 </script>
 @endsection

@@ -58,7 +58,8 @@ class RidersRepository extends BaseRepository
         'labor_card_expiry',
         'insurance',
         'insurance_expiry',
-        'policy_no'
+        'policy_no',
+        'recuriter'
     ];
 
     public function getFieldsSearchable(): array

@@ -19,6 +19,7 @@ use App\Models\Vouchers;
 use App\Services\TransactionService;
 use App\Services\VoucherService;
 use Illuminate\Http\Request;
+use App\Traits\GlobalPagination;
 use Flash;
 use Maatwebsite\Excel\Facades\Excel;
 use Response;
@@ -28,6 +29,7 @@ use Carbon\Carbon;
 
 class VouchersController extends Controller
 {
+  use GlobalPagination;
   /**
    * Display a listing of the Vouchers.
    *
@@ -49,9 +51,8 @@ class VouchersController extends Controller
    */
   private function indexWithFilters(Request $request)
   {
-    $perPage = $request->input('per_page', 50);
-    $perPage = is_numeric($perPage) ? (int) $perPage : 50;
-    $perPage = $perPage > 0 ? $perPage : 50;
+    // Use global pagination trait
+    $paginationParams = $this->getPaginationParams($request, $this->getDefaultPerPage());
 
     $query = Vouchers::query()->orderBy('id', 'desc');
 
@@ -103,14 +104,15 @@ class VouchersController extends Controller
       \Log::info('Voucher Filter Bindings: ' . json_encode($query->getBindings()));
     }
 
-    $data = $query->paginate($perPage);
+    // Apply pagination using the trait
+    $data = $this->applyPagination($query, $paginationParams);
 
     // AJAX Response for filtered results
     if ($request->ajax()) {
       $tableData = view('vouchers.table', [
         'data' => $data,
       ])->render();
-      $paginationLinks = $data->links('pagination')->render();
+      $paginationLinks = $data->links('components.global-pagination')->render();
       return response()->json([
         'tableData' => $tableData,
         'paginationLinks' => $paginationLinks,
@@ -141,52 +143,75 @@ class VouchersController extends Controller
    */
   public function store(Request $request, VoucherService $voucherService)
   {
-    //dd($request->all());
+    try {
+      //dd($request->all());
 
-    $request->billing_month = $request->billing_month . "-01";
+      $request->billing_month = $request->billing_month . "-01";
 
 
 
-    /** @var Vouchers $vouchers */
-    if ($request->voucher_type == 'JV') {
-      if (array_sum($request->dr_amount) != array_sum($request->cr_amount)) {
+      /** @var Vouchers $vouchers */
+      if ($request->voucher_type == 'JV') {
+        if (array_sum($request->dr_amount) != array_sum($request->cr_amount)) {
 
-        return response()->json(['errors' => ['error' => 'Total debit and credit must be equal.']], 422);
+          return response()->json(['errors' => ['error' => 'Total debit and credit must be equal.']], 422);
+        }
+        $result = $voucherService->JournalVoucher($request);
       }
-      $result = $voucherService->JournalVoucher($request);
-    }
-    /* if ($request->voucher_type == 5) {
-      $result = $voucherService->InvoiceVoucher($request);
-    }
-    if ($request->voucher_type == 9) {
-      $result = $voucherService->SimVoucher($request);
-    } */
-    /*  if ($request->voucher_type == 11) {
-         $result = $voucherService->FuelVoucher($request);
-     }
-     if ($request->voucher_type == 10) {
-         $result = $voucherService->RentVoucher($request);
-     }
-     if ($request->voucher_type == 8) {
-         $result = $voucherService->RtaVoucher($request);
-     } */
+      /* if ($request->voucher_type == 5) {
+        $result = $voucherService->InvoiceVoucher($request);
+      }
+      if ($request->voucher_type == 9) {
+        $result = $voucherService->SimVoucher($request);
+      } */
+      /*  if ($request->voucher_type == 11) {
+           $result = $voucherService->FuelVoucher($request);
+       }
+       if ($request->voucher_type == 10) {
+           $result = $voucherService->RentVoucher($request);
+       }
+       if ($request->voucher_type == 8) {
+           $result = $voucherService->RtaVoucher($request);
+       } */
 
-    if ($request->voucher_type == 'VL') {
-      $result = $voucherService->loanvoucher($request);
-    }
-    if (in_array($request->voucher_type, ['LV'])) {
-      $result = $voucherService->DefaultVoucher($request, 'debit');
-    }
-    if (in_array($request->voucher_type, ['AL'])) {
-      $result = $voucherService->DefaultVoucher($request, 'debit');
-    }
-    /* if (in_array($request->voucher_type, [13])) {
-      $result = $voucherService->DefaultVoucher($request, 2);
+      if ($request->voucher_type == 'VL') {
+        $result = $voucherService->loanvoucher($request);
+      }
+      if (in_array($request->voucher_type, ['LV'])) {
+        $result = $voucherService->DefaultVoucher($request, 'debit');
+      }
+      if (in_array($request->voucher_type, ['AL'])) {
+        $result = $voucherService->DefaultVoucher($request, 'debit');
+      }
+      if (in_array($request->voucher_type, ['COD'])) {
+        $result = $voucherService->DefaultVoucher($request, 'debit');
+      }
+      if (in_array($request->voucher_type, ['PENALTY'])) {
+        $result = $voucherService->DefaultVoucher($request, 'debit');
+      }
+      if (in_array($request->voucher_type, ['INCENTIVE'])) {
+        $result = $voucherService->DefaultVoucher($request, 'debit');
+      }
+      /* if (in_array($request->voucher_type, [13])) {
+        $result = $voucherService->DefaultVoucher($request, 2);
 
-    } */
+      } */
 
-    //$vouchers = Vouchers::create($input);
-    return $result;
+      //$vouchers = Vouchers::create($input);
+      return $result;
+    } catch (\Exception $e) {
+      // Log the error for debugging
+      \Log::error('Voucher store error: ' . $e->getMessage(), [
+        'request_data' => $request->all(),
+        'trace' => $e->getTraceAsString()
+      ]);
+
+      // Return user-friendly error message
+      return response()->json([
+        'success' => false,
+        'message' => $e->getMessage()
+      ], 500);
+    }
   }
 
   /**
@@ -231,6 +256,16 @@ class VouchersController extends Controller
     if ($vouchers->voucher_type == 'JV') {
       $data = Transactions::where('trans_code', $id)->get();
     } elseif ($vouchers->voucher_type == 'RFV') {
+      $data = Transactions::where('trans_code', $id)->get();
+    } elseif ($vouchers->voucher_type == 'AL') {
+      $data = Transactions::where('trans_code', $id)->get();
+    } elseif ($vouchers->voucher_type == 'COD') {
+      $data = Transactions::where('trans_code', $id)->get();
+    } elseif ($vouchers->voucher_type == 'PN') {
+      $data = Transactions::where('trans_code', $id)->get();
+    } elseif ($vouchers->voucher_type == 'PAY') {
+      $data = Transactions::where('trans_code', $id)->get();
+    } elseif ($vouchers->voucher_type == 'VC') {
       $data = Transactions::where('trans_code', $id)->get();
     } else {
       $data = Transactions::where('trans_code', $id)->where('debit', '>', 0)->get();
@@ -371,7 +406,7 @@ class VouchersController extends Controller
 
 
 
-    if (in_array($request->voucher_type, ['LV'])) {
+    if (in_array($request->voucher_type, ['LV', 'AL', 'COD', 'PN', 'PAY', 'VC'])) {
       $result = $voucherService->DefaultVoucher($request, 'debit');
     }
     /*  if (in_array($request->voucher_type, [13])) {
@@ -542,11 +577,12 @@ class VouchersController extends Controller
   public function fileUpload(Request $request, $id)
   {
     $voucher = Vouchers::find($id);
-    if (isset($request->attach_file)) {
-      $photo = $request->attach_file;
-      $docFile = $photo->store('public/vouchers');
-      $data['attach_file'] = basename($docFile);
-      $voucher->attach_file = $data['attach_file'];
+
+    if ($request->hasFile('attach_file')) {
+      $photo = $request->file('attach_file');
+      $fileName = $photo->getClientOriginalName();
+      $photo->storeAs('public/vouchers', $fileName);
+      $voucher->attach_file = $fileName;
       $voucher->updated_by = auth()->id();
       $voucher->save();
     }

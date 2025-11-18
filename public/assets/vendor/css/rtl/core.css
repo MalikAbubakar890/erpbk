@@ -10882,6 +10882,7 @@ form select.selectpicker.is-invalid ~ .btn {
   padding: 0.44rem;
   box-shadow: 0 0.125rem 0.25rem rgba(165, 163, 174, 0.3);
   transition: all 0.23s ease 0.1s;
+  background-size: contain;
 }
 html:not([dir=rtl]) .modal .btn-close {
   -webkit-transform: translate(23px, -25px);
@@ -11774,6 +11775,9 @@ button.list-group-item-gray.active {
 .card .card-header + .card-content > .card-body:first-of-type,
 .card .card-body + .card-footer {
   padding-top: 0;
+}
+.card .card-body + .card-footer {
+  padding-top: 20px;
 }
 .card[class*=card-border-shadow-] {
   position: relative;
@@ -25598,4 +25602,8 @@ th.sorting.sorted-desc::after {
 .filter-overlay.active {
     opacity: 1;
     visibility: visible;
+}
+
+.light-style .select2-container--default .select2-selection--multiple .select2-selection__choice{
+  color: #ffffff !important;
 }

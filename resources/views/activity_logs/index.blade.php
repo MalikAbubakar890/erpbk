@@ -216,7 +216,7 @@
 
 @endsection
 
-@push('scripts')
+@push('page-scripts')
 <script>
     function showChanges(logId) {
         // This would typically make an AJAX call to get the changes

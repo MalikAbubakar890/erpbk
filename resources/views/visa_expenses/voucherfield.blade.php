@@ -43,7 +43,7 @@
 </div>
 <div class="form-group col-sm-6">
     <label class="readonly">Debit Account:</label>
-    <select class="form select select2" id="rider_id" name="rider_id" readonly>
+    <select class="form-control select select2" id="rider_id" name="rider_id" readonly>
         <option value=""></option>
         @foreach(DB::table('accounts')->where('status' , 1)->get() as $a)
         <option value="{{ $a->id }}" @if($data->rider_id == $a->id) selected @endif>{{ $a->name }}</option>
@@ -57,11 +57,20 @@
         @php
         $bank = DB::table('accounts')->where('name', 'Bank')->first();
         $cash = DB::table('accounts')->where('name', 'Cash in Hand')->first();
+        $recruiters = DB::table('accounts')->where('name', 'Recruiters')->first();
+
+        $parentIds = [];
+        if ($bank) $parentIds[] = $bank->id;
+        if ($cash) $parentIds[] = $cash->id;
+        if ($recruiters) $parentIds[] = $recruiters->id;
         @endphp
 
         @foreach(DB::table('accounts')
         ->where('status', 1)
-        ->whereIn('parent_id', [$bank->id, $cash->id])
+        ->where(function($query) use ($parentIds) {
+        $query->whereIn('parent_id', $parentIds)
+        ->orWhere('id', 2172);
+        })
         ->orderBy('id', 'asc')
         ->get() as $acc)
         <option value="{{ $acc->id }}">

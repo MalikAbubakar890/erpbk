@@ -3,14 +3,19 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use App\Traits\LogsActivity;
+use App\Traits\HasActiveStatus;
 
 class Riders extends Model
 {
+  use LogsActivity, HasActiveStatus;
+
   public $table = 'riders';
 
   public $fillable = [
     'name',
     'rider_id',
+    'courier_id',
     'account_id',
     'personal_contact',
     'company_contact',
@@ -43,6 +48,9 @@ class Riders extends Model
     'visa_sponsor',
     'visa_occupation',
     'status',
+    'absconder',
+    'flowup',
+    'l_license',
     'TAID',
     'fleet_supervisor',
     'passport_handover',
@@ -65,11 +73,14 @@ class Riders extends Model
     'vat',
     'attendance',
     'customer_id',
-    'attendance_date'
+    'attendance_date',
+    'recuriter',
+    'recruiter_id'
   ];
 
   protected $casts = [
     'name' => 'string',
+    'courier_id' => 'string',
     'personal_contact' => 'string',
     'company_contact' => 'string',
     'personal_email' => 'string',
@@ -95,7 +106,9 @@ class Riders extends Model
     'other_details' => 'string',
     'visa_sponsor' => 'string',
     'visa_occupation' => 'string',
-
+    'absconder' => 'boolean',
+    'flowup' => 'boolean',
+    'l_license' => 'boolean',
     'fleet_supervisor' => 'string',
     'passport_handover' => 'string',
     'noon_no' => 'string',
@@ -114,12 +127,15 @@ class Riders extends Model
     'insurance_expiry' => 'string',
     'shift' => 'string',
     'attendance' => 'string',
-    'policy_no' => 'string'
+    'policy_no' => 'string',
+    'recuriter' => 'string',
+    'recruiter_id' => 'integer'
   ];
 
   public static array $rules = [
     'name' => 'required|string|max:191',
     'rider_id' => 'required|unique:riders,rider_id',
+    'courier_id' => 'nullable|string|max:191',
     'personal_contact' => 'nullable|string|max:191',
     'company_contact' => 'nullable|string|max:191',
     'personal_email' => 'required|string|max:191',
@@ -171,7 +187,9 @@ class Riders extends Model
     'labor_card_expiry' => 'nullable',
     'insurance' => 'nullable|string|max:100',
     'insurance_expiry' => 'nullable',
-    'policy_no' => 'nullable|string|max:255'
+    'policy_no' => 'nullable|string|max:255',
+    'recuriter' => 'nullable|string|max:255',
+    'recruiter_id' => 'nullable|integer|exists:recruiters,id'
   ];
 
   public function items()
@@ -223,5 +241,10 @@ class Riders extends Model
   function activity()
   {
     return $this->hasMany(RiderActivities::class, 'rider_id', 'id')->where(\DB::raw('DATE_FORMAT(date, "%Y-%m")'), '=', date('Y-m'));
+  }
+
+  function recruiter()
+  {
+    return $this->belongsTo(Recruiters::class, 'recruiter_id', 'id');
   }
 }

@@ -3,9 +3,13 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use App\Traits\LogsActivity;
+use App\Traits\HasActiveStatus;
 
 class Customers extends Model
 {
+  use LogsActivity, HasActiveStatus;
+
   public $table = 'customers';
 
   public $fillable = [
@@ -57,7 +61,5 @@ class Customers extends Model
   {
     $query = self::select('id', 'name')->pluck('name', 'id')->prepend('Select', '');
     return $query;
-
   }
-
 }

@@ -50,7 +50,6 @@ class SalikImport implements ToCollection
 
                 try {
 
-
                     // --- Safe mapping (index based) ---
                     $transactionId       = $row[0] ?? null;
                     $tripDate            = $row[1] ?? null;
@@ -66,7 +65,6 @@ class SalikImport implements ToCollection
                     $adminCharge         = $row[11] ?? null;
                     $details             = $row[12] ?? null;
                     $debit               = $row[13] ?? null;
-
                     // Use amount field for the actual transaction amount
                     $transactionAmount = $amount ?: $debit;
 
@@ -139,12 +137,11 @@ class SalikImport implements ToCollection
                         'admin_charges'    => $this->adminChargePerSalik,
                         'total_amount'     => $transactionAmount + $this->adminChargePerSalik,
                         'status'           => 'paid',
-                        'billing_month'    => date('Y-m-01', strtotime($tripDate)),
+                        'billing_month'    =>  $billingMonth,
                         'trans_date'       => Carbon::today(),
                         'trans_code'       => Account::trans_code(),
                         'created_by'       => Auth::user()->id,
                     ];
-
                     // Determine if we're using current rider or last rider from history
                     $isCurrentRider = ($bike->rider_id == $rider->id);
                     $riderSource = $isCurrentRider ? 'current rider' : 'last rider from history';
@@ -307,7 +304,7 @@ class SalikImport implements ToCollection
                 'reference_type' => 'Salik Voucher',
                 'trans_code'     => $transCode,
                 'trans_date'     => $transDate,
-                'narration'      => "Salik Import - Rider Debit ($count transactions)",
+                'narration'      => "salik charges month of $billingMonth ($count transactions)",
                 'debit'          => $totalAmount + $totalAdmin,
                 'billing_month'  => $billingMonth,
             ]);
@@ -320,7 +317,7 @@ class SalikImport implements ToCollection
                     'reference_type' => 'Salik Voucher',
                     'trans_code'     => $transCode,
                     'trans_date'     => $transDate,
-                    'narration'      => "Salik Import - Salik Credit ({$salik->transaction_id})",
+                    'narration'      => "salik charges month of $billingMonth ($count transactions)",
                     'credit'         => $salik->amount,
                     'billing_month'  => $billingMonth,
                 ]);
@@ -334,7 +331,7 @@ class SalikImport implements ToCollection
                     'reference_type' => 'Salik Voucher',
                     'trans_code'     => $transCode,
                     'trans_date'     => $transDate,
-                    'narration'      => "Salik Import - Admin Charges ($count × {$this->adminChargePerSalik})",
+                    'narration'      => "salik charges month of $billingMonth ($count × {$this->adminChargePerSalik})",
                     'credit'         => $totalAdmin,
                     'billing_month'  => $billingMonth,
                 ]);
@@ -348,7 +345,7 @@ class SalikImport implements ToCollection
                 'billing_month' => $billingMonth,
                 'amount'        => $totalAmount + $totalAdmin,
                 'voucher_type'  => 'SV',
-                'remarks'       => "Salik Import Main Voucher",
+                'remarks'       => "salik charges month of $billingMonth",
                 'ref_id'        => $firstSalik->id,
                 'rider_id'      => $rider->id,
                 'payment_to'    => $this->salikAccountId,

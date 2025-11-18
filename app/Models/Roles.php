@@ -3,9 +3,12 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use App\Traits\LogsActivity;
 
 class Roles extends Model
 {
+    use LogsActivity;
+
     public $table = 'roles';
 
     public $fillable = [

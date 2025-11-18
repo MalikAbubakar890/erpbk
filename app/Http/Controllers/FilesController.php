@@ -9,10 +9,12 @@ use App\Http\Controllers\AppBaseController;
 use App\Repositories\FilesRepository;
 use App\Models\Bikes;
 use Illuminate\Http\Request;
+use App\Traits\GlobalPagination;
 use Flash;
 
 class FilesController extends AppBaseController
 {
+    use GlobalPagination;
   /** @var FilesRepository $filesRepository*/
   private $filesRepository;
 

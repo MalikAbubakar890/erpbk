@@ -19,11 +19,13 @@ use App\Repositories\RtaFinesRepository;
 use App\Services\TransactionService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use App\Traits\GlobalPagination;
 use Flash;
 use DB;
 
 class RtaFinesController extends AppBaseController
 {
+    use GlobalPagination;
     /** @var RtaFinesRepository $rtaFinesRepository*/
     private $rtaFinesRepository;
 
@@ -109,9 +111,8 @@ class RtaFinesController extends AppBaseController
             abort(403, 'Unauthorized action.');
         }
         $parent = Accounts::where('id', 1235)->first();
-        $perPage = request()->input('per_page', 50);
-        $perPage = is_numeric($perPage) ? (int) $perPage : 50;
-        $perPage = $perPage > 0 ? $perPage : 50;
+        // Use global pagination trait
+        $paginationParams = $this->getPaginationParams($request, $this->getDefaultPerPage());
         $query = Accounts::query()
             ->orderBy('id', 'asc')->where('parent_id', $parent->id);
         if ($request->has('account_code') && !empty($request->account_code)) {
@@ -120,12 +121,13 @@ class RtaFinesController extends AppBaseController
         if ($request->has('name') && !empty($request->name)) {
             $query->where('name', 'like', '%' . $request->name . '%');
         }
-        $data = $query->paginate($perPage);
+        // Apply pagination using the trait
+        $data = $this->applyPagination($query, $paginationParams);
         if ($request->ajax()) {
             $tableData = view('rta_fines.account_table', [
                 'data' => $data,
             ])->render();
-            $paginationLinks = $data->links('pagination')->render();
+            $paginationLinks = $data->links('components.global-pagination')->render();
             return response()->json([
                 'tableData' => $tableData,
                 'paginationLinks' => $paginationLinks,
@@ -141,9 +143,8 @@ class RtaFinesController extends AppBaseController
             abort(403, 'Unauthorized action.');
         }
 
-        $perPage = request()->input('per_page', 50);
-        $perPage = is_numeric($perPage) ? (int) $perPage : 50;
-        $perPage = $perPage > 0 ? $perPage : 50;
+        // Use global pagination trait
+        $paginationParams = $this->getPaginationParams($request, $this->getDefaultPerPage());
 
         $query = RtaFines::query()
             ->orderBy('id', 'asc')
@@ -168,7 +169,8 @@ class RtaFinesController extends AppBaseController
         }
 
         // Paginated data
-        $data = $query->paginate($perPage);
+        // Apply pagination using the trait
+        $data = $this->applyPagination($query, $paginationParams);
 
         // All matching (filtered) data to calculate totals
         $filteredData = $query->get();
@@ -189,7 +191,7 @@ class RtaFinesController extends AppBaseController
                 'data' => $data,
                 'account' => $account,
             ])->render();
-            $paginationLinks = $data->links('pagination')->render();
+            $paginationLinks = $data->links('components.global-pagination')->render();
             return response()->json([
                 'tableData' => $tableData,
                 'paginationLinks' => $paginationLinks,
@@ -687,7 +689,7 @@ class RtaFinesController extends AppBaseController
                     'trans_date'     => $rtaFines->trans_date,
                     'narration'      => $request->detail ?? 'RTA Fine Received',
                     'debit'          => 0,
-                    'credit'         => $rtaFines->total_amount,
+                    'credit'         => $rtaFines->amount,
                     'billing_month'  => $billingMonth,
                 ],
                 $rta_account->rta_account_id
@@ -711,7 +713,7 @@ class RtaFinesController extends AppBaseController
                     'billing_month' => $billingMonth,
                     'payment_type'  => 1,
                     'remarks'       => 'RTA Fine Voucher',
-                    'amount'        => $request->total_amount,
+                    'amount'        => $rtaFines->total_amount,
                     'attach_file'   => $path,
                     'pay_account'   => $rider_account->id,
                     'Updated_By'    => auth()->id(),
@@ -864,15 +866,15 @@ class RtaFinesController extends AppBaseController
             return;
         }
         $currentRiderId = $bike->rider_id;
-        $riders = Riders::all();
+        $riders = DB::table('riders')->get();
         if ($riders->isEmpty()) {
             echo '<option value="">There is no rider</option>';
         } else {
             echo '<option value="">Select Rider</option>';
             foreach ($riders as $r) {
-                $account = DB::table('accounts')->where('ref_id', $r->id)->first();
-                $selected = ($r->id == $currentRiderId) ? 'selected' : '';
-                echo '<option value="' . $account->ref_id . '" ' . $selected . '>'
+                echo '<option value="' . $r->id . '"'
+                    . ($r->id == $currentRiderId ? ' selected' : '')
+                    . '>'
                     . $r->rider_id . ' - ' . $r->name
                     . '</option>';
             }

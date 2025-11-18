@@ -96,8 +96,12 @@
                                 <tr>
                                     <th>Rider name</th>
                                     @php
-                                    $account = DB::table('accounts')->where('id' , $data->rider_id)->first();
-                                    $rider = DB::table('riders')->where('id', $account->ref_id)->first();
+                                    $rider_account = DB::table('riders')->where('id', $data->rider_id)->first();
+                                    if ($rider_account) {
+                                    $rider = $rider_account;
+                                    } else {
+                                    $rider = DB::table('accounts')->where('ref_name', 'Rider')->where('id', $data->rider_id)->first();
+                                    }
                                     @endphp
                                     <td class="text-end">{{ $rider->name ?? '-' }}</td>
                                 </tr>

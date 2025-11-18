@@ -4,9 +4,13 @@ namespace App\Models;
 
 use App\Helpers\IConstants;
 use Illuminate\Database\Eloquent\Model;
+use App\Traits\LogsActivity;
+use App\Traits\HasActiveStatus;
 
 class Vendors extends Model
 {
+  use LogsActivity, HasActiveStatus;
+
   public $table = 'vendors';
 
   public $fillable = [
@@ -56,5 +60,4 @@ class Vendors extends Model
   {
     return self::select('id', 'name')->where('status', IConstants::ACTIVE)->pluck('name', 'id')->prepend('Select', '');
   }
-
 }

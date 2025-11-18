@@ -6,19 +6,21 @@ use App\Models\rider_hiring;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Http\Request;
+use App\Traits\GlobalPagination;
 use Illuminate\Support\Facades\Auth;
 use Flash;
 use DB;
 
 class riderhiringController extends Controller
 {
+    use GlobalPagination;
     /**
      * Display a listing of the resource.
      */
     public function index(Request $request)
     {
-        $perPage = $request->input('per_page', 50);
-        $perPage = $perPage > 0 ? $perPage : 50;
+        // Use global pagination trait
+        $paginationParams = $this->getPaginationParams($request, $this->getDefaultPerPage());
         $query = rider_hiring::query()->orderBy('id', 'desc');
         if ($request->filled('rider_id')) {
             $query->where('rider_id', 'like', '%' . $request->rider_id . '%');
@@ -35,7 +37,8 @@ class riderhiringController extends Controller
         if ($request->filled('status')) {
             $query->where('status', $request->status);
         }
-        $data = $query->paginate($perPage);
+        // Apply pagination using the trait
+        $data = $this->applyPagination($query, $paginationParams);
         if ($request->ajax()) {
             try {
                 $tableData = view('riders.hiring_table', compact('data'))->render();
@@ -46,8 +49,8 @@ class riderhiringController extends Controller
                 ]);
             } catch (\Throwable $e) {
                 return response()->json([
-                  'error' => 'View render failed',
-                  'message' => $e->getMessage()
+                    'error' => 'View render failed',
+                    'message' => $e->getMessage()
                 ], 500);
             }
         }
@@ -105,9 +108,9 @@ class riderhiringController extends Controller
     /**
      * Update the specified resource in storage.
      */
-   public function update(Request $request, $id)
+    public function update(Request $request, $id)
     {
-         $userid = Auth::user()->id;
+        $userid = Auth::user()->id;
         // Check for duplicates
         $exists = rider_hiring::where('contact', $request->contact)
             ->orWhere('whatsapp_contact', $request->whatsapp_contact)

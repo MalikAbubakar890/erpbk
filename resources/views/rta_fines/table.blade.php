@@ -7,6 +7,7 @@
          <th title="Trip Time" class="sorting" tabindex="0" aria-controls="dataTableBuilder" rowspan="1" colspan="1" aria-label="Trip Time: activate to sort column ascending">Trip Time</th>
          <th title="Billing Month" class="sorting" tabindex="0" aria-controls="dataTableBuilder" rowspan="1" colspan="1" aria-label="Billing Month: activate to sort column ascending">Billing Month</th>
          <th title="Ticket No" class="sorting" tabindex="0" aria-controls="dataTableBuilder" rowspan="1" colspan="1" aria-label="Ticket No: activate to sort column ascending" aria-sort="descending">Ticket No</th>
+         <th title="Voucher No" class="sorting" tabindex="0" aria-controls="dataTableBuilder" rowspan="1" colspan="1" aria-label="Voucher No: activate to sort column ascending">Voucher No</th>
          <th title="Rider" class="sorting" tabindex="0" aria-controls="dataTableBuilder" rowspan="1" colspan="1" aria-label="Rider: activate to sort column ascending">Rider Id</th>
          <th title="Rider" class="sorting" tabindex="0" aria-controls="dataTableBuilder" rowspan="1" colspan="1" aria-label="Rider: activate to sort column ascending">Rider</th>
          <th title="Plate No" class="sorting" tabindex="0" aria-controls="dataTableBuilder" rowspan="1" colspan="1" aria-label="Plate No: activate to sort column ascending">Plate No</th>
@@ -29,8 +30,26 @@
          <td>{{ \Carbon\Carbon::parse($r->billing_month)->format('M Y') }}</td>
          @php
          $fileUrl = asset('storage/' . $r->attachment_path);
+         $voucher = null;
+         $voucherNumber = null;
+
+         if ($r->status === 'unpaid') {
+         $voucher = DB::table('vouchers')
+         ->where('ref_id', $r->id)
+         ->where('voucher_type', 'RFV')
+         ->orderByDesc('id')
+         ->first();
+         $voucherNumber = $voucher ? $voucher->voucher_type . '-' . str_pad($voucher->id, 4, '0', STR_PAD_LEFT) : null;
+         }
          @endphp
          <td><a href="{{ $fileUrl }}" target="_blank">{{$r->ticket_no}}</a></td>
+         <td>
+            @if ($voucher)
+            <a href="{{ route('vouchers.show', $voucher->id) }}" target="_blank">{{ $voucherNumber }}</a>
+            @else
+            -
+            @endif
+         </td>
          @php
          $rider_account = DB::table('riders')->where('id', $r->rider_id)->first();
          if ($rider_account) {
@@ -86,7 +105,9 @@
       @endforeach
    </tbody>
 </table>
-{!! $data->links('pagination') !!}
+@if(method_exists($data, 'links'))
+{!! $data->links('components.global-pagination') !!}
+@endif
 <div class="modal modal-default filtetmodal fade" id="customoizecolmn" tabindex="-1" data-bs-backdrop="static" role="dialog" aria-hidden="true">
    <div class="modal-dialog modal-lg modal-slide-top modal-full-top">
       <div class="modal-content">
