@@ -74,7 +74,9 @@
 
  <?php echo e(Request::is('riderActivities*') ? 'open' : ''); ?>
 
-  <?php echo e(Request::is('reports/rider_report*') ? 'open' : ''); ?>  ">
+  <?php echo e(Request::is('reports/rider_report*') ? 'open' : ''); ?>
+
+  <?php echo e(Request::is('reports/rider_monthly_report*') ? 'open' : ''); ?>  ">
   <a href="javascript:void(0);" class="menu-link menu-toggle ">
     <i class="menu-icon tf-icons ti ti-user-pin"></i>
     <div data-i18n="Front Pages">Riders</div>

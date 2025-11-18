@@ -50,17 +50,28 @@ class ImportRiderVoucherOnly implements ToCollection
                 $voucherType = trim((string)($row[4] ?? 'JV')) ?: 'JV';
                 if ($voucherType == 'Advance Loan') {
                     $voucherType = 'AL';
-                } elseif ($voucherType == 'Vendor Charges') {
+                } else if ($voucherType == 'Payment Voucher') {
+                    $voucherType = 'PAY';
+                } else if ($voucherType == 'Incentive') {
+                    $voucherType = 'INC';
+                } else if ($voucherType == 'Vendor Charges') {
                     $voucherType = 'VC';
                 } elseif ($voucherType == 'COD') {
                     $voucherType = 'COD';
                 } elseif ($voucherType == 'Penalty') {
                     $voucherType = 'PN';
                 } else {
-                    $voucherType = 'Voucher';
+                    $voucherType = 'JV';
                 }
-                $accountId = isset($row[5]) && $row[5] !== '' ? (int) $row[5] : null;
+                $code = trim((string)($row[6] ?? ''));
 
+                $account = Accounts::where('account_code', $code)->first();
+
+                if (!$account) {
+                    dd("Account code not found in DB: " . $code);
+                }
+
+                $accountId = $account->id;
                 $rider = Riders::where('rider_id', $riderExternalId)->first();
                 if (!$rider) {
                     throw ValidationException::withMessages([
@@ -71,7 +82,7 @@ class ImportRiderVoucherOnly implements ToCollection
 
                 $transCode = Account::trans_code();
                 $billingsMonth = Carbon::parse($billingMonth ?: date('Y-m-01'))->format('M-Y');
-                $narration = $row[4] . ' Month of ' . $billingsMonth;
+                $narration = $row[5];
                 $voucherData = [
                     'trans_date' => $transDate ?: date('Y-m-d'),
                     'posting_date' => $transDate ?: date('Y-m-d'),

@@ -303,6 +303,8 @@ Route::middleware(['auth', 'web'])->group(function () {
     Route::prefix('reports')->group(function () {
         Route::get('/rider_report', [ReportController::class, 'rider_report'])->name('reports.rider_report');
         Route::post('/rider_report_data', [ReportController::class, 'rider_report_data'])->name('reports.rider_report_data');
+        Route::get('/rider_monthly_report', [ReportController::class, 'rider_monthly_report'])->name('reports.rider_monthly_report');
+        Route::post('/rider_monthly_report_data', [ReportController::class, 'rider_monthly_report_data'])->name('reports.rider_monthly_report_data');
     });
 
 
